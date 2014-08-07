@@ -44,7 +44,8 @@ class BGGAPI(object):
         self.api_url = "http://www.boardgamegeek.com/xmlapi2/{}"
         self.cache = cache
 
-    def _fetch_tree(self, url, params=None):
+    @staticmethod
+    def _fetch_tree(url, params=None):
         try:
             r = requests.get(url, params=params)
 
@@ -86,7 +87,7 @@ class BGGAPI(object):
             params = {"query": name, "exact": 1}
 
             log.debug(u"fetching boardgame by name \"{}\"".format(name))
-            tree = self._fetch_tree(url, params=params)
+            tree = BGGAPI._fetch_tree(url, params=params)
             game = tree.find("./*[@type='boardgame']")
             if game is None:
                 log.warn(u"game not found: {}".format(name))
@@ -102,11 +103,11 @@ class BGGAPI(object):
         url = self.api_url.format("thing")
         params = {"id": bgid}
         if forcefetch or self.cache is None:
-            tree = self._fetch_tree(url, params=params)
+            tree = BGGAPI._fetch_tree(url, params=params)
         else:
             tree = self.cache.get_bg(bgid)
             if tree is None:  # cache miss
-                tree = self._fetch_tree(url, params=params)
+                tree = BGGAPI._fetch_tree(url, params=params)
 
         if tree is None:
             return None
@@ -116,8 +117,8 @@ class BGGAPI(object):
 
         root = tree.getroot()
 
-        kwargs = dict()
-        kwargs["bgid"] = bgid
+        kwargs = {"bgid": bgid}
+
         # entries that use attrib["value"].
         value_map = {
             ".//yearpublished": "year",
@@ -156,7 +157,7 @@ class BGGAPI(object):
         for xpath, bg_arg in value_map.items():
             els = root.findall(xpath)
             if els:
-                if len(els) > 0:
+                if len(els):
                     log.warn("Found multiple entries for {}, ignoring all but first".format(xpath))
                 kwargs[bg_arg] = els[0].text
 
@@ -179,11 +180,11 @@ class BGGAPI(object):
         params = {"id": gid, "members": 1}
 
         if forcefetch == True or self.cache is None:
-            tree = self._fetch_tree(url, params=params)
+            tree = BGGAPI._fetch_tree(url, params=params)
         else:
             tree = self.cache.get_guild(gid)
             if tree is None:  # cache miss
-                tree = self._fetch_tree(url, params=params)
+                tree = BGGAPI._fetch_tree(url, params=params)
 
         if tree is None:
             log.warn("Could not get XML for {}".format(url))
@@ -214,11 +215,11 @@ class BGGAPI(object):
             params = {"id": gid, "members": 1, "page": page}
 
             if forcefetch == True or self.cache is None:
-                tree = self._fetch_tree(url, params=params)
+                tree = BGGAPI._fetch_tree(url, params=params)
             else:
                 tree = self.cache.get_guild(gid, page=page)
                 if tree is None:  # cache miss
-                    tree = self._fetch_tree(url, params=params)
+                    tree = BGGAPI._fetch_tree(url, params=params)
 
             if tree is None:
                 log.warn("Could not get XML for {}".format(url))
@@ -247,11 +248,11 @@ class BGGAPI(object):
         params = {"name": name, "hot": 1, "top": 1}
 
         if forcefetch == True or self.cache is None:
-            tree = self._fetch_tree(url, params=params)
+            tree = BGGAPI._fetch_tree(url, params=params)
         else:
             tree = self.cache.get_user(name)
             if tree is None:  # cache miss
-                tree = self._fetch_tree(url, params=params)
+                tree = BGGAPI._fetch_tree(url, params=params)
 
         if tree is None:
             log.warn("Could not get XML for {}".format(url))
@@ -308,7 +309,7 @@ class BGGAPI(object):
             retry = 15 
             sleep_time = 2
             while retry != 0:
-                tree = self._fetch_tree(url, params=params)
+                tree = BGGAPI._fetch_tree(url, params=params)
                 if not tree:
                     # some fatal error while fetching...
                     break
@@ -325,7 +326,7 @@ class BGGAPI(object):
             tree = self.cache.get_collection(name)
             # FIXME: need retry here too
             if tree is None:  # cache miss
-                tree = self._fetch_tree(url, params=params)
+                tree = BGGAPI._fetch_tree(url, params=params)
 
         if tree is None:
             log.warn("Could not get XML for {}".format(url))
@@ -345,53 +346,84 @@ class BGGAPI(object):
             rating = stats.find("rating")
             status = el.find("status")
 
-            kwargs = dict()
             bgname = el.find("name").text
-            kwargs["names"] = bgname
             bgid = el.attrib["objectid"]
-            kwargs["bgid"] = bgid
-            subel = el.find("yearpublished")
-            kwargs["year"] = subel.text if subel is not None else None
-            subel = el.find("image")
-            kwargs["image"] = subel.text if subel is not None else None
-            subel = el.find("thumbnail")
-            kwargs["thumbnail"] = subel.text if subel is not None else None
 
-            for attr in ["minplayers", "maxplayers", "playingtime"]:
-                kwargs[attr] = stats.attrib.get(attr, "")
+            def get_subelem_text(e, subel):
+                e = e.find(subel)
+                if e is not None:
+                    return e.text
+                return None
 
-            log.debug("--> KWARG: {}".format(kwargs))
-            collection.games.append(Boardgame(**kwargs))
-           
-            kwargs = dict()
-            # this only works as BoardgameStatus.__slots__ matches most of the XML attributes
-            # exactly. i.e. this is probably bad idea.
-            for prop in BoardgameStatus.__slots__:
-                kwargs[prop] = status.attrib.get(prop, "")
-            kwargs["numplays"] = el.find("numplays").text
-            kwargs["name"] = bgname
-            kwargs["bgid"] = bgid
-            collection.status[bgname] = BoardgameStatus(**kwargs)
+            def get_subelem_attr(e, subel, attr):
+                e = e.find(subel)
+                if e is not None:
+                    return e.attrib.get(attr)
+                return None
 
-            kwargs = dict()
-            kwargs["name"] = bgname
-            kwargs["bgid"] = bgid
-            if "value" in rating.attrib and rating.attrib["value"] != "N/A":
-                kwargs["userrating"] = rating.attrib["value"]
-            else:
-                kwargs["userrating"] = None
+            kwargs = {"names": bgname,
+                      "bgid": bgid,
+                      "minplayers": stats.attrib.get("minplayers"),
+                      "maxplayers": stats.attrib.get("maxplayers"),
+                      "playingtime": stats.attrib.get("playingtime"),
+                      "year": get_subelem_text(el, "yearpublished"),
+                      "image": get_subelem_text(el, "image"),
+                      "thumbnail": get_subelem_text(el, "thumbnail")}
 
-            for prop in Rating.__slots__:
-                rate_el = rating.find(prop)
-                if not rate_el is None:
-                    kwargs[prop] = rate_el.attrib.get("value", "")
+            collection.add_boardgame(Boardgame(**kwargs))
 
-            kwargs["BGGrank"] = rating.find("ranks/rank[@name='boardgame']").attrib["value"]
-            log.debug(u"{} ranked {} by BGG - rated {} by {}".format(bgname,
-                                                                     kwargs["BGGrank"],
-                                                                     kwargs["userrating"],
-                                                                     name))
-            log.debug(u"Creating Rating with: {}".format(kwargs))
-            collection.rating[bgid] = Rating(**kwargs)
+            # 
+            # Status stuff
+            #
+
+            kwargs = {stat: status.attrib.get(stat) for stat in ["lastmodified",
+                                                                 "own",
+                                                                 "preordered",
+                                                                 "prevowned",
+                                                                 "want",
+                                                                 "wanttobuy",
+                                                                 "wanttoplay",
+                                                                 "fortrade",
+                                                                 "wanttobuy",
+                                                                 "wishlist",
+                                                                 "wishlistpriority"]}
+
+            kwargs.update({
+                "name": bgname,
+                "bgid": bgid,
+                "numplays": get_subelem_text(el, "numplays")
+            })
+
+            collection.add_boardgame_status(bgname, BoardgameStatus(**kwargs))
+
+            kwargs = {"name": bgname,
+                      "bgid": bgid,
+                      "usersrated": get_subelem_attr(rating, "usersrated", "value"),
+                      "average": get_subelem_attr(rating, "average", "value"),
+                      "stddev": get_subelem_attr(rating, "stddev", "value"),
+                      "bayesaverage": get_subelem_attr(rating, "bayesaverage", "value"),
+                      "median": get_subelem_attr(rating, "median", "value"),
+                      "ranks": {}
+            }
+
+            ranks = rating.find("ranks")
+
+            if ranks is not None:
+                for subel in ranks.findall("rank"):
+                    log.debug("XXX RANK XXX: {}".format(subel.attrib))
+
+                    if "name" in subel.attrib:
+                        kwargs["ranks"][subel.attrib["name"]] = {
+                            "bayesaverage": subel.attrib.get("bayesaverage"),
+                            "friendlyname": subel.attrib.get("friendlyname"),
+                            "type": subel.attrib.get("type"),
+                            "name": subel.attrib["name"],
+                            "value": subel.attrib.get("value")
+                        }
+
+            user_rating = rating.attrib.get("value")
+            kwargs["userrating"] = user_rating if user_rating != "N/A" else None
+
+            collection.add_boardgame_rating(bgname, Rating(**kwargs))
 
         return collection

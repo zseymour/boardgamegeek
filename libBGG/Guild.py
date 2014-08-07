@@ -9,30 +9,27 @@ class GuildException(Exception):
 
 
 class Guild(object):
-    """Store information about a BGG Guild. The init function takes a list of valid
-    proprties defined by Guild.valid_properties."""
+    """ Store information about a BGG Guild. The init function takes a list of valid
+    proprties defined by Guild.valid_properties. """
 
-    # This should really contain the correct types as well...
-    # ... and be put in a common base class.
-    __slots__ = [
-        "category", "website", "manager", "description", "members", "name", "gid"
-    ]
+    # __slots__ = [
+    #     "category", "website", "manager", "description", "members", "name", "gid"
+    # ]
 
     def __init__(self, **kwargs):
-        for k, v in kwargs.items():
-            setattr(self, k, v)
+        self._data = kwargs
+        if "members" in self._data and type(self._data["members"]) != list:
+            self._data["members"] = [self._data["members"]]
 
-        # force self.members to be a list.
-        try:
-            if type(self._members) != list:
-                self._members = [self._members]
-        except AttributeError:
-            pass
+    def __getattr__(self, item):
+        # allow accessing user's variables using .attribute
+        if item in self._data:
+            return self._data[item]
+        raise AttributeError
 
-    def dump(self):
-        log.debug(u"Guild {}:".format(self.name))
-        for a in Guild.__slots__:
-            log.debug(u"\t{}: {}".format(a, getattr(self, a, None)))
+    def data(self):
+        # useful for serialization as JSON
+        return self._data
 
     def __unicode__(self):
         return "Guild {} (id={})".format(self.name, self.gid)

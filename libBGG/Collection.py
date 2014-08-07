@@ -9,32 +9,31 @@ class CollectionException(Exception):
 
 
 class Rating(object):
-    __slots__ = ["name", "bgid", "userrating", "usersrated", "average", "stddev",
-                 "bayesaverage", "BGGrank", "median"]
+    #__slots__ = ["name", "bgid", "userrating", "usersrated", "average", "stddev",
+    #             "bayesaverage", "BGGrank", "median"]
 
     def __init__(self, **kwargs):
-        for k, v in kwargs.items():
-            setattr(self, k, v)
+        self._data = kwargs
 
-    def dump(self):
-        log.debug(u"{} rating".format(self.name))
-        for a in Rating.__slots__:
-            log.debug("\t{}: {}".format(a, getattr(self, a)))
+    def __getattr__(self, item):
+        # allow accessing user's variables using .attribute
+        if item in self._data:
+            return self._data[item]
+        raise AttributeError
 
 
 class BoardgameStatus(object):
-    __slots__ = ["name", "bgid", "own", "prevown", "fortrade", "want", "wanttoplay",
-                 "wanttobuy", "wishlist", "wishlistpriority", "timestamp", "numplays"]
+    #__slots__ = ["name", "bgid", "own", "prevown", "fortrade", "want", "wanttoplay",
+    #             "wanttobuy", "wishlist", "wishlistpriority", "timestamp", "numplays"]
 
     def __init__(self, **kwargs):
-        for k, v in kwargs.items():
-            setattr(self, k, v)
+        self._data = kwargs
 
-    def dump(self):
-        log.debug(u"{} rating".format(self.name))
-        for a in BoardgameStatus.__slots__:
-            if getattr(self, a, None):
-                log.debug(u"\t{}: {}".format(a, getattr(self, a)))
+    def __getattr__(self, item):
+        # allow accessing user's variables using .attribute
+        if item in self._data:
+            return self._data[item]
+        raise AttributeError
 
 
 class Collection(object):
@@ -49,27 +48,44 @@ class Collection(object):
 
     Ratings are mapped by boardgame name.
     """
-    def __init__(self, user):
-        self.user = user
+    def __init__(self, username):
+
+        self.username = username
         self.games = list()
         self.rating = dict()   # index is BG name
         self.status = dict()   # index is BG name
 
     def __unicode__(self):
-        return "{} collection {} items".format(self.user, len(self.games))
+        return "{}'s collection, {} items".format(self.username, len(self.games))
 
     def __str__(self):
         return self.__unicode__().encode("utf-8").strip()
 
-    def dump(self):
-        # note the , at the end of the print statements (no new lines)
-        log.debug(u"{}\"s collection has {} games:".format(self.user, len(self.games)))
-        for game in self.games:
-            if self.rating[game.bgid].userrating:
-                rating = " rated: {}".format(self.rating[game.bgid].userrating)
-            else:
-                rating = ""
-            log.debug(u"\"{}\" ({}){}".format(game.name, game.year, rating))
+    def data(self):
+        return {"user": self.username,
+                "games": [game.data() for game in self.games]
+               }
+
+    def add_boardgame(self, boardgame):
+        self.games.append(boardgame)
+
+    def add_boardgame_status(self, name, status):
+        """
+
+        :param name: The name of the boardgame
+        :param status:
+        :return:
+        """
+        self.status[name] = status
+
+    def add_boardgame_rating(self, name, rating):
+        """
+
+        :param name:
+        :param rating:
+        :return:
+        """
+        self.rating[name] = rating
 
     @property
     def len(self):

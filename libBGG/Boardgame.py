@@ -9,53 +9,43 @@ class BoardgameException(Exception):
 
 
 class Boardgame(object):
-    """Store information about a boardgame. The init function takes a list of valid
-    proprties defined by boardgame.valid_properties. Properties that are lists can
-    be given as a single item or as a list."""
+    """ Store information about a boardgame. """
 
-    # This should really contain the correct types as well...
-    __slots__ = [
-        "designers", "artists", "playingtime", "thumbnail",
-        "image", "description", "minplayers", "maxplayers",
-        "categories", "mechanics", "families", "publishers",
-        "website", "year", "names", "bgid"
-    ]
+    # __slots__ = [
+    #     "designers", "artists", "playingtime", "thumbnail",
+    #     "image", "description", "minplayers", "maxplayers",
+    #     "categories", "mechanics", "families", "publishers",
+    #     "website", "year", "names", "bgid"
+    # ]
 
     def __init__(self, **kwargs):
-        for k, v in kwargs.items():
-            setattr(self, k, v)
-       
-        _list_slots = ["designers", "artists", "categories", "mechanics", "families", "publishers", "names"]
-        # force these to be lists.
-        for l in _list_slots:
-            try:
-                if type(getattr(self, l)) != list:
-                    setattr(self, l, [getattr(self, l)])
-            except AttributeError:
-                pass
+        self._data = kwargs
 
-    def dump(self):
-        log.debug(u"{}:".format(self.name))
-        for a in Boardgame.__slots__:
-            if getattr(self, a, None):
-                if type(a) is list:
-                    log.debug(u"\t{}: {}".format(a, ", ".join(getattr(self, a, []))))
-                else:
-                    log.debug(u"\t{}: {}".format(a, getattr(self, a, None)))
+        for l in ["designers", "artists", "categories", "mechanics", "families", "publishers", "names"]:
+            if l in self._data and type(self._data[l]) != list:
+                self._data[l] = [self._data[l]]
+
+    def __getattr__(self, item):
+        if item in self._data:
+            return self._data[item]
+        raise AttributeError
 
     def __unicode__(self):
-        return "{} ({}) by {}".format(self.name, self.year, ", ".join(self.designers))
+        return "{} ({}) (authors: {})".format(self.name, self.year, ", ".join(self.designers))
 
     def __str__(self):
         return self.__unicode__().encode("utf-8").strip()
 
-    # Litte syntactic sugar for the more usual case of a single name.
-    @property
-    def name(self):
-        if getattr(self, "names", None):
-            return self.names[0]
-        return None
+    def data(self):
+        return self._data
 
-    @name.setter
-    def name(self, value):
-        self.names = [value]
+    # Litte syntactic sugar for the more usual case of a single name.
+    # @property
+    # def name(self):
+    #     if getattr(self, "names", None):
+    #         return self.names[0]
+    #     return None
+    #
+    # @name.setter
+    # def name(self, value):
+    #     self.names = [value]
