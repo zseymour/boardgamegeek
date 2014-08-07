@@ -4,18 +4,18 @@ log = logging.getLogger(__name__)
 
 
 class GuildException(Exception):
-    '''Exception wrapper for Guild specific exceptions.'''
+    """Exception wrapper for Guild specific exceptions."""
     pass
 
 
 class Guild(object):
-    '''Store information about a BGG Guild. The init function takes a list of valid
-    proprties defined by Guild.valid_properties.'''
+    """Store information about a BGG Guild. The init function takes a list of valid
+    proprties defined by Guild.valid_properties."""
 
     # This should really contain the correct types as well...
     # ... and be put in a common base class.
     __slots__ = [
-        'category', 'website', 'manager', 'description', 'members', 'name', 'gid'
+        "category", "website", "manager", "description", "members", "name", "gid"
     ]
 
     def __init__(self, **kwargs):
@@ -30,12 +30,12 @@ class Guild(object):
             pass
 
     def dump(self):
-        log.debug('Guild %s:' % self.name)
+        log.debug(u"Guild {}:".format(self.name))
         for a in Guild.__slots__:
-            log.debug('\t%s: %s' % (a, getattr(self, a, None)))
+            log.debug(u"\t{}: {}".format(a, getattr(self, a, None)))
 
     def __unicode__(self):
-        return 'Guild %s (id=%s): %s' % (self.name, self.gid)
+        return "Guild {} (id={})".format(self.name, self.gid)
 
     def __str__(self):
-        return self.__unicode__().encode('utf-8').strip()
+        return self.__unicode__().encode("utf-8").strip()

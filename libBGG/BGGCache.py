@@ -13,59 +13,59 @@ class BGGCacheException(Exception):
 
 
 class BGGCache(object):
-    '''Cache and/or retrieve the given XML representations of BGG objects.'''
+    """Cache and/or retrieve the given XML representations of BGG objects."""
     def __init__(self, cachedir):
         self.cachedir = cachedir
-        self.bgdir = os.path.join(self.cachedir, 'boardgames')
-        self.collectiondir = os.path.join(self.cachedir, 'collections')
-        self.userdir = os.path.join(self.cachedir, 'users')
-        self.guilddir = os.path.join(self.cachedir, 'guilds')
+        self.bgdir = os.path.join(self.cachedir, "boardgames")
+        self.collectiondir = os.path.join(self.cachedir, "collections")
+        self.userdir = os.path.join(self.cachedir, "users")
+        self.guilddir = os.path.join(self.cachedir, "guilds")
 
-        self.cache = defaultdict(lambda : defaultdict(str))
+        self.cache = defaultdict(lambda: defaultdict(str))
 
         for d in [self.cachedir, self.guilddir, self.bgdir, self.collectiondir, self.userdir]:
             if not os.path.isdir(d):
                 os.mkdir(d)
 
     def cache_bg(self, tree, bgid):
-        self.cache['boardgames'][bgid] = tree
-        self._cache_tree(tree, os.path.join(self.bgdir, '%s.xml' % bgid))
+        self.cache["boardgames"][bgid] = tree
+        self._cache_tree(tree, os.path.join(self.bgdir, "{}.xml".format(bgid)))
 
     def get_bg(self, bgid):
-        if bgid in self.cache['boardgames']:
-            return self.cache['boardgames'][bgid]
+        if bgid in self.cache["boardgames"]:
+            return self.cache["boardgames"][bgid]
         else:
-            return self._get_tree(os.path.join(self.bgdir, '%s.xml' % bgid))
+            return self._get_tree(os.path.join(self.bgdir, "{}.xml".format(bgid)))
 
     def bg_exists(self, bgid):
-        return bgid in self.cache['boardgames'] or os.path.exists(os.path.join(self.bgdir, '%s.xml' % bgid))
+        return bgid in self.cache["boardgames"] or os.path.exists(os.path.join(self.bgdir, "{}.xml".format(bgid)))
 
     def cache_guild(self, tree, gid, page=1):
-        self._cache_tree(tree, os.path.join(self.guilddir, '%s-%d.xml' % (gid, page)))
+        self._cache_tree(tree, os.path.join(self.guilddir, "{}-{}.xml".format(gid, page)))
 
     def get_guild(self, gid, page=1):
-        return self._get_tree(os.path.join(self.guilddir, '%s-%d.xml' % (gid, page)))
+        return self._get_tree(os.path.join(self.guilddir, "{}-{}.xml".format(gid, page)))
 
     def guild_exists(self, gid):
-        return os.path.exists(os.path.join(self.guilddir, '%s-1.xml' % gid))
+        return os.path.exists(os.path.join(self.guilddir, "{}-1.xml".format(gid)))
 
     def cache_user(self, tree, name):
-        self._cache_tree(tree, os.path.join(self.userdir, '%s.xml' % name))
+        self._cache_tree(tree, os.path.join(self.userdir, "{}.xml".format(name)))
 
     def get_user(self, user):
-        return self._get_tree(os.path.join(self.userdir, '%s.xml' % user))
+        return self._get_tree(os.path.join(self.userdir, "{}.xml".format(user)))
 
     def user_exists(self, name):
-        return os.path.exists(os.path.join(self.userdir, '%s.xml' % name))
+        return os.path.exists(os.path.join(self.userdir, "{}.xml".format(name)))
 
     def cache_collection(self, tree, user):
-        self._cache_tree(tree, os.path.join(self.collectiondir, '%s.xml' % user))
+        self._cache_tree(tree, os.path.join(self.collectiondir, "{}.xml".format(user)))
 
     def get_collection(self, user):
-        return self._get_tree(os.path.join(self.collectiondir, '%s.xml' % user))
+        return self._get_tree(os.path.join(self.collectiondir, "{}.xml".format(user)))
 
     def collection_exists(self, user):
-        return os.path.exists(os.path.join(self.collectiondir, '%s.xml' % user))
+        return os.path.exists(os.path.join(self.collectiondir, "{}.xml".format(user)))
 
     def _cache_tree(self, tree, filename):
         tree.write(filename)
@@ -76,7 +76,7 @@ class BGGCache(object):
         try:
             return ET.parse(path)
         except ETParseError:
-            log.critical('unable to parse file %s' % path)
+            log.critical("unable to parse file {}".format(path))
             # raise BGGCacheException(e)
             return None
 
