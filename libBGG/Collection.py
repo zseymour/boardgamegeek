@@ -63,8 +63,7 @@ class Collection(object):
 
     def data(self):
         return {"user": self.username,
-                "games": [game.data() for game in self.games]
-               }
+                "games": [game.data() for game in self.games]}
 
     def add_boardgame(self, boardgame):
         self.games.append(boardgame)
@@ -87,6 +86,5 @@ class Collection(object):
         """
         self.rating[name] = rating
 
-    @property
-    def len(self):
+    def __len__(self):
         return len(self.games)

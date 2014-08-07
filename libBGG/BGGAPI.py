@@ -1,16 +1,10 @@
 #!/usr/bin/env python
 
-# Note: python 2.7
 import requests
 import xml.etree.ElementTree as ET
 from xml.etree.ElementTree import ParseError as ETParseError
 from time import sleep
 import sys
-
-if sys.version_info >= (3,):
-    import io as StringIO
-else:
-    import StringIO
 
 import logging
 
@@ -45,15 +39,15 @@ class BGGAPI(object):
         self.cache = cache
 
     @staticmethod
-    def _fetch_tree(url, params=None):
+    def _fetch_and_parse_xml(url, params=None):
         try:
             r = requests.get(url, params=params)
 
             if sys.version_info >= (3,):
-                tree = ET.parse(StringIO.StringIO(r.text))
+                root_elem = ET.fromstring(r.text)
             else:
                 utf8_text = r.text.encode("utf-8")
-                tree = ET.parse(StringIO.StringIO(utf8_text))
+                root_elem = ET.fromstring(utf8_text)
 
         except Exception as e:
             log.error("error getting URL {}: {}".format(url, e))
@@ -64,7 +58,7 @@ class BGGAPI(object):
             # raise BGGAPIException(e)
             return None
 
-        return tree
+        return root_elem
 
     def fetch_boardgame(self, name, bgid=None, forcefetch=False):
         """
@@ -87,35 +81,37 @@ class BGGAPI(object):
             params = {"query": name, "exact": 1}
 
             log.debug(u"fetching boardgame by name \"{}\"".format(name))
-            tree = BGGAPI._fetch_tree(url, params=params)
-            game = tree.find("./*[@type='boardgame']")
+            root = BGGAPI._fetch_and_parse_xml(url, params=params)
+            game = root.find("./*[@type='boardgame']")
             if game is None:
                 log.warn(u"game not found: {}".format(name))
                 return None
 
-            bgid = game.attrib.get("id")
-            if not bgid:
-                log.warning(u"BGGAPI gave us a game without an id: {}".format(name))
+            try:
+                bgid = int(game.attrib.get("id"))
+                if not bgid:
+                    log.warning(u"BGGAPI gave us a game without an id: {}".format(name))
+                    return None
+            except Exception as e:
+                log.error("error getting bgid: {}".format(e))
                 return None
 
-        log.debug(u"fetching boardgame by BGG ID \"{}\"".format(bgid))
+        log.debug(u"fetching boardgame by BGG id {}".format(bgid))
 
         url = self.api_url.format("thing")
         params = {"id": bgid}
         if forcefetch or self.cache is None:
-            tree = BGGAPI._fetch_tree(url, params=params)
+            root = BGGAPI._fetch_and_parse_xml(url, params=params)
         else:
-            tree = self.cache.get_bg(bgid)
-            if tree is None:  # cache miss
-                tree = BGGAPI._fetch_tree(url, params=params)
+            root = self.cache.get_bg(bgid)
+            if root is None:  # cache miss
+                root = BGGAPI._fetch_and_parse_xml(url, params=params)
 
-        if tree is None:
+        if root is None:
             return None
 
         if self.cache is not None:
-            self.cache.cache_bg(tree, bgid)
-
-        root = tree.getroot()
+            self.cache.cache_bg(root, bgid)
 
         kwargs = {"bgid": bgid}
 
@@ -180,20 +176,18 @@ class BGGAPI(object):
         params = {"id": gid, "members": 1}
 
         if forcefetch == True or self.cache is None:
-            tree = BGGAPI._fetch_tree(url, params=params)
+            root = BGGAPI._fetch_and_parse_xml(url, params=params)
         else:
-            tree = self.cache.get_guild(gid)
-            if tree is None:  # cache miss
-                tree = BGGAPI._fetch_tree(url, params=params)
+            root = self.cache.get_guild(gid)
+            if root is None:  # cache miss
+                root = BGGAPI._fetch_and_parse_xml(url, params=params)
 
-        if tree is None:
+        if root is None:
             log.warn("Could not get XML for {}".format(url))
             return None
 
         if self.cache is not None:
-            self.cache.cache_guild(tree, gid)
-
-        root = tree.getroot()
+            self.cache.cache_guild(root, gid)
 
         if "name" not in root.attrib:
             log.warn(u"Guild {} not yet approved. Unable to get info on it.".format(gid))
@@ -215,20 +209,19 @@ class BGGAPI(object):
             params = {"id": gid, "members": 1, "page": page}
 
             if forcefetch == True or self.cache is None:
-                tree = BGGAPI._fetch_tree(url, params=params)
+                root = BGGAPI._fetch_and_parse_xml(url, params=params)
             else:
-                tree = self.cache.get_guild(gid, page=page)
-                if tree is None:  # cache miss
-                    tree = BGGAPI._fetch_tree(url, params=params)
+                root = self.cache.get_guild(gid, page=page)
+                if root is None:  # cache miss
+                    root = BGGAPI._fetch_and_parse_xml(url, params=params)
 
-            if tree is None:
+            if root is None:
                 log.warn("Could not get XML for {}".format(url))
                 return None
 
             if self.cache is not None:
-                self.cache.cache_guild(tree, gid, page=page)
+                self.cache.cache_guild(root, gid, page=page)
 
-            root = tree.getroot()
             log.debug("fetched guild page {} of {}".format(page, total_pages))
 
             for el in root.findall(".//member"):
@@ -248,24 +241,21 @@ class BGGAPI(object):
         params = {"name": name, "hot": 1, "top": 1}
 
         if forcefetch == True or self.cache is None:
-            tree = BGGAPI._fetch_tree(url, params=params)
+            root = BGGAPI._fetch_and_parse_xml(url, params=params)
         else:
-            tree = self.cache.get_user(name)
-            if tree is None:  # cache miss
-                tree = BGGAPI._fetch_tree(url, params=params)
+            root = self.cache.get_user(name)
+            if root is None:  # cache miss
+                root = BGGAPI._fetch_and_parse_xml(url, params=params)
 
-        if tree is None:
+        if root is None:
             log.warn("Could not get XML for {}".format(url))
             return None
 
         if self.cache is not None:
-            self.cache.cache_user(tree, name)
+            self.cache.cache_user(root, name)
 
-        root = tree.getroot()
-
-        kwargs = dict()
-        kwargs["name"] = root.attrib["name"]
-        kwargs["bgid"] = root.attrib["id"]
+        kwargs = {"name": root.attrib["name"],
+                  "bgid": root.attrib["id"]}
 
         value_map = {
             ".//firstname": "firstname",
@@ -309,11 +299,11 @@ class BGGAPI(object):
             retry = 15 
             sleep_time = 2
             while retry != 0:
-                tree = BGGAPI._fetch_tree(url, params=params)
-                if not tree:
+                root = BGGAPI._fetch_and_parse_xml(url, params=params)
+                if not root:
                     # some fatal error while fetching...
                     break
-                els = tree.getroot().findall(".//item[@subtype='boardgame']")
+                els = root.findall(".//item[@subtype='boardgame']")
                 if len(els) == 0:
                     # TODO: what if collection has 0 games ?
                     log.debug("Found 0 boardgames. Trying again in {} seconds.".format(sleep_time))
@@ -323,19 +313,18 @@ class BGGAPI(object):
                     log.debug("Found {} boardgames. Continuing with processing.".format(len(els)))
                     break
         else:
-            tree = self.cache.get_collection(name)
+            root = self.cache.get_collection(name)
             # FIXME: need retry here too
-            if tree is None:  # cache miss
-                tree = BGGAPI._fetch_tree(url, params=params)
+            if root is None:  # cache miss
+                root = BGGAPI._fetch_and_parse_xml(url, params=params)
 
-        if tree is None:
+        if root is None:
             log.warn("Could not get XML for {}".format(url))
             return None
 
         if self.cache is not None:
-            self.cache.cache_collection(tree, name)
+            self.cache.cache_collection(root, name)
 
-        root = tree.getroot()
         collection = Collection(name)
 
         # build up the games, status, and rating and add to collection.
@@ -372,7 +361,7 @@ class BGGAPI(object):
 
             collection.add_boardgame(Boardgame(**kwargs))
 
-            # 
+            #
             # Status stuff
             #
 
@@ -410,8 +399,6 @@ class BGGAPI(object):
 
             if ranks is not None:
                 for subel in ranks.findall("rank"):
-                    log.debug("XXX RANK XXX: {}".format(subel.attrib))
-
                     if "name" in subel.attrib:
                         kwargs["ranks"][subel.attrib["name"]] = {
                             "bayesaverage": subel.attrib.get("bayesaverage"),
