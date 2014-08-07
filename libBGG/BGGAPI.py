@@ -20,6 +20,59 @@ class BGGAPIException(Exception):
     pass
 
 
+def xml_subelement_attr(xml_elem, subelement, convert=None, attribute="value"):
+    """
+    Return the value of <xml_elem><subelement value="THIS" /></xml_elem>
+    :param xml_elem:
+    :param subelement:
+    :param integer: if True, try to convert to int
+    :return:
+    """
+    subel = xml_elem.find(subelement)
+    if subel is not None:
+        value = subel.attrib.get(attribute)
+        if convert:
+            value = convert(value)
+        return value
+    return None
+
+
+def xml_subelement_attr_list(xml_elem, subelement, convert=None):
+    """
+    Return the value of multiple <xml_elem><subelement value="THIS" /></xml_elem> as a list
+    :param xml_elem:
+    :param subelement:
+    :param integer: if True, try to convert to int
+    :return:
+    """
+    subel = xml_elem.findall(subelement)
+    res = []
+    for e in subel:
+        value = e.attrib.get("value")
+        if convert:
+            value = convert(value)
+        res.append(value)
+
+    return res
+
+
+def xml_subelement_text(xml_elem, subelement, convert=None):
+    """
+    Return the text from the specified subelement
+    :param xml_elem:
+    :param subelement:
+    :param convert:
+    :return:
+    """
+    subel = xml_elem.find(subelement)
+    if subel is not None:
+        text = subel.text
+        if convert:
+            text = convert(text)
+        return text
+    return None
+
+
 class BGGAPI(object):
     """
     BGGAPI is a class that knows how to contact BGG for information, parse out relevant details,
@@ -113,49 +166,30 @@ class BGGAPI(object):
         if self.cache is not None:
             self.cache.cache_bg(root, bgid)
 
-        kwargs = {"bgid": bgid}
+        # xml is structured like <items blablabla><item>..
+        root = root.find("item")
 
-        # entries that use attrib["value"].
-        value_map = {
-            ".//yearpublished": "year",
-            ".//minplayers": "minplayers",
-            ".//maxplayers": "maxplayers",
-            ".//playingtime": "playingtime",
-            ".//name": "names",
-            ".//link[@type='boardgamefamily']": "families",
-            ".//link[@type='boardgamecategory']": "categories",
-            ".//link[@type='boardgamemechanic']": "mechanics",
-            ".//link[@type='boardgamedesigner']": "designers",
-            ".//link[@type='boardgameartist']": "artists",
-            ".//link[@type='boardgamepublisher']": "publishers",
-        }
+        kwargs = {"bgid": bgid,
+                  "thumbnail": xml_subelement_text(root, "thumbnail"),
+                  "image": xml_subelement_text(root, "image"),
+                  "description": xml_subelement_text(root, "description"),
+                  "families": xml_subelement_attr_list(root, ".//link[@type='boardgamefamily']"),
+                  "categories": xml_subelement_attr_list(root, ".//link[@type='boardgamecategory']"),
+                  "mechanics": xml_subelement_attr_list(root, ".//link[@type='boardgamemechanic']"),
+                  "designers": xml_subelement_attr_list(root, ".//link[@type='boardgamedesigner']"),
+                  "artists": xml_subelement_attr_list(root, ".//link[@type='boardgameartist']"),
+                  "publishers": xml_subelement_attr_list(root, ".//link[@type='boardgamepublisher']"),
+                  }
 
-        for xpath, bg_arg in value_map.items():
-            els = root.findall(xpath)
-            for el in els:
-                if "value" in el.attrib:
-                    if bg_arg in kwargs:
-                        # multiple entries, make this arg a list.
-                        if type(kwargs[bg_arg]) != list:
-                            kwargs[bg_arg] = [kwargs[bg_arg]]
-                        kwargs[bg_arg].append(el.attrib["value"])
-                    else:
-                        kwargs[bg_arg] = el.attrib["value"]
-                else:
-                    log.warn(u"no \"value\" found in {} for game: {}".format(xpath, name))
+        # These XML elements have a numberic value, attempt to convert them to integers
+        for i in ["yearpublished", "minplayers", "maxplayers", "playingtime", "minage"]:
+            kwargs[i] = xml_subelement_attr(root, i, convert=int)
 
-        # entries that use text instead of attrib["value"]
-        value_map = {
-            "./thumbnail": "thumbnail",
-            "./image": "image",
-            "./description": "description"
-        }
-        for xpath, bg_arg in value_map.items():
-            els = root.findall(xpath)
-            if els:
-                if len(els):
-                    log.warn("Found multiple entries for {}, ignoring all but first".format(xpath))
-                kwargs[bg_arg] = els[0].text
+        # What's the name of the game :P
+        kwargs["name"] = xml_subelement_attr(root, ".//name[@type='primary']")
+
+        # Get alternative names too
+        kwargs["alternative_names"] = xml_subelement_attr_list(root, ".//name[@type='alternate']")
 
         log.debug(u"creating boardgame with kwargs: {}".format(kwargs))
         return Boardgame(**kwargs)
@@ -193,22 +227,20 @@ class BGGAPI(object):
             log.warn(u"Guild {} not yet approved. Unable to get info on it.".format(gid))
             return None
 
-        kwargs = dict()
-        kwargs["name"] = root.attrib["name"]
-        kwargs["gid"] = gid
-        kwargs["members"] = list()
+        kwargs = {"name": root.attrib["name"],
+                  "gid": gid,
+                  "members": []}
 
         el = root.find(".//members[@count]")
         count = int(el.attrib["count"])
-        total_pages = int(2+(count/25))   # 25 memebers per page according to BGGAPI
+        total_pages = int(2 + (count / 25))   # 25 memebers per page according to BGGAPI
         if total_pages >= 10:
             log.warn("Need to fetch {} pages. It could take awhile.".format(total_pages - 1))
 
-        for page in range(1,total_pages):
-            url = self.api_url.format("guild")
+        for page in range(1, total_pages):
             params = {"id": gid, "members": 1, "page": page}
 
-            if forcefetch == True or self.cache is None:
+            if forcefetch or self.cache is None:
                 root = BGGAPI._fetch_and_parse_xml(url, params=params)
             else:
                 root = self.cache.get_guild(gid, page=page)
@@ -230,9 +262,7 @@ class BGGAPI(object):
             if page == 1:
                 # grab initial info from first page
                 for tag in ["description", "category", "website", "manager"]:
-                    el = root.find(tag)
-                    if not el is None:
-                        kwargs[tag] = el.text
+                    kwargs[tag] = xml_subelement_text(root, tag)
 
         return Guild(**kwargs)
 
@@ -255,38 +285,23 @@ class BGGAPI(object):
             self.cache.cache_user(root, name)
 
         kwargs = {"name": root.attrib["name"],
-                  "bgid": root.attrib["id"]}
+                  "bgid": int(root.attrib["id"])}
 
-        value_map = {
-            ".//firstname": "firstname",
-            ".//lastname": "lastname",
-            ".//yearregistered": "yearregistered",
-            ".//stateorprovince": "stateorprovince",
-            ".//country": "country",
-            ".//traderating": "traderating",
-        }
+        for i in ["firstname", "lastname", "avatarlink", "lastlogin",
+                  "stateorprovince", "country", "webaddress", "xboxaccount",
+                  "wiiaccount", "steamaccount", "psnaccount", "traderating"]:
+            kwargs[i] = xml_subelement_attr(root, i)
 
-        # cut and pasted from fetch_boardgame. TODO put this in separate function.
-        for xpath, bg_arg in value_map.items():
-            els = root.findall(xpath)
-            for el in els:
-                if "value" in el.attrib:
-                    if bg_arg in kwargs:
-                        # multiple entries, make this arg a list.
-                        if type(kwargs[bg_arg]) != list:
-                            kwargs[bg_arg] = [kwargs[bg_arg]]
-                        kwargs[bg_arg].append(el.attrib["value"])
-                    else:
-                        kwargs[bg_arg] = el.attrib["value"]
-                else:
-                    log.warn(u"no \"value\" found in {} for user {}".format(xpath, name))
+        kwargs["yearregistered"] = xml_subelement_attr(root, "yearregistered", convert=int)
 
-        for xpath, prop in {".//top/item": "top10", ".//hot/item": "hot10"}.items():
-            els = root.findall(xpath)   # do we need to sort these by attrib="rank"? If so, how?
-            for el in els:
-                if not prop in kwargs:
-                    kwargs[prop] = list()
-                kwargs[prop].append(el.attrib["name"])
+        # FIXME: figure this out, if really wanted.
+
+        # for xpath, prop in {".//top/item": "top10", ".//hot/item": "hot10"}.items():
+        #     els = root.findall(xpath)   # do we need to sort these by attrib="rank"? If so, how?
+        #     for el in els:
+        #         if not prop in kwargs:
+        #             kwargs[prop] = list()
+        #         kwargs[prop].append(el.attrib["name"])
 
         return User(**kwargs)
 
@@ -338,26 +353,14 @@ class BGGAPI(object):
             bgname = el.find("name").text
             bgid = el.attrib["objectid"]
 
-            def get_subelem_text(e, subel):
-                e = e.find(subel)
-                if e is not None:
-                    return e.text
-                return None
-
-            def get_subelem_attr(e, subel, attr):
-                e = e.find(subel)
-                if e is not None:
-                    return e.attrib.get(attr)
-                return None
-
             kwargs = {"names": bgname,
                       "bgid": bgid,
-                      "minplayers": stats.attrib.get("minplayers"),
-                      "maxplayers": stats.attrib.get("maxplayers"),
-                      "playingtime": stats.attrib.get("playingtime"),
-                      "year": get_subelem_text(el, "yearpublished"),
-                      "image": get_subelem_text(el, "image"),
-                      "thumbnail": get_subelem_text(el, "thumbnail")}
+                      "minplayers": xml_subelement_attr(stats, "minplayers", convert=int),
+                      "maxplayers": xml_subelement_attr(stats, "maxplayers", convert=int),
+                      "playingtime": xml_subelement_attr(stats, "playingtime", convert=int),
+                      "year": xml_subelement_text(el, "yearpublished", convert=int),
+                      "image": xml_subelement_text(el, "image"),
+                      "thumbnail": xml_subelement_text(el, "thumbnail")}
 
             collection.add_boardgame(Boardgame(**kwargs))
 
@@ -380,18 +383,18 @@ class BGGAPI(object):
             kwargs.update({
                 "name": bgname,
                 "bgid": bgid,
-                "numplays": get_subelem_text(el, "numplays")
+                "numplays": xml_subelement_text(el, "numplays", convert=int)
             })
 
             collection.add_boardgame_status(bgname, BoardgameStatus(**kwargs))
 
             kwargs = {"name": bgname,
                       "bgid": bgid,
-                      "usersrated": get_subelem_attr(rating, "usersrated", "value"),
-                      "average": get_subelem_attr(rating, "average", "value"),
-                      "stddev": get_subelem_attr(rating, "stddev", "value"),
-                      "bayesaverage": get_subelem_attr(rating, "bayesaverage", "value"),
-                      "median": get_subelem_attr(rating, "median", "value"),
+                      "usersrated": xml_subelement_attr(rating, "usersrated", convert=int),
+                      "average": xml_subelement_attr(rating, "average", convert=float),
+                      "stddev": xml_subelement_attr(rating, "stddev", convert=float),
+                      "bayesaverage": xml_subelement_attr(rating, "bayesaverage", convert=float),
+                      "median": xml_subelement_attr(rating, "median", convert=float),
                       "ranks": {}
             }
 
