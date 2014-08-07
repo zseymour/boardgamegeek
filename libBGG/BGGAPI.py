@@ -46,25 +46,16 @@ class BGGAPI(object):
 
     def _fetch_tree(self, url, params=None):
         try:
-            log.error("fetching url: {} (params: {})".format(url, params))
             r = requests.get(url, params=params)
-
-
-            log.info("result type: {}".format(type(r.text)))
 
             if sys.version_info >= (3,):
                 tree = ET.parse(StringIO.StringIO(r.text))
             else:
                 utf8_text = r.text.encode('utf-8')
-                log.info("str type: {}".format(type(utf8_text)))
                 tree = ET.parse(StringIO.StringIO(utf8_text))
 
         except Exception as e:
-            log.exception('error getting URL: %s: %s', url, e)
-            if hasattr(e, 'reason'):
-                log.warn('We failed to reach a server. Reason: %s' % e.reason)
-            elif hasattr(e, 'code'):
-                log.warn('The server couldn\'t fulfill the request. Error code: %d', e.code)
+            log.error('error getting URL %s: %s', url, e)
             # raise BGGAPIException(e)
             return None
         except ETParseError as e:
