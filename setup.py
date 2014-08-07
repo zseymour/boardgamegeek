@@ -20,6 +20,6 @@ setup(
     description='A python interface to the boardgamegeek.com API and boardgame utils.',
     long_description=long_description,
     url='https://github.com/philsstein/libBGG',
-    install_requires=[],
+    install_requires=["requests"],
     scripts=['bin/bgg_query', 'bin/top_rated']
 )

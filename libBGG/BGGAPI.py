@@ -1,11 +1,16 @@
 #!/usr/bin/env python
 
 # Note: python 2.7
-import urllib.request, urllib.error, urllib.parse
-from urllib.error import  URLError
+import requests
 import xml.etree.ElementTree as ET
 from xml.etree.ElementTree import ParseError as ETParseError
 from time import sleep
+import sys
+
+if sys.version_info >= (3,):
+    import io as StringIO
+else:
+    import StringIO
 
 import logging
 
@@ -39,11 +44,23 @@ class BGGAPI(object):
         self.root_url = 'http://www.boardgamegeek.com/xmlapi2/'
         self.cache = cache
 
-    def _fetch_tree(self, url):
+    def _fetch_tree(self, url, params=None):
         try:
-            tree = ET.parse(urllib.request.urlopen(url))
-        except URLError as e:
-            log.warn('error getting URL: %s' % url)
+            log.error("fetching url: {} (params: {})".format(url, params))
+            r = requests.get(url, params=params)
+
+
+            log.info("result type: {}".format(type(r.text)))
+
+            if sys.version_info >= (3,):
+                tree = ET.parse(StringIO.StringIO(r.text))
+            else:
+                utf8_text = r.text.encode('utf-8')
+                log.info("str type: {}".format(type(utf8_text)))
+                tree = ET.parse(StringIO.StringIO(utf8_text))
+
+        except Exception as e:
+            log.exception('error getting URL: %s: %s', url, e)
             if hasattr(e, 'reason'):
                 log.warn('We failed to reach a server. Reason: %s' % e.reason)
             elif hasattr(e, 'code'):
@@ -67,9 +84,8 @@ class BGGAPI(object):
             # ideally we'd search the cache by name, but that would be
             # difficult. So we just fetch it via BGG.
             log.debug('fetching boardgame by name "%s"' % name)
-            url = '%ssearch?query=%s&exact=1' % (self.root_url,
-                                                 urllib.parse.quote(name))
-            tree = self._fetch_tree(url)
+            url = self.root_url + 'search'
+            tree = self._fetch_tree(url, params={'query': name, 'exact': 1})
             game = tree.find("./*[@type='boardgame']")
             if game is None:
                 log.warn('game not found: %s' % name)
@@ -213,13 +229,14 @@ class BGGAPI(object):
         return Guild(**kwargs)
 
     def fetch_user(self, name, forcefetch=False):
-        url = '%suser?name=%s&hot=1&top=1' % (self.root_url, urllib.parse.quote(name))
+        url = self.root_url + 'user'
+        params = {'name': name, 'hot': 1, 'top': 1}
         if forcefetch == True or self.cache is None:
-            tree = self._fetch_tree(url)
+            tree = self._fetch_tree(url, params)
         else:
             tree = self.cache.get_user(name)
             if tree is None:  # cache miss
-                tree = self._fetch_tree(url)
+                tree = self._fetch_tree(url, params)
 
         if tree is None:
             log.warn('Could not get XML for %s' % url)
@@ -267,14 +284,15 @@ class BGGAPI(object):
         return User(**kwargs)
 
     def fetch_collection(self, name, forcefetch=False):
-        url = '%scollection?username=%s&stats=1' % (self.root_url, urllib.parse.quote(name))
+        params = {'username': name, 'stats': 1}
+        url = self.root_url + 'collection'
 
         if forcefetch == True or self.cache is None:
             # API update: server side cache. fetch will fail until cached, so try a few times.
             retry = 15 
             sleep_time = 2
             while retry != 0:
-                tree = self._fetch_tree(url)
+                tree = self._fetch_tree(url, params)
                 if not tree:
                     break
                 els = tree.getroot().findall('.//item[@subtype="boardgame"]')
