@@ -16,9 +16,6 @@ from libBGG.Collection import Collection, Rating, BoardgameStatus
 log = logging.getLogger(__name__)
 
 
-class BGGAPIException(Exception):
-    pass
-
 
 def xml_subelement_attr(xml_elem, subelement, convert=None, attribute="value"):
     """
@@ -73,7 +70,7 @@ def xml_subelement_text(xml_elem, subelement, convert=None):
     return None
 
 
-class BGGAPI(object):
+class BGGNAPI(object):
     """
     BGGAPI is a class that knows how to contact BGG for information, parse out relevant details,
     the create a Python BGG object for general use.
@@ -87,9 +84,14 @@ class BGGAPI(object):
         guild = api.fetch("1920")  # BGG only supports fetch by ID.
         print "BGG Guild %s has %d members." % (guild.name, len(guild.members))
     """
-    def __init__(self, cache=None):
-        self.api_url = "http://www.boardgamegeek.com/xmlapi2/{}"
-        self.cache = cache
+    def __init__(self, api_endpoint):
+
+        if api_endpoint.endswith("/"):
+            self.__api_url = api_endpoint + "{}"
+        else:
+            self.__api_url = api_endpoint + "/{}"
+
+        self.__cache = cache
 
     @staticmethod
     def _fetch_and_parse_xml(url, params=None):
@@ -130,11 +132,11 @@ class BGGAPI(object):
             # ideally we'd search the cache by name, but that would be
             # difficult. So we just fetch it via BGG.
 
-            url = self.api_url.format("search")
+            url = self.__api_url.format("search")
             params = {"query": name, "exact": 1}
 
             log.debug(u"fetching boardgame by name \"{}\"".format(name))
-            root = BGGAPI._fetch_and_parse_xml(url, params=params)
+            root = BGGNAPI._fetch_and_parse_xml(url, params=params)
             game = root.find("./*[@type='boardgame']")
             if game is None:
                 log.warn(u"game not found: {}".format(name))
@@ -151,20 +153,20 @@ class BGGAPI(object):
 
         log.debug(u"fetching boardgame by BGG id {}".format(bgid))
 
-        url = self.api_url.format("thing")
+        url = self.__api_url.format("thing")
         params = {"id": bgid}
-        if forcefetch or self.cache is None:
-            root = BGGAPI._fetch_and_parse_xml(url, params=params)
+        if forcefetch or self.__cache is None:
+            root = BGGNAPI._fetch_and_parse_xml(url, params=params)
         else:
-            root = self.cache.get_bg(bgid)
+            root = self.__cache.get_bg(bgid)
             if root is None:  # cache miss
-                root = BGGAPI._fetch_and_parse_xml(url, params=params)
+                root = BGGNAPI._fetch_and_parse_xml(url, params=params)
 
         if root is None:
             return None
 
-        if self.cache is not None:
-            self.cache.cache_bg(root, bgid)
+        if self.__cache is not None:
+            self.__cache.cache_bg(root, bgid)
 
         # xml is structured like <items blablabla><item>..
         root = root.find("item")
@@ -206,22 +208,22 @@ class BGGAPI(object):
         :param forcefetch:
         :return:
         """
-        url = self.api_url.format("guild")
+        url = self.__api_url.format("guild")
         params = {"id": gid, "members": 1}
 
-        if forcefetch == True or self.cache is None:
-            root = BGGAPI._fetch_and_parse_xml(url, params=params)
+        if forcefetch == True or self.__cache is None:
+            root = BGGNAPI._fetch_and_parse_xml(url, params=params)
         else:
-            root = self.cache.get_guild(gid)
+            root = self.__cache.get_guild(gid)
             if root is None:  # cache miss
-                root = BGGAPI._fetch_and_parse_xml(url, params=params)
+                root = BGGNAPI._fetch_and_parse_xml(url, params=params)
 
         if root is None:
             log.warn("Could not get XML for {}".format(url))
             return None
 
-        if self.cache is not None:
-            self.cache.cache_guild(root, gid)
+        if self.__cache is not None:
+            self.__cache.cache_guild(root, gid)
 
         if "name" not in root.attrib:
             log.warn(u"Guild {} not yet approved. Unable to get info on it.".format(gid))
@@ -240,19 +242,19 @@ class BGGAPI(object):
         for page in range(1, total_pages):
             params = {"id": gid, "members": 1, "page": page}
 
-            if forcefetch or self.cache is None:
-                root = BGGAPI._fetch_and_parse_xml(url, params=params)
+            if forcefetch or self.__cache is None:
+                root = BGGNAPI._fetch_and_parse_xml(url, params=params)
             else:
-                root = self.cache.get_guild(gid, page=page)
+                root = self.__cache.get_guild(gid, page=page)
                 if root is None:  # cache miss
-                    root = BGGAPI._fetch_and_parse_xml(url, params=params)
+                    root = BGGNAPI._fetch_and_parse_xml(url, params=params)
 
             if root is None:
                 log.warn("Could not get XML for {}".format(url))
                 return None
 
-            if self.cache is not None:
-                self.cache.cache_guild(root, gid, page=page)
+            if self.__cache is not None:
+                self.__cache.cache_guild(root, gid, page=page)
 
             log.debug("fetched guild page {} of {}".format(page, total_pages))
 
@@ -267,22 +269,22 @@ class BGGAPI(object):
         return Guild(**kwargs)
 
     def fetch_user(self, name, forcefetch=False):
-        url = self.api_url.format("user")
+        url = self.__api_url.format("user")
         params = {"name": name, "hot": 1, "top": 1}
 
-        if forcefetch == True or self.cache is None:
-            root = BGGAPI._fetch_and_parse_xml(url, params=params)
+        if forcefetch == True or self.__cache is None:
+            root = BGGNAPI._fetch_and_parse_xml(url, params=params)
         else:
-            root = self.cache.get_user(name)
+            root = self.__cache.get_user(name)
             if root is None:  # cache miss
-                root = BGGAPI._fetch_and_parse_xml(url, params=params)
+                root = BGGNAPI._fetch_and_parse_xml(url, params=params)
 
         if root is None:
             log.warn("Could not get XML for {}".format(url))
             return None
 
-        if self.cache is not None:
-            self.cache.cache_user(root, name)
+        if self.__cache is not None:
+            self.__cache.cache_user(root, name)
 
         kwargs = {"name": root.attrib["name"],
                   "bgid": int(root.attrib["id"])}
@@ -307,14 +309,14 @@ class BGGAPI(object):
 
     def fetch_collection(self, name, forcefetch=False):
         params = {"username": name, "stats": 1}
-        url = self.api_url.format("collection")
+        url = self.__api_url.format("collection")
 
-        if forcefetch == True or self.cache is None:
+        if forcefetch == True or self.__cache is None:
             # API update: server side cache. fetch will fail until cached, so try a few times.
             retry = 15 
             sleep_time = 2
             while retry != 0:
-                root = BGGAPI._fetch_and_parse_xml(url, params=params)
+                root = BGGNAPI._fetch_and_parse_xml(url, params=params)
                 if not root:
                     # some fatal error while fetching...
                     break
@@ -328,17 +330,17 @@ class BGGAPI(object):
                     log.debug("Found {} boardgames. Continuing with processing.".format(len(els)))
                     break
         else:
-            root = self.cache.get_collection(name)
+            root = self.__cache.get_collection(name)
             # FIXME: need retry here too
             if root is None:  # cache miss
-                root = BGGAPI._fetch_and_parse_xml(url, params=params)
+                root = BGGNAPI._fetch_and_parse_xml(url, params=params)
 
         if root is None:
             log.warn("Could not get XML for {}".format(url))
             return None
 
-        if self.cache is not None:
-            self.cache.cache_collection(root, name)
+        if self.__cache is not None:
+            self.__cache.cache_collection(root, name)
 
         collection = Collection(name)
 
@@ -417,3 +419,11 @@ class BGGAPI(object):
             collection.add_boardgame_rating(bgname, Rating(**kwargs))
 
         return collection
+
+
+class BGGAPI(BGGNAPI):
+    """
+        API for www.boardgamegeek.com
+    """
+    def __init__(self, cache=None):
+        super(BGGAPI, self).__init__(api_endpoint="http://www.boardgamegeek.com/xmlapi2/", cache=cache)
