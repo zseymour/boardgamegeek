@@ -1,46 +1,68 @@
-import logging
+from .utils import DictObject
 
 
-log = logging.getLogger(__name__)
+class User(DictObject):
 
-
-class UserException(Exception):
-    """Exception wrapper for User specific exceptions."""
-    pass
-
-
-class User(object):
-    """ Store information about a BGG User. """
-
-    # This should really contain the correct types as well...
-    # __slots__ = [
-    #     "name", "hot10", "top10", "firstname", "lastname", "yearregistered", "lastlogin",
-    #     "stateorprovince", "country", "traderating", "bgid"
-    # ]
-    def __init__(self, **kwargs):
-
-        self._data = kwargs
-
-        for l in ["top10", "hot10"]:
-            if l in self._data and type(self._data[l]) != list:
-                self._data[l] = [self._data[l]]
-
-    def __getattr__(self, item):
-        # allow accessing user's variables using .attribute
-        if item in self._data:
-            return self._data[item]
-        raise AttributeError
+    # FIXME: look for an user with top10 and hot10
 
     def __unicode__(self):
-        return "{} {}".format(self.firstname, self.lastname)
+        return u"user: {} {}".format(self.firstname, self.lastname)
 
-    def __str__(self):
-        return self.__unicode__().encode("utf-8").strip()
-
-    def data(self):
-        # useful for serialization as JSON
-        return self._data
+    def __repr__(self):
+        return u"username: {} (id: {})".format(self.name, self.id).encode("utf-8")
 
     @property
-    def fullname(self):
-        return " ".join([self.firstname, self.lastname]).encode("utf-8").strip()
+    def name(self):
+        return self._data.get("name")
+
+    @property
+    def id(self):
+        return self._data.get("id")
+
+    @property
+    def firstname(self):
+        return self._data.get("firstname")
+
+    @property
+    def lastname(self):
+        return self._data.get("lastname")
+
+    @property
+    def avatar(self):
+        return self._data.get("avatarlink")
+
+    @property
+    def last_login(self):
+        return self._data.get("lastlogin")
+
+    @property
+    def state(self):
+        return self._data.get("stateorprovince")
+
+    @property
+    def country(self):
+        return self._data.get("country")
+
+    @property
+    def homepage(self):
+        return self._data.get("webaddress")
+
+    @property
+    def xbox_account(self):
+        return self._data.get("xboxaccount")
+
+    @property
+    def wii_account(self):
+        return self._data.get("wiiaccount")
+
+    @property
+    def steam_account(self):
+        return self._data.get("steam_account")
+
+    @property
+    def psn_account(self):
+        return self._data.get("psnaccount")
+
+    @property
+    def trade_rating(self):
+        return self._data.get("trade_rating")

@@ -1,51 +1,87 @@
-import logging
-
-log = logging.getLogger(__name__)
+from .utils import DictObject
 
 
-class BoardgameException(Exception):
-    """Exception wrapper for Boardgame specific exceptions."""
-    pass
-
-
-class Boardgame(object):
-    """ Store information about a boardgame. """
-
-    # __slots__ = [
-    #     "designers", "artists", "playingtime", "thumbnail",
-    #     "image", "description", "minplayers", "maxplayers",
-    #     "categories", "mechanics", "families", "publishers",
-    #     "website", "year", "names", "bgid"
-    # ]
-
-    def __init__(self, **kwargs):
-        self._data = kwargs
-
-        for l in ["designers", "artists", "categories", "mechanics", "families", "publishers", "names"]:
-            if l in self._data and type(self._data[l]) != list:
-                self._data[l] = [self._data[l]]
-
-    def __getattr__(self, item):
-        if item in self._data:
-            return self._data[item]
-        raise AttributeError
+class Boardgame(DictObject):
 
     def __unicode__(self):
-        return "{} ({}) (authors: {})".format(self.name, self.year, ", ".join(self.designers))
+        return u"{}".format(self.name)
 
-    def __str__(self):
-        return self.__unicode__().encode("utf-8").strip()
+    def __repr__(self):
+        return u"boardgame: {} (id: {})".format(self.name, self.id).encode("utf-8")
 
-    def data(self):
-        return self._data
+    @property
+    def name(self):
+        return self._data.get("name")
 
-    # Litte syntactic sugar for the more usual case of a single name.
-    # @property
-    # def name(self):
-    #     if getattr(self, "names", None):
-    #         return self.names[0]
-    #     return None
-    #
-    # @name.setter
-    # def name(self, value):
-    #     self.names = [value]
+    @property
+    def alternative_names(self):
+        return self._data.get("alternative_names")
+
+    @property
+    def id(self):
+        return self._data.get("id")
+
+    @property
+    def thumbnail(self):
+        return self._data.get("thumbnail")
+
+    @property
+    def image(self):
+        return self._data.get("image")
+
+    @property
+    def description(self):
+        return self._data.get("description")
+
+    @property
+    def families(self):
+        return self._data.get("families")
+
+    @property
+    def categories(self):
+        return self._data.get("categories")
+
+    @property
+    def mechanics(self):
+        return self._data.get("mechanics")
+
+    @property
+    def expansions(self):
+        return self._data.get("expansions")
+
+    @property
+    def implementations(self):
+        return self._data.get("implementations")
+
+    @property
+    def designers(self):
+        return self._data.get("designers")
+
+    @property
+    def artists(self):
+        return self._data.get("artists")
+
+    @property
+    def publishers(self):
+        return self._data.get("publishers")
+
+    @property
+    def year(self):
+        return self._data.get("yearpublished")
+
+
+    @property
+    def min_players(self):
+        return self._data.get("minplayers")
+
+    @property
+    def max_players(self):
+        return self._data.get("max_players")
+
+    @property
+    def playing_time(self):
+        return self._data.get("playingtime")
+
+    @property
+    def min_age(self):
+        return self._data.get("minage")

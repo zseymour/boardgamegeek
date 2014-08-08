@@ -11,7 +11,7 @@ import logging
 from .boardgame import Boardgame
 from .guild import Guild
 from .user import User
-from .collection import Collection, Rating, BoardgameStatus
+from .collection import Collection
 from .exceptions import BGGApiError
 
 log = logging.getLogger(__name__)
@@ -25,6 +25,9 @@ def xml_subelement_attr(xml_elem, subelement, convert=None, attribute="value"):
     :param integer: if True, try to convert to int
     :return:
     """
+    if xml_elem is None:
+        return None
+
     subel = xml_elem.find(subelement)
     if subel is not None:
         value = subel.attrib.get(attribute)
@@ -42,6 +45,9 @@ def xml_subelement_attr_list(xml_elem, subelement, convert=None):
     :param integer: if True, try to convert to int
     :return:
     """
+    if xml_elem is None:
+        return None
+
     subel = xml_elem.findall(subelement)
     res = []
     for e in subel:
@@ -61,6 +67,9 @@ def xml_subelement_text(xml_elem, subelement, convert=None):
     :param convert:
     :return:
     """
+    if xml_elem is None:
+        return None
+
     subel = xml_elem.find(subelement)
     if subel is not None:
         text = subel.text
@@ -175,12 +184,14 @@ class BGGNAPI(object):
         # xml is structured like <items blablabla><item>..
         root = root.find("item")
 
-        kwargs = {"bgid": bgid,
+        kwargs = {"id": bgid,
                   "thumbnail": xml_subelement_text(root, "thumbnail"),
                   "image": xml_subelement_text(root, "image"),
                   "description": xml_subelement_text(root, "description"),
                   "families": xml_subelement_attr_list(root, ".//link[@type='boardgamefamily']"),
                   "categories": xml_subelement_attr_list(root, ".//link[@type='boardgamecategory']"),
+                  "expansions": xml_subelement_attr_list(root, ".//link[@type='boardgameexpansion']"),
+                  "implementations": xml_subelement_attr_list(root, ".//link[@type='boardgameimplementation']"),
                   "mechanics": xml_subelement_attr_list(root, ".//link[@type='boardgamemechanic']"),
                   "designers": xml_subelement_attr_list(root, ".//link[@type='boardgamedesigner']"),
                   "artists": xml_subelement_attr_list(root, ".//link[@type='boardgameartist']"),
@@ -264,7 +275,7 @@ class BGGNAPI(object):
             return None
 
         kwargs = {"name": root.attrib["name"],
-                  "bgid": int(root.attrib["id"])}
+                  "id": int(root.attrib["id"])}
 
         for i in ["firstname", "lastname", "avatarlink", "lastlogin",
                   "stateorprovince", "country", "webaddress", "xboxaccount",
@@ -296,96 +307,62 @@ class BGGNAPI(object):
         while retry > 0:
             root = get_parsed_xml_response(url, params=params)
 
-            els = root.findall(".//item[@subtype='boardgame']")
-            if not len(els):
+            # check if there's an error (e.g. invalid username)
+            error = root.find(".//error")
+            if error is not None:
+                raise BGGApiError("API error: {}".format(xml_subelement_text(error, "message")))
+
+            xml_boardgame_elements = root.findall(".//item[@subtype='boardgame']")
+            if not len(xml_boardgame_elements):
                 # TODO: what if collection has 0 games ?
                 log.debug("found 0 boardgames, sleeping")
                 retry -= 1
                 sleep(5)
             else:
-                log.debug("found {} boardgames, continuing with processing.".format(len(els)))
+                log.debug("found {} boardgames, continuing with processing.".format(len(xml_boardgame_elements)))
                 found = True
                 break
 
         if not found:
             raise BGGApiError("failed to get collection after more retries")
 
-        collection = Collection(name)
+        collection = Collection({"owner": name, "items": []})
 
-        # build up the games, status, and rating and add to collection.
-        els = root.findall(".//item[@subtype='boardgame']")
-        log.debug(u"Found {} games in {}\'s collection.".format(len(els), name))
+        # search for all boardgames in the collection, add them to the list
 
-        for el in els:
-            stats = el.find("stats")
-            rating = stats.find("rating")
-            status = el.find("status")
+        xml_boardgame_elements = root.findall(".//item[@subtype='boardgame']")
 
-            bgname = el.find("name").text
-            bgid = el.attrib["objectid"]
+        for xml_el in xml_boardgame_elements:
 
-            kwargs = {"names": bgname,
-                      "bgid": bgid,
-                      "minplayers": xml_subelement_attr(stats, "minplayers", convert=int),
-                      "maxplayers": xml_subelement_attr(stats, "maxplayers", convert=int),
-                      "playingtime": xml_subelement_attr(stats, "playingtime", convert=int),
-                      "year": xml_subelement_text(el, "yearpublished", convert=int),
-                      "image": xml_subelement_text(el, "image"),
-                      "thumbnail": xml_subelement_text(el, "thumbnail")}
+            # get the user's rating for this game in his collection
+            stats = xml_el.find("stats")
+            rating = xml_subelement_attr(stats, "rating")
+            if rating == "N/A":
+                rating = None
+            else:
+                rating = float(rating)
 
-            collection.add_boardgame(Boardgame(**kwargs))
+            status = xml_el.find("status")
 
-            #
-            # Status stuff
-            #
+            # name and id of the game in collection
+            game = {"name": xml_subelement_text(xml_el, "name"),
+                    "id": int(xml_el.attrib.get("objectid")),
+                    "rating": rating,
+                    "numplays": xml_subelement_text(xml_el, "numplays", convert=int)}
 
-            kwargs = {stat: status.attrib.get(stat) for stat in ["lastmodified",
-                                                                 "own",
-                                                                 "preordered",
-                                                                 "prevowned",
-                                                                 "want",
-                                                                 "wanttobuy",
-                                                                 "wanttoplay",
-                                                                 "fortrade",
-                                                                 "wanttobuy",
-                                                                 "wishlist",
-                                                                 "wishlistpriority"]}
+            game.update({stat: status.attrib.get(stat) for stat in ["lastmodified",
+                                                                    "own",
+                                                                    "preordered",
+                                                                    "prevowned",
+                                                                    "want",
+                                                                    "wanttobuy",
+                                                                    "wanttoplay",
+                                                                    "fortrade",
+                                                                    "wanttobuy",
+                                                                    "wishlist",
+                                                                    "wishlistpriority"]})
 
-            kwargs.update({
-                "name": bgname,
-                "bgid": bgid,
-                "numplays": xml_subelement_text(el, "numplays", convert=int)
-            })
-
-            collection.add_boardgame_status(bgname, BoardgameStatus(**kwargs))
-
-            kwargs = {"name": bgname,
-                      "bgid": bgid,
-                      "usersrated": xml_subelement_attr(rating, "usersrated", convert=int),
-                      "average": xml_subelement_attr(rating, "average", convert=float),
-                      "stddev": xml_subelement_attr(rating, "stddev", convert=float),
-                      "bayesaverage": xml_subelement_attr(rating, "bayesaverage", convert=float),
-                      "median": xml_subelement_attr(rating, "median", convert=float),
-                      "ranks": {}
-            }
-
-            ranks = rating.find("ranks")
-
-            if ranks is not None:
-                for subel in ranks.findall("rank"):
-                    if "name" in subel.attrib:
-                        kwargs["ranks"][subel.attrib["name"]] = {
-                            "bayesaverage": subel.attrib.get("bayesaverage"),
-                            "friendlyname": subel.attrib.get("friendlyname"),
-                            "type": subel.attrib.get("type"),
-                            "name": subel.attrib["name"],
-                            "value": subel.attrib.get("value")
-                        }
-
-            user_rating = rating.attrib.get("value")
-            kwargs["userrating"] = user_rating if user_rating != "N/A" else None
-
-            collection.add_boardgame_rating(bgname, Rating(**kwargs))
+            collection.add_game(game)
 
         return collection
 

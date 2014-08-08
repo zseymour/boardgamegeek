@@ -1,38 +1,38 @@
-import logging
-
-log = logging.getLogger(__name__)
+from .utils import DictObject
 
 
-class GuildException(Exception):
-    """Exception wrapper for Guild specific exceptions."""
-    pass
+class Guild(DictObject):
 
+    @property
+    def category(self):
+        return self._data.get("category")
 
-class Guild(object):
-    """ Store information about a BGG Guild. The init function takes a list of valid
-    proprties defined by Guild.valid_properties. """
+    @property
+    def name(self):
+        return self._data.get("name")
 
-    # __slots__ = [
-    #     "category", "website", "manager", "description", "members", "name", "gid"
-    # ]
+    @property
+    def id(self):
+        return self._data.get("id")
 
-    def __init__(self, **kwargs):
-        self._data = kwargs
-        if "members" in self._data and type(self._data["members"]) != list:
-            self._data["members"] = [self._data["members"]]
+    @property
+    def members(self):
+        return self._data.get("members")
 
-    def __getattr__(self, item):
-        # allow accessing user's variables using .attribute
-        if item in self._data:
-            return self._data[item]
-        raise AttributeError
+    @property
+    def description(self):
+        return self._data.get("description")
 
-    def data(self):
-        # useful for serialization as JSON
-        return self._data
+    @property
+    def manager(self):
+        return self._data.get("manager")
+
+    @property
+    def website(self):
+        return self._data.get("website")
 
     def __unicode__(self):
-        return "Guild {} (id={})".format(self.name, self.gid)
+        return u"BGG guild: {}".format(self.name, self.id)
 
-    def __str__(self):
-        return self.__unicode__().encode("utf-8").strip()
+    def __repr__(self):
+        return u"guild: {} (id: {})".format(self.name, self.id).encode("utf-8")
