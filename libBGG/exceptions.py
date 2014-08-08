@@ -1,0 +1,2 @@
+class BGGApiError(Exception):
+    pass

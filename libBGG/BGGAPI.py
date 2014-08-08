@@ -12,9 +12,9 @@ from libBGG.Boardgame import Boardgame
 from libBGG.Guild import Guild
 from libBGG.User import User
 from libBGG.Collection import Collection, Rating, BoardgameStatus
+from .exceptions import BGGApiError
 
 log = logging.getLogger(__name__)
-
 
 
 def xml_subelement_attr(xml_elem, subelement, convert=None, attribute="value"):
@@ -70,6 +70,42 @@ def xml_subelement_text(xml_elem, subelement, convert=None):
     return None
 
 
+def fetch_url(url, params=None):
+    # using a function for getting the XML from an URL so that we can easily cache the results
+    try:
+        r = requests.get(url, params=params)
+        return r.text
+    except Exception as e:
+        log.error("error fetching URL {} (params: {}): {}".format(url, params, e))
+        raise
+
+
+def get_parsed_xml_response(url, params=None):
+    """
+    Returns a parsed XML
+
+    :param url:
+    :param params:
+    :return:
+    """
+    try:
+        xml = fetch_url(url, params)
+
+        if sys.version_info >= (3,):
+            root_elem = ET.fromstring(xml)
+        else:
+            utf8_xml = xml.encode("utf-8")
+            root_elem = ET.fromstring(utf8_xml)
+
+    except ETParseError as e:
+        raise BGGApiError("error decoding BGG API response: {}".format(e))
+
+    except Exception as e:
+        raise BGGApiError("error fetching BGG API response: {}".format(e))
+
+    return root_elem
+
+
 class BGGNAPI(object):
     """
     BGGAPI is a class that knows how to contact BGG for information, parse out relevant details,
@@ -90,28 +126,6 @@ class BGGNAPI(object):
             self.__api_url = api_endpoint + "{}"
         else:
             self.__api_url = api_endpoint + "/{}"
-
-    @staticmethod
-    def _fetch_and_parse_xml(url, params=None):
-        try:
-            r = requests.get(url, params=params)
-
-            if sys.version_info >= (3,):
-                root_elem = ET.fromstring(r.text)
-            else:
-                utf8_text = r.text.encode("utf-8")
-                root_elem = ET.fromstring(utf8_text)
-
-        except Exception as e:
-            log.error("error getting URL {}: {}".format(url, e))
-            # raise BGGAPIException(e)
-            return None
-        except ETParseError as e:
-            log.critical("unable to parse BGG response to {}".format(url))
-            # raise BGGAPIException(e)
-            return None
-
-        return root_elem
 
     def fetch_boardgame(self, name, bgid=None, forcefetch=False):
         """
@@ -134,7 +148,7 @@ class BGGNAPI(object):
             params = {"query": name, "exact": 1}
 
             log.debug(u"fetching boardgame by name \"{}\"".format(name))
-            root = BGGNAPI._fetch_and_parse_xml(url, params=params)
+            root = get_parsed_xml_response(url, params=params)
             game = root.find("./*[@type='boardgame']")
             if game is None:
                 log.warn(u"game not found: {}".format(name))
@@ -154,7 +168,7 @@ class BGGNAPI(object):
         url = self.__api_url.format("thing")
         params = {"id": bgid}
 
-        root = BGGNAPI._fetch_and_parse_xml(url, params=params)
+        root = get_parsed_xml_response(url, params=params)
         if root is None:
             return None
 
@@ -201,7 +215,7 @@ class BGGNAPI(object):
         url = self.__api_url.format("guild")
         params = {"id": gid, "members": 1}
 
-        root = BGGNAPI._fetch_and_parse_xml(url, params=params)
+        root = get_parsed_xml_response(url, params=params)
         if root is None:
             log.warn("Could not get XML for {}".format(url))
             return None
@@ -223,7 +237,7 @@ class BGGNAPI(object):
         for page in range(1, total_pages):
             params = {"id": gid, "members": 1, "page": page}
 
-            root = BGGNAPI._fetch_and_parse_xml(url, params=params)
+            root = get_parsed_xml_response(url, params=params)
             if root is None:
                 log.warn("Could not get XML for {}".format(url))
                 return None
@@ -244,7 +258,7 @@ class BGGNAPI(object):
         url = self.__api_url.format("user")
         params = {"name": name, "hot": 1, "top": 1}
 
-        root = BGGNAPI._fetch_and_parse_xml(url, params=params)
+        root = get_parsed_xml_response(url, params=params)
         if root is None:
             log.warn("Could not get XML for {}".format(url))
             return None
@@ -276,31 +290,32 @@ class BGGNAPI(object):
 
         # API update: server side cache. fetch will fail until cached, so try a few times.
         retry = 15
-        sleep_time = 2
-        while retry != 0:
-            root = BGGNAPI._fetch_and_parse_xml(url, params=params)
-            if not root:
-                # some fatal error while fetching...
-                break
+        root = None
+        found = False
+
+        while retry > 0:
+            root = get_parsed_xml_response(url, params=params)
+
             els = root.findall(".//item[@subtype='boardgame']")
-            if len(els) == 0:
+            if not len(els):
                 # TODO: what if collection has 0 games ?
-                log.debug("Found 0 boardgames. Trying again in {} seconds.".format(sleep_time))
-                retry = retry - 1
-                sleep(sleep_time)
+                log.debug("found 0 boardgames, sleeping")
+                retry -= 1
+                sleep(5)
             else:
-                log.debug("Found {} boardgames. Continuing with processing.".format(len(els)))
+                log.debug("found {} boardgames, continuing with processing.".format(len(els)))
+                found = True
                 break
 
-        if root is None:
-            log.warn("Could not get XML for {}".format(url))
-            return None
+        if not found:
+            raise BGGApiError("failed to get collection after more retries")
 
         collection = Collection(name)
 
         # build up the games, status, and rating and add to collection.
         els = root.findall(".//item[@subtype='boardgame']")
         log.debug(u"Found {} games in {}\'s collection.".format(len(els), name))
+        
         for el in els:
             stats = el.find("stats")
             rating = stats.find("rating")
