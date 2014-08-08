@@ -7,11 +7,11 @@ import numpy
 import argparse
 import logging
 
-from libBGG.api import BGGAPI
-from libBGG.boardgame import Boardgame
-from libBGG.user import User
-from libBGG.collection import Collection
-from libBGG.guild import Guild
+from boardgamegeek.api import BGGAPI
+from boardgamegeek.boardgame import Boardgame
+from boardgamegeek.user import User
+from boardgamegeek.collection import Collection
+from boardgamegeek.guild import Guild
 
 log = logging.getLogger(__name__)
 
