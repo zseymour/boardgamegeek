@@ -8,10 +8,10 @@ import sys
 
 import logging
 
-from libBGG.Boardgame import Boardgame
-from libBGG.Guild import Guild
-from libBGG.User import User
-from libBGG.Collection import Collection, Rating, BoardgameStatus
+from .boardgame import Boardgame
+from .guild import Guild
+from .user import User
+from .collection import Collection, Rating, BoardgameStatus
 from .exceptions import BGGApiError
 
 log = logging.getLogger(__name__)
@@ -315,7 +315,7 @@ class BGGNAPI(object):
         # build up the games, status, and rating and add to collection.
         els = root.findall(".//item[@subtype='boardgame']")
         log.debug(u"Found {} games in {}\'s collection.".format(len(els), name))
-        
+
         for el in els:
             stats = el.find("stats")
             rating = stats.find("rating")
