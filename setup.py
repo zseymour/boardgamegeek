@@ -1,25 +1,27 @@
+# coding=utf-8
+
 from distutils.core import setup
 from setuptools import find_packages
-from libBGG import __version__
+from boardgamegeek import __version__
 
 import sys
 
 if sys.version_info >= (3,):
-    long_description = open('README.txt', 'r', encoding='utf-8').read()
+    long_description = open("README.txt", encoding="utf-8").read()
 else:
-    # python 2 doesn't have the 'encoding' keyword for open()
-    long_description = open('README.txt', 'r').read() 
+    # python 2 doesn"t have the "encoding" keyword for open()
+    long_description = open("README.txt").read()
 
 setup(
-    name='libBGG',
+    name="boargamegeek",
     version=__version__,
-    packages=find_packages(exclude=['*test']),
-    license='FreeBSD License',
-    author='Geoff Lawler',
-    author_email='geoff.lawler@gmail.com',
-    description='A python interface to the boardgamegeek.com API and boardgame utils.',
+    packages=find_packages(exclude=["*test"]),
+    license="BSD License",
+    author="Cosmin Luță",
+    author_email="q4break@gmail.com",
+    description="A Python interface to the boardgamegeek.com API (forked from Geoff Lawler's libBGG).",
     long_description=long_description,
-    url='https://github.com/philsstein/libBGG',
+    url="https://github.com/lcosmin/boardgamegeek",
     install_requires=["requests"],
-    scripts=['bin/bgg_query', 'bin/top_rated']
+    scripts=["bin/bgg_query", "bin/top_rated"]
 )

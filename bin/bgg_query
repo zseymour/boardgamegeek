@@ -68,4 +68,4 @@ if __name__ == '__main__':
                     print('%s: not found. No connection or not in cache if given.' % query)
                     continue
 
-                log.info(item.data())
+                item._format(log)

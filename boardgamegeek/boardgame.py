@@ -9,6 +9,62 @@ class Boardgame(DictObject):
     def __repr__(self):
         return u"boardgame: {} (id: {})".format(self.name, self.id).encode("utf-8")
 
+    def _format(self, log):
+        log.info(u"boardgame id      : {}".format(self.id))
+        log.info(u"boardgame name    : {}".format(self.name))
+        if self.alternative_names:
+            for i in self.alternative_names:
+                log.info(u"alternative name  : {}".format(i))
+        log.info(u"publishing year   : {}".format(self.year))
+        log.info(u"minimum players   : {}".format(self.min_players))
+        log.info(u"maximum players   : {}".format(self.max_players))
+        log.info(u"playing time      : {}".format(self.playing_time))
+        log.info(u"minimum age       : {}".format(self.min_age))
+        log.info(u"thumbnail         : {}".format(self.thumbnail))
+        log.info(u"image             : {}".format(self.image))
+
+        if self.expansions:
+            log.info("expansions")
+            for i in self.expansions:
+                log.info(u"- {}".format(i))
+
+        if self.categories:
+            log.info("categories")
+            for i in self.categories:
+                log.info(u"- {}".format(i))
+
+        if self.families:
+            log.info("families")
+            for i in self.families:
+                log.info(u"- {}".format(i))
+
+        if self.mechanics:
+            log.info("mechanics")
+            for i in self.mechanics:
+                log.info(u"- {}".format(i))
+
+        if self.implementations:
+            log.info("implementations")
+            for i in self.implementations:
+                log.info(u"- {}".format(i))
+
+        if self.designers:
+            log.info("designers")
+            for i in self.designers:
+                log.info(u"- {}".format(i))
+
+        if self.artists:
+            log.info("artistis")
+            for i in self.artists:
+                log.info(u"- {}".format(i))
+
+        if self.publishers:
+            log.info("publishers")
+            for i in self.publishers:
+                log.info(u"- {}".format(i))
+
+        log.info(u"description       : {}".format(self.description))
+
     @property
     def name(self):
         return self._data.get("name")

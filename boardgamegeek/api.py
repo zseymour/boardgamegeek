@@ -6,6 +6,11 @@ from xml.etree.ElementTree import ParseError as ETParseError
 from time import sleep
 import sys
 
+if sys.version_info >= (3,):
+    import html.parser as hp
+else:
+    import HTMLParser as hp
+
 import logging
 
 from .boardgame import Boardgame
@@ -15,6 +20,7 @@ from .collection import Collection
 from .exceptions import BGGApiError
 
 log = logging.getLogger(__name__)
+html_parser = hp.HTMLParser()
 
 
 def xml_subelement_attr(xml_elem, subelement, convert=None, attribute="value"):
@@ -187,7 +193,7 @@ class BGGNAPI(object):
         kwargs = {"id": bgid,
                   "thumbnail": xml_subelement_text(root, "thumbnail"),
                   "image": xml_subelement_text(root, "image"),
-                  "description": xml_subelement_text(root, "description"),
+                  "description": html_parser.unescape(xml_subelement_text(root, "description")),
                   "families": xml_subelement_attr_list(root, ".//link[@type='boardgamefamily']"),
                   "categories": xml_subelement_attr_list(root, ".//link[@type='boardgamecategory']"),
                   "expansions": xml_subelement_attr_list(root, ".//link[@type='boardgameexpansion']"),
@@ -209,7 +215,7 @@ class BGGNAPI(object):
         kwargs["alternative_names"] = xml_subelement_attr_list(root, ".//name[@type='alternate']")
 
         log.debug(u"creating boardgame with kwargs: {}".format(kwargs))
-        return Boardgame(**kwargs)
+        return Boardgame(kwargs)
 
     def fetch_guild(self, gid, forcefetch=False):
         """
@@ -260,10 +266,11 @@ class BGGNAPI(object):
 
             if page == 1:
                 # grab initial info from first page
-                for tag in ["description", "category", "website", "manager"]:
+                for tag in ["category", "website", "manager"]:
                     kwargs[tag] = xml_subelement_text(root, tag)
+                kwargs["description"] = html_parser.unescape(xml_subelement_text(root, "description"))
 
-        return Guild(**kwargs)
+        return Guild(kwargs)
 
     def fetch_user(self, name, forcefetch=False):
         url = self.__api_url.format("user")
@@ -293,7 +300,7 @@ class BGGNAPI(object):
         #             kwargs[prop] = list()
         #         kwargs[prop].append(el.attrib["name"])
 
-        return User(**kwargs)
+        return User(kwargs)
 
     def fetch_collection(self, name, forcefetch=False):
         params = {"username": name, "stats": 1}

@@ -11,6 +11,22 @@ class User(DictObject):
     def __repr__(self):
         return u"username: {} (id: {})".format(self.name, self.id).encode("utf-8")
 
+    def _format(self, log):
+        log.info(u"id          : {}".format(self.id))
+        log.info(u"login name  : {}".format(self.name))
+        log.info(u"first name  : {}".format(self.firstname))
+        log.info(u"last name   : {}".format(self.lastname))
+        log.info(u"state       : {}".format(self.state))
+        log.info(u"country     : {}".format(self.country))
+        log.info(u"home page   : {}".format(self.homepage))
+        log.info(u"avatar      : {}".format(self.avatar))
+        log.info(u"xbox acct   : {}".format(self.xbox_account))
+        log.info(u"wii acct    : {}".format(self.wii_account))
+        log.info(u"steam acct  : {}".format(self.steam_account))
+        log.info(u"psn acct    : {}".format(self.psn_account))
+        log.info(u"last login  : {}".format(self.last_login))
+        log.info(u"trade rating: {}".format(self.trade_rating))
+
     @property
     def name(self):
         return self._data.get("name")

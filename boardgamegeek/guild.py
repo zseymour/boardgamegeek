@@ -3,6 +3,18 @@ from .utils import DictObject
 
 class Guild(DictObject):
 
+    def _format(self, log):
+        log.info(u"id         : {}".format(self.id))
+        log.info(u"name       : {}".format(self.name))
+        log.info(u"category   : {}".format(self.category))
+        log.info(u"manager    : {}".format(self.manager))
+        log.info(u"website    : {}".format(self.website))
+        log.info(u"description: {}".format(self.description))
+        if self.members:
+            log.info(u"members")
+            for i in self.members:
+                log.info(u" - {}".format(i))
+
     @property
     def category(self):
         return self._data.get("category")
