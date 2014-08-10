@@ -181,7 +181,7 @@ class BGGNAPI(object):
         log.debug(u"fetching boardgame by BGG id {}".format(bgid))
 
         url = self.__api_url.format("thing")
-        params = {"id": bgid}
+        params = {"id": bgid, "stats": 1}
 
         root = get_parsed_xml_response(url, params=params)
         if root is None:
@@ -214,7 +214,32 @@ class BGGNAPI(object):
         # Get alternative names too
         kwargs["alternative_names"] = xml_subelement_attr_list(root, ".//name[@type='alternate']")
 
-        log.debug(u"creating boardgame with kwargs: {}".format(kwargs))
+        # look for statistics info
+        stats = root.find(".//ratings")
+        kwargs.update({
+            "usersrated": xml_subelement_attr(stats, "usersrated", convert=int),
+            "average": xml_subelement_attr(stats, "average", convert=float),
+            "bayesaverage": xml_subelement_attr(stats, "bayesaverage", convert=float),
+            "stddev": xml_subelement_attr(stats, "stddev", convert=float),
+            "median": xml_subelement_attr(stats, "median", convert=float),
+            "owned": xml_subelement_attr(stats, "owned", convert=int),
+            "trading": xml_subelement_attr(stats, "trading", convert=int),
+            "wanting": xml_subelement_attr(stats, "wanting", convert=int),
+            "wishing": xml_subelement_attr(stats, "wishing", convert=int),
+            "numcomments": xml_subelement_attr(stats, "numcomments", convert=int),
+            "numweights": xml_subelement_attr(stats, "numweights", convert=int),
+            "averageweight": xml_subelement_attr(stats, "averageweight", convert=float)
+        })
+
+        kwargs["ranks"] = []
+
+        ranks = root.findall(".//rank")
+        log.info("ranks: {}".format(ranks))
+        for rank in ranks:
+            kwargs["ranks"].append({"name": rank.attrib.get("name"),
+                                    "friendlyname": rank.attrib.get("friendlyname"),
+                                    "value": int(rank.attrib.get("value"))})
+
         return Boardgame(kwargs)
 
     def fetch_guild(self, gid, forcefetch=False):
@@ -336,10 +361,8 @@ class BGGNAPI(object):
         collection = Collection({"owner": name, "items": []})
 
         # search for all boardgames in the collection, add them to the list
-
-        xml_boardgame_elements = root.findall(".//item[@subtype='boardgame']")
-
-        for xml_el in xml_boardgame_elements:
+        for xml_el in root.findall(".//item[@subtype='boardgame']"):
+            log.debug("XXXX: {}".format(xml_el.attrib))
 
             # get the user's rating for this game in his collection
             stats = xml_el.find("stats")
@@ -349,14 +372,13 @@ class BGGNAPI(object):
             else:
                 rating = float(rating)
 
-            status = xml_el.find("status")
 
             # name and id of the game in collection
             game = {"name": xml_subelement_text(xml_el, "name"),
                     "id": int(xml_el.attrib.get("objectid")),
-                    "rating": rating,
-                    "numplays": xml_subelement_text(xml_el, "numplays", convert=int)}
+                    "rating": rating}
 
+            status = xml_el.find("status")
             game.update({stat: status.attrib.get(stat) for stat in ["lastmodified",
                                                                     "own",
                                                                     "preordered",
@@ -365,7 +387,6 @@ class BGGNAPI(object):
                                                                     "wanttobuy",
                                                                     "wanttoplay",
                                                                     "fortrade",
-                                                                    "wanttobuy",
                                                                     "wishlist",
                                                                     "wishlistpriority"]})
 

@@ -1,23 +1,8 @@
 from copy import copy
 from collections import Iterable
 
-from .boardgame import Boardgame
+from .boardgame import CollectionBoardgame
 from .utils import DictObject
-
-
-class CollectionIterator(Iterable):
-
-    def __init__(self, collection):
-        self.__collection = collection
-
-    def __iter__(self):
-        return self
-
-    def __next__(self):
-        for item in self.__collection:
-            yield Boardgame(item)
-
-    next = __next__
 
 
 class Collection(DictObject):
@@ -61,4 +46,4 @@ class Collection(DictObject):
 
     def iteritems(self):
         for item in self._data["items"]:
-            yield Boardgame(item)
+            yield CollectionBoardgame(item)

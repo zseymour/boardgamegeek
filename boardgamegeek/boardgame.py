@@ -1,6 +1,89 @@
 from .utils import DictObject
 
 
+class CollectionBoardgame(DictObject):
+    """
+    A boardgame retrieved from the collection information, which has
+    less information than the one retrieved via the /thing api and which
+    also contains some user-specific information
+    """
+
+    def __unicode__(self):
+        return u"{}".format(self.name)
+
+    def __repr__(self):
+        return u"boardgame: {} (id: {})".format(self.name, self.id).encode("utf-8")
+
+    def _format(self, log):
+        log.info(u"boardgame id      : {}".format(self.id))
+        log.info(u"boardgame name    : {}".format(self.name))
+
+        log.info(u"last modified     : {}".format(self.lastmodified))
+
+        log.info(u"rating            : {}".format(self.rating))
+        log.info(u"own               : {}".format(self.own))
+        log.info(u"preordered        : {}".format(self.preordered))
+        log.info(u"previously owned  : {}".format(self.prev_owned))
+        log.info(u"want              : {}".format(self.want))
+        log.info(u"want to buy       : {}".format(self.want_to_buy))
+        log.info(u"want to play      : {}".format(self.want_to_play))
+        log.info(u"wishlist          : {}".format(self.wishlish))
+        log.info(u"wishlist priority : {}".format(self.wishlist_priority))
+        log.info(u"for trade         : {}".format(self.for_trade))
+
+    @property
+    def lastmodified(self):
+        return self._data.get("lastmodified")
+
+    @property
+    def name(self):
+        return self._data.get("name")
+
+    @property
+    def id(self):
+        return self._data.get("id")
+
+    @property
+    def rating(self):
+        return self._data.get("rating")
+
+    @property
+    def own(self):
+        return bool(int(self._data.get("own", 0)))
+
+    @property
+    def preordered(self):
+        return bool(int(self._data.get("preordered", 0)))
+
+    @property
+    def prev_owned(self):
+        return bool(int(self._data.get("prevowned", 0)))
+
+    @property
+    def want(self):
+        return bool(int(self._data.get("want", 0)))
+
+    @property
+    def want_to_buy(self):
+        return bool(int(self._data.get("wanttobuy", 0)))
+
+    @property
+    def want_to_play(self):
+        return bool(int(self._data.get("wanttoplay", 0)))
+
+    @property
+    def for_trade(self):
+        return bool(int(self._data.get("fortrade", 0)))
+
+    @property
+    def wishlish(self):
+        return bool(int(self._data.get("wishlist", 0)))
+
+    @property
+    def wishlist_priority(self):
+        return (self._data.get("wishlistpriority"))
+
+
 class Boardgame(DictObject):
 
     def __unicode__(self):
@@ -63,6 +146,13 @@ class Boardgame(DictObject):
             for i in self.publishers:
                 log.info(u"- {}".format(i))
 
+        log.info(u"users rated game  : {}".format(self.users_rated))
+        log.info(u"users commented   : {}".format(self.users_commented))
+        log.info(u"users owned       : {}".format(self.users_owned))
+        log.info(u"users wanting     : {}".format(self.users_wanting))
+        log.info(u"users wishing     : {}".format(self.users_wishing))
+        log.info(u"users trading     : {}".format(self.users_trading))
+        log.info(u"ranks             : {}".format(self.rank))
         log.info(u"description       : {}".format(self.description))
 
     @property
@@ -125,7 +215,6 @@ class Boardgame(DictObject):
     def year(self):
         return self._data.get("yearpublished")
 
-
     @property
     def min_players(self):
         return self._data.get("minplayers")
@@ -141,3 +230,55 @@ class Boardgame(DictObject):
     @property
     def min_age(self):
         return self._data.get("minage")
+
+    @property
+    def users_rated(self):
+        return self._data.get("usersrated")
+
+    @property
+    def rating_average(self):
+        return self._data.get("average")
+
+    @property
+    def rating_bayes_average(self):
+        return self._data.get("bayesaverage")
+
+    @property
+    def rating_stddev(self):
+        return self._data.get("stddev")
+
+    @property
+    def rating_median(self):
+        return self._data.get("median")
+
+    @property
+    def users_owned(self):
+        return self._data.get("owned")
+
+    @property
+    def users_trading(self):
+        return self._data.get("trading")
+
+    @property
+    def users_wanting(self):
+        return self._data.get("wanting")
+
+    @property
+    def users_wishing(self):
+        return self._data.get("wishing")
+
+    @property
+    def users_commented(self):
+        return self._data.get("numcomments")
+
+    @property
+    def rating_num_weights(self):
+        return self._data.get("numweights")
+
+    @property
+    def rating_average_weight(self):
+        return self._data.get("averageweight")
+
+    @property
+    def ranks(self):
+        return self._data.get("ranks")
