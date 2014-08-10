@@ -42,7 +42,7 @@ class Collection(DictObject):
 
     @property
     def items(self):
-        return self._data["items"]
+        return [CollectionGame(x) for x in self._data["items"]]
 
     def iteritems(self):
         for item in self._data["items"]:

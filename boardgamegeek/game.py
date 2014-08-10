@@ -27,7 +27,7 @@ class CollectionGame(DictObject):
         log.info(u"want              : {}".format(self.want))
         log.info(u"want to buy       : {}".format(self.want_to_buy))
         log.info(u"want to play      : {}".format(self.want_to_play))
-        log.info(u"wishlist          : {}".format(self.wishlish))
+        log.info(u"wishlist          : {}".format(self.wishlist))
         log.info(u"wishlist priority : {}".format(self.wishlist_priority))
         log.info(u"for trade         : {}".format(self.for_trade))
 
@@ -48,7 +48,7 @@ class CollectionGame(DictObject):
         return self._data.get("rating")
 
     @property
-    def own(self):
+    def owned(self):
         return bool(int(self._data.get("own", 0)))
 
     @property
@@ -76,7 +76,7 @@ class CollectionGame(DictObject):
         return bool(int(self._data.get("fortrade", 0)))
 
     @property
-    def wishlish(self):
+    def wishlist(self):
         return bool(int(self._data.get("wishlist", 0)))
 
     @property
