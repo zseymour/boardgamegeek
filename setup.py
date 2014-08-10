@@ -22,6 +22,7 @@ setup(
     description="A Python interface to the boardgamegeek.com API (forked from Geoff Lawler's libBGG).",
     long_description=long_description,
     url="https://github.com/lcosmin/boardgamegeek",
-    install_requires=["requests"],
+    install_requires=["requests",
+                      "requests-cache"],
     scripts=["bin/bgg_query", "bin/top_rated"]
 )

@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import requests
+import requests_cache
 import xml.etree.ElementTree as ET
 from xml.etree.ElementTree import ParseError as ETParseError
 from time import sleep
@@ -85,17 +86,7 @@ def xml_subelement_text(xml_elem, subelement, convert=None):
     return None
 
 
-def fetch_url(url, params=None):
-    # using a function for getting the XML from an URL so that we can easily cache the results
-    try:
-        r = requests.get(url, params=params)
-        return r.text
-    except Exception as e:
-        log.error("error fetching URL {} (params: {}): {}".format(url, params, e))
-        raise
-
-
-def get_parsed_xml_response(url, params=None):
+def get_parsed_xml_response(requests_session, url, params=None):
     """
     Returns a parsed XML
 
@@ -104,7 +95,7 @@ def get_parsed_xml_response(url, params=None):
     :return:
     """
     try:
-        xml = fetch_url(url, params)
+        xml = requests_session.get(url, params=params).text
 
         if sys.version_info >= (3,):
             root_elem = ET.fromstring(xml)
@@ -122,27 +113,28 @@ def get_parsed_xml_response(url, params=None):
 
 
 class BGGNAPI(object):
-    """
-    BGGAPI is a class that knows how to contact BGG for information, parse out relevant details,
-    the create a Python BGG object for general use.
 
-    Example:
-        api = BGGAPI()
+    def __init__(self, api_endpoint, cache=True, **kwargs):
+        """
 
-        bg = api.fetch_boardgame("yinsh")
-        print "Yinsh was created in %s by %s" % (bg.year, ", ".join(bg.designers))
-
-        guild = api.fetch("1920")  # BGG only supports fetch by ID.
-        print "BGG Guild %s has %d members." % (guild.name, len(guild.members))
-    """
-    def __init__(self, api_endpoint):
+        :param api_endpoint:
+        :param cache: Use caching (default True)
+        :return:
+        """
 
         if api_endpoint.endswith("/"):
             self.__api_url = api_endpoint + "{}"
         else:
             self.__api_url = api_endpoint + "/{}"
 
-    def fetch_boardgame(self, name, bgid=None, forcefetch=False):
+        if cache:
+            self.requests_session = requests_cache.core.CachedSession(cache_name=kwargs.get("cache_name", "bggnapi-cache"),
+                                                                      backend=kwargs.get("cache_backend", "sqlite"),
+                                                                      expire_after=kwargs.get("cache_time", 3600))
+        else:
+            self.requests_session = requests.Session()
+
+    def fetch_boardgame(self, name, bgid=None, cache=False):
         """
         Fetch information about a bardgame from BGG by name. If bgid is given,
         it will be used instead. bgid is the ID of the game at BGG. bgid should be type str.
@@ -163,7 +155,7 @@ class BGGNAPI(object):
             params = {"query": name, "exact": 1}
 
             log.debug(u"fetching boardgame by name \"{}\"".format(name))
-            root = get_parsed_xml_response(url, params=params)
+            root = get_parsed_xml_response(self.requests_session, url, params=params)
             game = root.find("./*[@type='boardgame']")
             if game is None:
                 log.warn(u"game not found: {}".format(name))
@@ -183,7 +175,7 @@ class BGGNAPI(object):
         url = self.__api_url.format("thing")
         params = {"id": bgid, "stats": 1}
 
-        root = get_parsed_xml_response(url, params=params)
+        root = get_parsed_xml_response(self.requests_session, url, params=params)
         if root is None:
             return None
 
@@ -257,7 +249,7 @@ class BGGNAPI(object):
         url = self.__api_url.format("guild")
         params = {"id": gid, "members": 1}
 
-        root = get_parsed_xml_response(url, params=params)
+        root = get_parsed_xml_response(self.requests_session, url, params=params)
         if root is None:
             log.warn("Could not get XML for {}".format(url))
             return None
@@ -279,7 +271,7 @@ class BGGNAPI(object):
         for page in range(1, total_pages):
             params = {"id": gid, "members": 1, "page": page}
 
-            root = get_parsed_xml_response(url, params=params)
+            root = get_parsed_xml_response(self.requests_session, url, params=params)
             if root is None:
                 log.warn("Could not get XML for {}".format(url))
                 return None
@@ -301,7 +293,7 @@ class BGGNAPI(object):
         url = self.__api_url.format("user")
         params = {"name": name, "hot": 1, "top": 1}
 
-        root = get_parsed_xml_response(url, params=params)
+        root = get_parsed_xml_response(self.requests_session, url, params=params)
         if root is None:
             log.warn("Could not get XML for {}".format(url))
             return None
@@ -337,7 +329,7 @@ class BGGNAPI(object):
         found = False
 
         while retry > 0:
-            root = get_parsed_xml_response(url, params=params)
+            root = get_parsed_xml_response(self.requests_session, url, params=params)
 
             # check if there's an error (e.g. invalid username)
             error = root.find(".//error")
@@ -362,8 +354,6 @@ class BGGNAPI(object):
 
         # search for all boardgames in the collection, add them to the list
         for xml_el in root.findall(".//item[@subtype='boardgame']"):
-            log.debug("XXXX: {}".format(xml_el.attrib))
-
             # get the user's rating for this game in his collection
             stats = xml_el.find("stats")
             rating = xml_subelement_attr(stats, "rating")
