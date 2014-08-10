@@ -1,7 +1,7 @@
 from copy import copy
 from collections import Iterable
 
-from .boardgame import CollectionBoardgame
+from .game import CollectionGame
 from .utils import DictObject
 
 
@@ -46,4 +46,4 @@ class Collection(DictObject):
 
     def iteritems(self):
         for item in self._data["items"]:
-            yield CollectionBoardgame(item)
+            yield CollectionGame(item)

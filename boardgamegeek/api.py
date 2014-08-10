@@ -13,7 +13,7 @@ else:
 
 import logging
 
-from .boardgame import Boardgame
+from .game import Game
 from .guild import Guild
 from .user import User
 from .collection import Collection
@@ -240,7 +240,7 @@ class BGGNAPI(object):
                                     "friendlyname": rank.attrib.get("friendlyname"),
                                     "value": int(rank.attrib.get("value"))})
 
-        return Boardgame(kwargs)
+        return Game(kwargs)
 
     def fetch_guild(self, gid, forcefetch=False):
         """
