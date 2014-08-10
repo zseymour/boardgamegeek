@@ -134,9 +134,9 @@ class BGGNAPI(object):
         else:
             self.requests_session = requests.Session()
 
-    def fetch_game(self, name, bgid=None, cache=False):
+    def game(self, name, game_id=None):
 
-        if bgid is None:
+        if game_id is None:
             url = self.__api_url.format("search")
             params = {"query": name, "exact": 1}
 
@@ -148,25 +148,25 @@ class BGGNAPI(object):
                 return None
 
             try:
-                bgid = int(game.attrib.get("id"))
-                if not bgid:
+                game_id = int(game.attrib.get("id"))
+                if not game_id:
                     log.warning(u"BGGAPI gave us a game without an id: {}".format(name))
                     return None
             except Exception as e:
                 log.error("error getting bgid: {}".format(e))
                 return None
 
-        log.debug(u"fetching boardgame by BGG id {}".format(bgid))
+        log.debug(u"retrieving game with id: {}".format(game_id))
 
         url = self.__api_url.format("thing")
-        params = {"id": bgid, "stats": 1}
+        params = {"id": game_id, "stats": 1}
 
         root = get_parsed_xml_response(self.requests_session, url, params=params)
 
         # xml is structured like <items blablabla><item>..
         root = root.find("item")
 
-        kwargs = {"id": bgid,
+        kwargs = {"id": game_id,
                   "thumbnail": xml_subelement_text(root, "thumbnail"),
                   "image": xml_subelement_text(root, "image"),
                   "description": html_parser.unescape(xml_subelement_text(root, "description")),
@@ -177,8 +177,7 @@ class BGGNAPI(object):
                   "mechanics": xml_subelement_attr_list(root, ".//link[@type='boardgamemechanic']"),
                   "designers": xml_subelement_attr_list(root, ".//link[@type='boardgamedesigner']"),
                   "artists": xml_subelement_attr_list(root, ".//link[@type='boardgameartist']"),
-                  "publishers": xml_subelement_attr_list(root, ".//link[@type='boardgamepublisher']"),
-                  }
+                  "publishers": xml_subelement_attr_list(root, ".//link[@type='boardgamepublisher']")}
 
         # These XML elements have a numberic value, attempt to convert them to integers
         for i in ["yearpublished", "minplayers", "maxplayers", "playingtime", "minage"]:
@@ -220,25 +219,14 @@ class BGGNAPI(object):
 
         return Game(kwargs)
 
-    def fetch_guild(self, gid, forcefetch=False):
-        """
-        Fetch Guild information from BGG and populate a returned Guild object. There is
-        currently no way to query BGG by guild name, it must be by ID.
-
-        BGGAPI always caches the first fetch of a game if given a cachedir. If forcefetch == True,
-        fetch_boardgame will overwrite the existing cache if it exists.
-
-        :param gid:
-        :param forcefetch:
-        :return:
-        """
+    def guild(self, gid):
         url = self.__api_url.format("guild")
         params = {"id": gid, "members": 1}
 
         root = get_parsed_xml_response(self.requests_session, url, params=params)
 
         if "name" not in root.attrib:
-            log.warn(u"Guild {} not yet approved. Unable to get info on it.".format(gid))
+            log.warn(u"unable to get guild information (name not found)".format(gid))
             return None
 
         kwargs = {"name": root.attrib["name"],
@@ -248,17 +236,11 @@ class BGGNAPI(object):
         el = root.find(".//members[@count]")
         count = int(el.attrib["count"])
         total_pages = int(2 + (count / 25))   # 25 memebers per page according to BGGAPI
-        if total_pages >= 10:
-            log.warn("Need to fetch {} pages. It could take awhile.".format(total_pages - 1))
 
         for page in range(1, total_pages):
             params = {"id": gid, "members": 1, "page": page}
 
             root = get_parsed_xml_response(self.requests_session, url, params=params)
-            if root is None:
-                log.warn("Could not get XML for {}".format(url))
-                return None
-
             log.debug("fetched guild page {} of {}".format(page, total_pages))
 
             for el in root.findall(".//member"):
@@ -272,7 +254,7 @@ class BGGNAPI(object):
 
         return Guild(kwargs)
 
-    def fetch_user(self, name, forcefetch=False):
+    def user(self, name):
         url = self.__api_url.format("user")
         params = {"name": name, "hot": 1, "top": 1}
 
@@ -299,7 +281,7 @@ class BGGNAPI(object):
 
         return User(kwargs)
 
-    def fetch_collection(self, name, forcefetch=False):
+    def collection(self, name):
         params = {"username": name, "stats": 1}
         url = self.__api_url.format("collection")
 
