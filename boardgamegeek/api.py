@@ -207,12 +207,12 @@ class BGGNAPI(object):
         return collection
 
 
-class BGGAPI(BGGNAPI):
+class BoardGameGeek(BGGNAPI):
     """
         API for www.boardgamegeek.com
     """
     def __init__(self, cache=True, **kwargs):
-        super(BGGAPI, self).__init__(api_endpoint="http://www.boardgamegeek.com/xmlapi2", cache=cache, **kwargs)
+        super(BoardGameGeek, self).__init__(api_endpoint="http://www.boardgamegeek.com/xmlapi2", cache=cache, **kwargs)
 
     def get_game_id(self, name):
         return self._get_game_id(name, "boardgame")
