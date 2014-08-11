@@ -26,6 +26,9 @@ html_parser = hp.HTMLParser()
 
 class BGGNAPI(object):
 
+    COLLECTION_FETCH_RETRIES = 5
+    COLLECTION_FETCH_DELAY = 5
+
     def __init__(self, api_endpoint, cache=True, **kwargs):
         """
 
@@ -42,11 +45,8 @@ class BGGNAPI(object):
         if cache:
             cache_args = {"cache_name": kwargs.get("cache_name", "bggnapi-cache"),
                           "backend": kwargs.get("cache_backend", "sqlite"),
-                          "expire_after": kwargs.get("cache_time", 3600),
+                          "expire_after": kwargs.get("cache_time", 3600*3),
                           "extension": ".cache"}
-
-            if "cache_location" in kwargs:
-                cache_args["location"] = kwargs["cache_location"]
 
             self.requests_session = requests_cache.core.CachedSession(**cache_args)
         else:
@@ -57,13 +57,11 @@ class BGGNAPI(object):
         if game_type not in ["rpgitem", "videogame", "boardgame", "boardgameexpansion"]:
             raise BoardGameGeekError("invalid game type: {}".format(game_type))
 
-        params = {"query": name, "exact": 1}
-
-        log.debug(u"fetching game by name \"{}\"".format(name))
+        log.debug(u"getting game id of '{}'".format(name))
 
         root = get_parsed_xml_response(self.requests_session,
                                        self._search_api_url,
-                                       params=params)
+                                       params={"query": name, "exact": 1})
 
         # game_type can be rpgitem, videogame, boardgame, or boardgameexpansion
         game = root.find(".//item[@type='{}']".format(game_type))
@@ -74,6 +72,7 @@ class BGGNAPI(object):
         game_id = int(game.attrib.get("id"))
         if not game_id:
             raise BoardGameGeekAPIError("response didn't contain the game id")
+        return game_id
 
     def guild(self, gid):
 
@@ -108,7 +107,11 @@ class BGGNAPI(object):
                 # grab initial info from first page
                 for tag in ["category", "website", "manager"]:
                     kwargs[tag] = xml_subelement_text(root, tag)
-                kwargs["description"] = html_parser.unescape(xml_subelement_text(root, "description"))
+                description = xml_subelement_text(root, "description")
+                if description is not None:
+                    kwargs["description"] = html_parser.unescape(description)
+                else:
+                    kwargs["description"] = None
 
         return Guild(kwargs)
 
@@ -140,8 +143,7 @@ class BGGNAPI(object):
         return User(kwargs)
 
     def collection(self, name):
-        # API update: server side cache. fetch will fail until cached, so try a few times.
-        retry = 5
+        retry = BGGNAPI.COLLECTION_FETCH_RETRIES
         root = None
         found = False
 
@@ -160,14 +162,14 @@ class BGGNAPI(object):
                 # TODO: what if collection has 0 games ?
                 log.debug("found 0 boardgames, sleeping")
                 retry -= 1
-                sleep(5)
+                sleep(BGGNAPI.COLLECTION_FETCH_DELAY)
             else:
                 log.debug("found {} boardgames, continuing with processing.".format(len(xml_boardgame_elements)))
                 found = True
                 break
 
         if not found:
-            raise BoardGameGeekAPIError("failed to get collection after more retries")
+            raise BoardGameGeekAPIError("failed to get {}'s collection after multiple retries".format(name))
 
         collection = Collection({"owner": name, "items": []})
 
@@ -234,11 +236,14 @@ class BoardGameGeek(BGGNAPI):
 
         # xml is structured like <items blablabla><item>..
         root = root.find("item")
+        if root is None:
+            msg = u"error parsing game data for game id: {}{}".format(game_id,
+                                                                      u" ({})".format(name) if name is not None else "")
+            raise BoardGameGeekAPIError(msg)
 
         kwargs = {"id": game_id,
                   "thumbnail": xml_subelement_text(root, "thumbnail"),
                   "image": xml_subelement_text(root, "image"),
-                  "description": html_parser.unescape(xml_subelement_text(root, "description")),
                   "families": xml_subelement_attr_list(root, ".//link[@type='boardgamefamily']"),
                   "categories": xml_subelement_attr_list(root, ".//link[@type='boardgamecategory']"),
                   "expansions": xml_subelement_attr_list(root, ".//link[@type='boardgameexpansion']"),
@@ -247,6 +252,12 @@ class BoardGameGeek(BGGNAPI):
                   "designers": xml_subelement_attr_list(root, ".//link[@type='boardgamedesigner']"),
                   "artists": xml_subelement_attr_list(root, ".//link[@type='boardgameartist']"),
                   "publishers": xml_subelement_attr_list(root, ".//link[@type='boardgamepublisher']")}
+
+        description = xml_subelement_text(root, "description")
+        if description is not None:
+            kwargs["description"] = html_parser.unescape(description)
+        else:
+            kwargs["description"] = None
 
         # These XML elements have a numberic value, attempt to convert them to integers
         for i in ["yearpublished", "minplayers", "maxplayers", "playingtime", "minage"]:

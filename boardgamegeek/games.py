@@ -147,12 +147,14 @@ class BoardGame(DictObject):
                 log.info(u"- {}".format(i))
 
         log.info(u"users rated game  : {}".format(self.users_rated))
+        log.info(u"users avg rating  : {}".format(self.rating_average))
+        log.info(u"users b-avg rating: {}".format(self.rating_bayes_average))
         log.info(u"users commented   : {}".format(self.users_commented))
         log.info(u"users owned       : {}".format(self.users_owned))
         log.info(u"users wanting     : {}".format(self.users_wanting))
         log.info(u"users wishing     : {}".format(self.users_wishing))
         log.info(u"users trading     : {}".format(self.users_trading))
-        log.info(u"ranks             : {}".format(self.rank))
+        log.info(u"ranks             : {}".format(self.ranks))
         log.info(u"description       : {}".format(self.description))
 
     @property
