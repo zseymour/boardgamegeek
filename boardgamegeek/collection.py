@@ -11,6 +11,7 @@ class Collection(DictObject):
         kw = copy(data)
         if "items" not in kw:
             kw["items"] = []
+        self.game_ids = set()
         super(Collection, self).__init__(kw)
 
     def _format(self, log):
@@ -24,7 +25,10 @@ class Collection(DictObject):
             log.info("---------------------")
 
     def add_game(self, game):
-        self._data["items"].append(game)
+        # Collections can have duplicate elements (different collection ids), so don't add the same thing multiple times
+        if game["id"] not in self.game_ids:
+            self._data["items"].append(game)
+            self.game_ids.add(game["id"])
 
     def __unicode__(self):
         return "{}'s collection, {} items".format(self.username, len(self.games))
@@ -42,8 +46,8 @@ class Collection(DictObject):
 
     @property
     def items(self):
-        return [CollectionGame(x) for x in self._data["items"]]
+        return [CollectionBoardGame(x) for x in self._data["items"]]
 
     def iteritems(self):
         for item in self._data["items"]:
-            yield CollectionGame(item)
+            yield CollectionBoardGame(item)

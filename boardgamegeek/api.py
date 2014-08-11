@@ -76,11 +76,10 @@ class BGGNAPI(object):
             raise BoardGameGeekAPIError("response didn't contain the game id")
 
     def guild(self, gid):
-        params = {"id": gid, "members": 1}
 
         root = get_parsed_xml_response(self.requests_session,
                                        self._guild_api_url,
-                                       params=params)
+                                       params={"id": gid, "members": 1})
 
         if "name" not in root.attrib:
             log.warn(u"unable to get guild information (name not found)".format(gid))
@@ -115,10 +114,9 @@ class BGGNAPI(object):
 
     def user(self, name):
 
-        params = {"name": name, "hot": 1, "top": 1}
         root = get_parsed_xml_response(self.requests_session,
                                        self._user_api_url,
-                                       params=params)
+                                       params={"name": name, "hot": 1, "top": 1})
 
         kwargs = {"name": root.attrib["name"],
                   "id": int(root.attrib["id"])}
@@ -142,8 +140,6 @@ class BGGNAPI(object):
         return User(kwargs)
 
     def collection(self, name):
-        params = {"username": name, "stats": 1}
-
         # API update: server side cache. fetch will fail until cached, so try a few times.
         retry = 5
         root = None
@@ -152,7 +148,7 @@ class BGGNAPI(object):
         while retry > 0:
             root = get_parsed_xml_response(self.requests_session,
                                            self._collection_api_url,
-                                           params=params)
+                                           params={"username": name, "stats": 1})
 
             # check if there's an error (e.g. invalid username)
             error = root.find(".//error")
@@ -212,7 +208,9 @@ class BoardGameGeek(BGGNAPI):
         API for www.boardgamegeek.com
     """
     def __init__(self, cache=True, **kwargs):
-        super(BoardGameGeek, self).__init__(api_endpoint="http://www.boardgamegeek.com/xmlapi2", cache=cache, **kwargs)
+        super(BoardGameGeek, self).__init__(api_endpoint="http://www.boardgamegeek.com/xmlapi2",
+                                            cache=cache,
+                                            **kwargs)
 
     def get_game_id(self, name):
         return self._get_game_id(name, "boardgame")
@@ -228,7 +226,7 @@ class BoardGameGeek(BGGNAPI):
                 log.error("couldn't find any game named '{}'".format(name))
                 return None
 
-        log.debug(u"retrieving game id: {}".format(game_id))
+        log.debug(u"retrieving game id {}{}".format(game_id, u" ({})".format(name) if name is not None else ""))
 
         root = get_parsed_xml_response(self.requests_session,
                                        self._thing_api_url,

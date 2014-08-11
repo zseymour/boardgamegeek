@@ -21,7 +21,7 @@ class CollectionBoardGame(DictObject):
         log.info(u"last modified     : {}".format(self.lastmodified))
 
         log.info(u"rating            : {}".format(self.rating))
-        log.info(u"own               : {}".format(self.own))
+        log.info(u"own               : {}".format(self.owned))
         log.info(u"preordered        : {}".format(self.preordered))
         log.info(u"previously owned  : {}".format(self.prev_owned))
         log.info(u"want              : {}".format(self.want))
