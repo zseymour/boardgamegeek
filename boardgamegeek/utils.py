@@ -3,7 +3,7 @@ import xml.etree.ElementTree as ET
 from xml.etree.ElementTree import ParseError as ETParseError
 
 
-from .exceptions import BGGApiError
+from .exceptions import BoardGameGeekAPIError
 
 
 class DictObject(object):
@@ -112,9 +112,9 @@ def get_parsed_xml_response(requests_session, url, params=None):
             root_elem = ET.fromstring(utf8_xml)
 
     except ETParseError as e:
-        raise BGGApiError("error decoding BGG API response: {}".format(e))
+        raise BoardGameGeekAPIError("error decoding BGG API response: {}".format(e))
 
     except Exception as e:
-        raise BGGApiError("error fetching BGG API response: {}".format(e))
+        raise BoardGameGeekAPIError("error fetching BGG API response: {}".format(e))
 
     return root_elem

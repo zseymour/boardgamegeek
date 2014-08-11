@@ -1,7 +1,7 @@
 from copy import copy
 from collections import Iterable
 
-from .game import CollectionGame
+from .games import CollectionBoardGame
 from .utils import DictObject
 
 

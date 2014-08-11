@@ -12,11 +12,11 @@ else:
     import HTMLParser as hp
 
 
-from .game import Game
+from .games import BoardGame
 from .guild import Guild
 from .user import User
 from .collection import Collection
-from .exceptions import BGGApiError
+from .exceptions import BoardGameGeekAPIError, BoardGameGeekError
 from .utils import xml_subelement_attr, xml_subelement_text, xml_subelement_attr_list, get_parsed_xml_response
 
 
@@ -33,11 +33,11 @@ class BGGNAPI(object):
         :param cache: Use caching (default True)
         :return:
         """
-        self.__search_api_url = api_endpoint + "/search"
-        self.__thing_api_url = api_endpoint + "/thing"
-        self.__guild_api_url = api_endpoint + "/guild"
-        self.__user_api_url = api_endpoint + "/user"
-        self.__collection_api_url = api_endpoint + "/collection"
+        self._search_api_url = api_endpoint + "/search"
+        self._thing_api_url = api_endpoint + "/thing"
+        self._guild_api_url = api_endpoint + "/guild"
+        self._user_api_url = api_endpoint + "/user"
+        self._collection_api_url = api_endpoint + "/collection"
 
         if cache:
             cache_args = {"cache_name": kwargs.get("cache_name", "bggnapi-cache"),
@@ -52,43 +52,187 @@ class BGGNAPI(object):
         else:
             self.requests_session = requests.Session()
 
-    def get_game_id(self, name):
+    def _get_game_id(self, name, game_type):
 
-            params = {"query": name, "exact": 1}
+        if game_type not in ["rpgitem", "videogame", "boardgame", "boardgameexpansion"]:
+            raise BoardGameGeekError("invalid game type: {}".format(game_type))
 
-            log.debug(u"fetching boardgame by name \"{}\"".format(name))
+        params = {"query": name, "exact": 1}
+
+        log.debug(u"fetching game by name \"{}\"".format(name))
+
+        root = get_parsed_xml_response(self.requests_session,
+                                       self._search_api_url,
+                                       params=params)
+
+        # game_type can be rpgitem, videogame, boardgame, or boardgameexpansion
+        game = root.find(".//item[@type='{}']".format(game_type))
+        if game is None:
+            log.warn(u"game not found: {}".format(name))
+            return None
+
+        game_id = int(game.attrib.get("id"))
+        if not game_id:
+            raise BoardGameGeekAPIError("response didn't contain the game id")
+
+    def guild(self, gid):
+        params = {"id": gid, "members": 1}
+
+        root = get_parsed_xml_response(self.requests_session,
+                                       self._guild_api_url,
+                                       params=params)
+
+        if "name" not in root.attrib:
+            log.warn(u"unable to get guild information (name not found)".format(gid))
+            return None
+
+        kwargs = {"name": root.attrib["name"],
+                  "gid": gid,
+                  "members": []}
+
+        el = root.find(".//members[@count]")
+        count = int(el.attrib["count"])
+        total_pages = int(2 + (count / 25))   # 25 memebers per page according to BGGAPI
+
+        for page in range(1, total_pages):
+            params = {"id": gid, "members": 1, "page": page}
+
             root = get_parsed_xml_response(self.requests_session,
-                                           self.__search_api_url,
+                                           self._guild_api_url,
                                            params=params)
-            game = root.find("./*[@type='boardgame']")
-            if game is None:
-                log.warn(u"game not found: {}".format(name))
-                return None
+            log.debug("fetched guild page {} of {}".format(page, total_pages))
 
+            for el in root.findall(".//member"):
+                kwargs["members"].append(el.attrib["name"])
+
+            if page == 1:
+                # grab initial info from first page
+                for tag in ["category", "website", "manager"]:
+                    kwargs[tag] = xml_subelement_text(root, tag)
+                kwargs["description"] = html_parser.unescape(xml_subelement_text(root, "description"))
+
+        return Guild(kwargs)
+
+    def user(self, name):
+
+        params = {"name": name, "hot": 1, "top": 1}
+        root = get_parsed_xml_response(self.requests_session,
+                                       self._user_api_url,
+                                       params=params)
+
+        kwargs = {"name": root.attrib["name"],
+                  "id": int(root.attrib["id"])}
+
+        for i in ["firstname", "lastname", "avatarlink", "lastlogin",
+                  "stateorprovince", "country", "webaddress", "xboxaccount",
+                  "wiiaccount", "steamaccount", "psnaccount", "traderating"]:
+            kwargs[i] = xml_subelement_attr(root, i)
+
+        kwargs["yearregistered"] = xml_subelement_attr(root, "yearregistered", convert=int)
+
+        # FIXME: figure this out, if really wanted.
+
+        # for xpath, prop in {".//top/item": "top10", ".//hot/item": "hot10"}.items():
+        #     els = root.findall(xpath)   # do we need to sort these by attrib="rank"? If so, how?
+        #     for el in els:
+        #         if not prop in kwargs:
+        #             kwargs[prop] = list()
+        #         kwargs[prop].append(el.attrib["name"])
+
+        return User(kwargs)
+
+    def collection(self, name):
+        params = {"username": name, "stats": 1}
+
+        # API update: server side cache. fetch will fail until cached, so try a few times.
+        retry = 5
+        root = None
+        found = False
+
+        while retry > 0:
+            root = get_parsed_xml_response(self.requests_session,
+                                           self._collection_api_url,
+                                           params=params)
+
+            # check if there's an error (e.g. invalid username)
+            error = root.find(".//error")
+            if error is not None:
+                raise BoardGameGeekAPIError("API error: {}".format(xml_subelement_text(error, "message")))
+
+            xml_boardgame_elements = root.findall(".//item[@subtype='boardgame']")
+            if not len(xml_boardgame_elements):
+                # TODO: what if collection has 0 games ?
+                log.debug("found 0 boardgames, sleeping")
+                retry -= 1
+                sleep(5)
+            else:
+                log.debug("found {} boardgames, continuing with processing.".format(len(xml_boardgame_elements)))
+                found = True
+                break
+
+        if not found:
+            raise BoardGameGeekAPIError("failed to get collection after more retries")
+
+        collection = Collection({"owner": name, "items": []})
+
+        # search for all boardgames in the collection, add them to the list
+        for xml_el in root.findall(".//item[@subtype='boardgame']"):
+            # get the user's rating for this game in his collection
+            stats = xml_el.find("stats")
+            rating = xml_subelement_attr(stats, "rating")
             try:
-                game_id = int(game.attrib.get("id"))
-                if not game_id:
-                    log.warning(u"BGGAPI gave us a game without an id: {}".format(name))
-                    return None
-            except Exception as e:
-                log.error("error getting bgid: {}".format(e))
-                return None
+                rating = float(rating)
+            except:
+                rating = None
+
+            # name and id of the game in collection
+            game = {"name": xml_subelement_text(xml_el, "name"),
+                    "id": int(xml_el.attrib.get("objectid")),
+                    "rating": rating}
+
+            status = xml_el.find("status")
+            game.update({stat: status.attrib.get(stat) for stat in ["lastmodified",
+                                                                    "own",
+                                                                    "preordered",
+                                                                    "prevowned",
+                                                                    "want",
+                                                                    "wanttobuy",
+                                                                    "wanttoplay",
+                                                                    "fortrade",
+                                                                    "wishlist",
+                                                                    "wishlistpriority"]})
+
+            collection.add_game(game)
+
+        return collection
+
+
+class BGGAPI(BGGNAPI):
+    """
+        API for www.boardgamegeek.com
+    """
+    def __init__(self, cache=True, **kwargs):
+        super(BGGAPI, self).__init__(api_endpoint="http://www.boardgamegeek.com/xmlapi2", cache=cache, **kwargs)
+
+    def get_game_id(self, name):
+        return self._get_game_id(name, "boardgame")
 
     def game(self, name=None, game_id=None):
 
         if name is None and game_id is None:
-            raise BGGApiError("")
+            raise BoardGameGeekError("game name or id not specified")
 
         if game_id is None:
             game_id = self.get_game_id(name)
+            if game_id is None:
+                log.error("couldn't find any game named '{}'".format(name))
+                return None
 
-        log.debug(u"retrieving game with id: {}".format(game_id))
-
-        params = {"id": game_id, "stats": 1}
+        log.debug(u"retrieving game id: {}".format(game_id))
 
         root = get_parsed_xml_response(self.requests_session,
-                                       self.__thing_api_url,
-                                       params=params)
+                                       self._thing_api_url,
+                                       params={"id": game_id, "stats": 1})
 
         # xml is structured like <items blablabla><item>..
         root = root.find("item")
@@ -144,143 +288,4 @@ class BGGNAPI(object):
                                     "friendlyname": rank.attrib.get("friendlyname"),
                                     "value": rank_value})
 
-        return Game(kwargs)
-
-    def guild(self, gid):
-        params = {"id": gid, "members": 1}
-
-        root = get_parsed_xml_response(self.requests_session,
-                                       self.__guild_api_url,
-                                       params=params)
-
-        if "name" not in root.attrib:
-            log.warn(u"unable to get guild information (name not found)".format(gid))
-            return None
-
-        kwargs = {"name": root.attrib["name"],
-                  "gid": gid,
-                  "members": []}
-
-        el = root.find(".//members[@count]")
-        count = int(el.attrib["count"])
-        total_pages = int(2 + (count / 25))   # 25 memebers per page according to BGGAPI
-
-        for page in range(1, total_pages):
-            params = {"id": gid, "members": 1, "page": page}
-
-            root = get_parsed_xml_response(self.requests_session,
-                                           self.__guild_api_url,
-                                           params=params)
-            log.debug("fetched guild page {} of {}".format(page, total_pages))
-
-            for el in root.findall(".//member"):
-                kwargs["members"].append(el.attrib["name"])
-
-            if page == 1:
-                # grab initial info from first page
-                for tag in ["category", "website", "manager"]:
-                    kwargs[tag] = xml_subelement_text(root, tag)
-                kwargs["description"] = html_parser.unescape(xml_subelement_text(root, "description"))
-
-        return Guild(kwargs)
-
-    def user(self, name):
-
-        params = {"name": name, "hot": 1, "top": 1}
-        root = get_parsed_xml_response(self.requests_session,
-                                       self.__user_api_url,
-                                       params=params)
-
-        kwargs = {"name": root.attrib["name"],
-                  "id": int(root.attrib["id"])}
-
-        for i in ["firstname", "lastname", "avatarlink", "lastlogin",
-                  "stateorprovince", "country", "webaddress", "xboxaccount",
-                  "wiiaccount", "steamaccount", "psnaccount", "traderating"]:
-            kwargs[i] = xml_subelement_attr(root, i)
-
-        kwargs["yearregistered"] = xml_subelement_attr(root, "yearregistered", convert=int)
-
-        # FIXME: figure this out, if really wanted.
-
-        # for xpath, prop in {".//top/item": "top10", ".//hot/item": "hot10"}.items():
-        #     els = root.findall(xpath)   # do we need to sort these by attrib="rank"? If so, how?
-        #     for el in els:
-        #         if not prop in kwargs:
-        #             kwargs[prop] = list()
-        #         kwargs[prop].append(el.attrib["name"])
-
-        return User(kwargs)
-
-    def collection(self, name):
-        params = {"username": name, "stats": 1}
-
-        # API update: server side cache. fetch will fail until cached, so try a few times.
-        retry = 5
-        root = None
-        found = False
-
-        while retry > 0:
-            root = get_parsed_xml_response(self.requests_session,
-                                           self.__collection_api_url,
-                                           params=params)
-
-            # check if there's an error (e.g. invalid username)
-            error = root.find(".//error")
-            if error is not None:
-                raise BGGApiError("API error: {}".format(xml_subelement_text(error, "message")))
-
-            xml_boardgame_elements = root.findall(".//item[@subtype='boardgame']")
-            if not len(xml_boardgame_elements):
-                # TODO: what if collection has 0 games ?
-                log.debug("found 0 boardgames, sleeping")
-                retry -= 1
-                sleep(5)
-            else:
-                log.debug("found {} boardgames, continuing with processing.".format(len(xml_boardgame_elements)))
-                found = True
-                break
-
-        if not found:
-            raise BGGApiError("failed to get collection after more retries")
-
-        collection = Collection({"owner": name, "items": []})
-
-        # search for all boardgames in the collection, add them to the list
-        for xml_el in root.findall(".//item[@subtype='boardgame']"):
-            # get the user's rating for this game in his collection
-            stats = xml_el.find("stats")
-            rating = xml_subelement_attr(stats, "rating")
-            try:
-                rating = float(rating)
-            except:
-                rating = None
-
-            # name and id of the game in collection
-            game = {"name": xml_subelement_text(xml_el, "name"),
-                    "id": int(xml_el.attrib.get("objectid")),
-                    "rating": rating}
-
-            status = xml_el.find("status")
-            game.update({stat: status.attrib.get(stat) for stat in ["lastmodified",
-                                                                    "own",
-                                                                    "preordered",
-                                                                    "prevowned",
-                                                                    "want",
-                                                                    "wanttobuy",
-                                                                    "wanttoplay",
-                                                                    "fortrade",
-                                                                    "wishlist",
-                                                                    "wishlistpriority"]})
-
-            collection.add_game(game)
-
-        return collection
-
-
-class BGGAPI(BGGNAPI):
-    """
-        API for www.boardgamegeek.com
-    """
-    def __init__(self, cache=True, **kwargs):
-        super(BGGAPI, self).__init__(api_endpoint="http://www.boardgamegeek.com/xmlapi2", cache=cache, **kwargs)
+        return BoardGame(kwargs)

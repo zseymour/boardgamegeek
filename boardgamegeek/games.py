@@ -1,7 +1,7 @@
 from .utils import DictObject
 
 
-class CollectionGame(DictObject):
+class CollectionBoardGame(DictObject):
     """
     A boardgame retrieved from the collection information, which has
     less information than the one retrieved via the /thing api and which
@@ -84,7 +84,7 @@ class CollectionGame(DictObject):
         return (self._data.get("wishlistpriority"))
 
 
-class Game(DictObject):
+class BoardGame(DictObject):
 
     def __unicode__(self):
         return u"{}".format(self.name)

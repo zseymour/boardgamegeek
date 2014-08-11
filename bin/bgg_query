@@ -48,22 +48,22 @@ if __name__ == '__main__':
         'critical': logging.CRITICAL
     }
     log_format = '%(asctime)s %(name)-12s %(levelname)-8s %(message)s'
-    log_datefmt = '%m-%d %H:%M:%S'
+    log_datefmt = '%Y-%m-%d %H:%M:%S'
     logging.basicConfig(format=log_format, datefmt=log_datefmt,
                         level=logLevels[args.loglevel])
     
     bgg = BGGAPI()
 
     query_map = {
-        bgg.fetch_boardgame: args.game,
-        bgg.fetch_guild: args.guild,
-        bgg.fetch_user: args.user,
-        bgg.fetch_collection: args.collection,
+        bgg.game: args.game,
+        bgg.guild: args.guild,
+        bgg.user: args.user,
+        bgg.collection: args.collection,
     }
     for func, queries in query_map.items():
         if queries:
             for query in queries:
-                item = func(query, forcefetch=args.forcefetch)
+                item = func(query)
                 if item is None:
                     print('%s: not found. No connection or not in cache if given.' % query)
                     continue
