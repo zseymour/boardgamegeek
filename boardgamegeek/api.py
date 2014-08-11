@@ -1,115 +1,27 @@
-#!/usr/bin/env python
-
+import logging
 import requests
 import requests_cache
-import xml.etree.ElementTree as ET
-from xml.etree.ElementTree import ParseError as ETParseError
 from time import sleep
 import sys
 
+# This is required for decoding HTML entities from the description text
+# of games
 if sys.version_info >= (3,):
     import html.parser as hp
 else:
     import HTMLParser as hp
 
-import logging
 
 from .game import Game
 from .guild import Guild
 from .user import User
 from .collection import Collection
 from .exceptions import BGGApiError
+from .utils import xml_subelement_attr, xml_subelement_text, xml_subelement_attr_list, get_parsed_xml_response
 
-log = logging.getLogger(__name__)
+
+log = logging.getLogger("")
 html_parser = hp.HTMLParser()
-
-
-def xml_subelement_attr(xml_elem, subelement, convert=None, attribute="value"):
-    """
-    Return the value of <xml_elem><subelement value="THIS" /></xml_elem>
-    :param xml_elem:
-    :param subelement:
-    :param integer: if True, try to convert to int
-    :return:
-    """
-    if xml_elem is None:
-        return None
-
-    subel = xml_elem.find(subelement)
-    if subel is not None:
-        value = subel.attrib.get(attribute)
-        if convert:
-            value = convert(value)
-        return value
-    return None
-
-
-def xml_subelement_attr_list(xml_elem, subelement, convert=None):
-    """
-    Return the value of multiple <xml_elem><subelement value="THIS" /></xml_elem> as a list
-    :param xml_elem:
-    :param subelement:
-    :param integer: if True, try to convert to int
-    :return:
-    """
-    if xml_elem is None:
-        return None
-
-    subel = xml_elem.findall(subelement)
-    res = []
-    for e in subel:
-        value = e.attrib.get("value")
-        if convert:
-            value = convert(value)
-        res.append(value)
-
-    return res
-
-
-def xml_subelement_text(xml_elem, subelement, convert=None):
-    """
-    Return the text from the specified subelement
-    :param xml_elem:
-    :param subelement:
-    :param convert:
-    :return:
-    """
-    if xml_elem is None:
-        return None
-
-    subel = xml_elem.find(subelement)
-    if subel is not None:
-        text = subel.text
-        if convert:
-            text = convert(text)
-        return text
-    return None
-
-
-def get_parsed_xml_response(requests_session, url, params=None):
-    """
-    Returns a parsed XML
-
-    :param url:
-    :param params:
-    :return:
-    """
-    try:
-        xml = requests_session.get(url, params=params).text
-
-        if sys.version_info >= (3,):
-            root_elem = ET.fromstring(xml)
-        else:
-            utf8_xml = xml.encode("utf-8")
-            root_elem = ET.fromstring(utf8_xml)
-
-    except ETParseError as e:
-        raise BGGApiError("error decoding BGG API response: {}".format(e))
-
-    except Exception as e:
-        raise BGGApiError("error fetching BGG API response: {}".format(e))
-
-    return root_elem
 
 
 class BGGNAPI(object):
@@ -121,27 +33,33 @@ class BGGNAPI(object):
         :param cache: Use caching (default True)
         :return:
         """
-
-        if api_endpoint.endswith("/"):
-            self.__api_url = api_endpoint + "{}"
-        else:
-            self.__api_url = api_endpoint + "/{}"
+        self.__search_api_url = api_endpoint + "/search"
+        self.__thing_api_url = api_endpoint + "/thing"
+        self.__guild_api_url = api_endpoint + "/guild"
+        self.__user_api_url = api_endpoint + "/user"
+        self.__collection_api_url = api_endpoint + "/collection"
 
         if cache:
-            self.requests_session = requests_cache.core.CachedSession(cache_name=kwargs.get("cache_name", "bggnapi-cache"),
-                                                                      backend=kwargs.get("cache_backend", "sqlite"),
-                                                                      expire_after=kwargs.get("cache_time", 3600))
+            cache_args = {"cache_name": kwargs.get("cache_name", "bggnapi-cache"),
+                          "backend": kwargs.get("cache_backend", "sqlite"),
+                          "expire_after": kwargs.get("cache_time", 3600),
+                          "extension": ".cache"}
+
+            if "cache_location" in kwargs:
+                cache_args["location"] = kwargs["cache_location"]
+
+            self.requests_session = requests_cache.core.CachedSession(**cache_args)
         else:
             self.requests_session = requests.Session()
 
-    def game(self, name, game_id=None):
+    def get_game_id(self, name):
 
-        if game_id is None:
-            url = self.__api_url.format("search")
             params = {"query": name, "exact": 1}
 
             log.debug(u"fetching boardgame by name \"{}\"".format(name))
-            root = get_parsed_xml_response(self.requests_session, url, params=params)
+            root = get_parsed_xml_response(self.requests_session,
+                                           self.__search_api_url,
+                                           params=params)
             game = root.find("./*[@type='boardgame']")
             if game is None:
                 log.warn(u"game not found: {}".format(name))
@@ -156,12 +74,21 @@ class BGGNAPI(object):
                 log.error("error getting bgid: {}".format(e))
                 return None
 
+    def game(self, name=None, game_id=None):
+
+        if name is None and game_id is None:
+            raise BGGApiError("")
+
+        if game_id is None:
+            game_id = self.get_game_id(name)
+
         log.debug(u"retrieving game with id: {}".format(game_id))
 
-        url = self.__api_url.format("thing")
         params = {"id": game_id, "stats": 1}
 
-        root = get_parsed_xml_response(self.requests_session, url, params=params)
+        root = get_parsed_xml_response(self.requests_session,
+                                       self.__thing_api_url,
+                                       params=params)
 
         # xml is structured like <items blablabla><item>..
         root = root.find("item")
@@ -220,10 +147,11 @@ class BGGNAPI(object):
         return Game(kwargs)
 
     def guild(self, gid):
-        url = self.__api_url.format("guild")
         params = {"id": gid, "members": 1}
 
-        root = get_parsed_xml_response(self.requests_session, url, params=params)
+        root = get_parsed_xml_response(self.requests_session,
+                                       self.__guild_api_url,
+                                       params=params)
 
         if "name" not in root.attrib:
             log.warn(u"unable to get guild information (name not found)".format(gid))
@@ -240,7 +168,9 @@ class BGGNAPI(object):
         for page in range(1, total_pages):
             params = {"id": gid, "members": 1, "page": page}
 
-            root = get_parsed_xml_response(self.requests_session, url, params=params)
+            root = get_parsed_xml_response(self.requests_session,
+                                           self.__guild_api_url,
+                                           params=params)
             log.debug("fetched guild page {} of {}".format(page, total_pages))
 
             for el in root.findall(".//member"):
@@ -255,10 +185,11 @@ class BGGNAPI(object):
         return Guild(kwargs)
 
     def user(self, name):
-        url = self.__api_url.format("user")
-        params = {"name": name, "hot": 1, "top": 1}
 
-        root = get_parsed_xml_response(self.requests_session, url, params=params)
+        params = {"name": name, "hot": 1, "top": 1}
+        root = get_parsed_xml_response(self.requests_session,
+                                       self.__user_api_url,
+                                       params=params)
 
         kwargs = {"name": root.attrib["name"],
                   "id": int(root.attrib["id"])}
@@ -283,7 +214,6 @@ class BGGNAPI(object):
 
     def collection(self, name):
         params = {"username": name, "stats": 1}
-        url = self.__api_url.format("collection")
 
         # API update: server side cache. fetch will fail until cached, so try a few times.
         retry = 5
@@ -291,7 +221,9 @@ class BGGNAPI(object):
         found = False
 
         while retry > 0:
-            root = get_parsed_xml_response(self.requests_session, url, params=params)
+            root = get_parsed_xml_response(self.requests_session,
+                                           self.__collection_api_url,
+                                           params=params)
 
             # check if there's an error (e.g. invalid username)
             error = root.find(".//error")
@@ -351,4 +283,4 @@ class BGGAPI(BGGNAPI):
         API for www.boardgamegeek.com
     """
     def __init__(self, cache=True, **kwargs):
-        super(BGGAPI, self).__init__(api_endpoint="http://www.boardgamegeek.com/xmlapi2/", cache=cache, **kwargs)
+        super(BGGAPI, self).__init__(api_endpoint="http://www.boardgamegeek.com/xmlapi2", cache=cache, **kwargs)
