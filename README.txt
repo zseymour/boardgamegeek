@@ -1,4 +1,8 @@
 boardgamegeek
 =============
 
-Work in progress rewriting the original code forked from philsstein/libBGG.
+An almost complete rewrite of a Board Game Geek API Python client, libBGG (https://github.com/philsstein/libBGG)
+
+
+Documentation will be here soon.
+
