@@ -6,4 +6,6 @@
 
 .. moduleauthor:: Cosmin Luță <q4break@gmail.com>
 """
-__version__ = '0.1.4'
+from .api import BoardGameGeek
+
+__all__ = [BoardGameGeek]
