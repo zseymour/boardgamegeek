@@ -9,7 +9,7 @@ import sys
 if sys.version_info >= (3,):
     long_description = open("README.txt", encoding="utf-8").read()
 else:
-    # python 2 doesn"t have the "encoding" keyword for open()
+    # python 2 doesn't have the "encoding" keyword for open()
     long_description = open("README.txt").read()
 
 setup(
@@ -23,5 +23,10 @@ setup(
     long_description=long_description,
     url="https://github.com/lcosmin/boardgamegeek",
     install_requires=["requests",
-                      "requests-cache"]
+                      "requests-cache"],
+    entry_points={
+        "console_scripts": [
+            "boardgamegeek = boardgamegeek.main:main"
+        ]
+    }
 )

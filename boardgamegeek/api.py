@@ -129,7 +129,7 @@ class BGGNAPI(object):
 
         root = get_parsed_xml_response(self.requests_session,
                                        self._user_api_url,
-                                       params={"name": name, "hot": 1, "top": 1})
+                                       params={"name": name})
 
         kwargs = {"name": root.attrib["name"],
                   "id": int(root.attrib["id"])}
@@ -140,15 +140,6 @@ class BGGNAPI(object):
             kwargs[i] = xml_subelement_attr(root, i)
 
         kwargs["yearregistered"] = xml_subelement_attr(root, "yearregistered", convert=int)
-
-        # FIXME: figure this out, if really wanted.
-
-        # for xpath, prop in {".//top/item": "top10", ".//hot/item": "hot10"}.items():
-        #     els = root.findall(xpath)   # do we need to sort these by attrib="rank"? If so, how?
-        #     for el in els:
-        #         if not prop in kwargs:
-        #             kwargs[prop] = list()
-        #         kwargs[prop].append(el.attrib["name"])
 
         return User(kwargs)
 
