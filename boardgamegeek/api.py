@@ -20,7 +20,7 @@ from .exceptions import BoardGameGeekAPIError, BoardGameGeekError
 from .utils import xml_subelement_attr, xml_subelement_text, xml_subelement_attr_list, get_parsed_xml_response
 
 
-log = logging.getLogger("")
+log = logging.getLogger("boardgamegeek.api")
 html_parser = hp.HTMLParser()
 
 
@@ -41,6 +41,7 @@ class BGGNAPI(object):
         self._guild_api_url = api_endpoint + "/guild"
         self._user_api_url = api_endpoint + "/user"
         self._collection_api_url = api_endpoint + "/collection"
+        self.cache = cache
 
         if cache:
             cache_args = {"cache_name": kwargs.get("cache_name", "bggnapi-cache"),
@@ -148,25 +149,31 @@ class BGGNAPI(object):
         found = False
 
         while retry > 0:
-            root = get_parsed_xml_response(self.requests_session,
-                                           self._collection_api_url,
-                                           params={"username": name, "stats": 1})
+
+            # this call needs to be retried so make sure we don't cache it
+            if self.cache:
+                with requests_cache.disabled():
+                    root = get_parsed_xml_response(self.requests_session,
+                                                   self._collection_api_url,
+                                                   params={"username": name, "stats": 1})
+            else:
+                root = get_parsed_xml_response(self.requests_session,
+                                               self._collection_api_url,
+                                               params={"username": name, "stats": 1})
 
             # check if there's an error (e.g. invalid username)
             error = root.find(".//error")
             if error is not None:
                 raise BoardGameGeekAPIError("API error: {}".format(xml_subelement_text(error, "message")))
 
-            xml_boardgame_elements = root.findall(".//item[@subtype='boardgame']")
-            if not len(xml_boardgame_elements):
-                # TODO: what if collection has 0 games ?
-                log.debug("found 0 boardgames, sleeping")
-                retry -= 1
-                sleep(BGGNAPI.COLLECTION_FETCH_DELAY)
-            else:
-                log.debug("found {} boardgames, continuing with processing.".format(len(xml_boardgame_elements)))
+            # check if we retrieved the collection
+            if root.tag == "items":
                 found = True
                 break
+            retry -= 1
+            sleep(BGGNAPI.COLLECTION_FETCH_DELAY)
+            log.debug("retrying collection fetch")
+            continue
 
         if not found:
             raise BoardGameGeekAPIError("failed to get {}'s collection after multiple retries".format(name))
