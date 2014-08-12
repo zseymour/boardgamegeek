@@ -41,10 +41,18 @@ To install ``boardgamegeek``, just use pip::
     > pip install boardgamegeek
 
 
+Documentation
+=============
+
+Documentation is available at http://boardgamegeek.readthedocs.org/
+
+
 Usage
 =====
 
-Here's a quick usage example::
+Here's a quick usage example:
+
+.. code-block:: pycon
 
     >>> from boardgamegeek import BoardGameGeek
     >>> bgg = BoardGameGeek()
