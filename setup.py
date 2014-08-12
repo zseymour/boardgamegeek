@@ -23,6 +23,5 @@ setup(
     long_description=long_description,
     url="https://github.com/lcosmin/boardgamegeek",
     install_requires=["requests",
-                      "requests-cache"],
-    scripts=["bin/bgg_query", "bin/top_rated"]
+                      "requests-cache"]
 )
