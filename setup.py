@@ -2,7 +2,13 @@
 
 from distutils.core import setup
 from setuptools import find_packages
-from boardgamegeek import __version__
+
+from getver import get_git_version
+
+version = get_git_version()
+
+with open("boardgamegeek/version.py", "w") as f:
+    f.write("__version__ = '{}'".format(version))
 
 import sys
 
@@ -14,9 +20,9 @@ else:
 
 setup(
     name="boardgamegeek",
-    version=__version__,
+    version=version,
     packages=find_packages(),
-    license="BSD License",
+    license="BSD",
     author="Cosmin Luță",
     author_email="q4break@gmail.com",
     description="A Python interface to boardgamegeek.com's API",
