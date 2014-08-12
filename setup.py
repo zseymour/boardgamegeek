@@ -22,7 +22,7 @@ setup(
     name="boardgamegeek",
     version=version,
     packages=find_packages(),
-    license="BSD License",
+    license="BSD",
     author="Cosmin Luță",
     author_email="q4break@gmail.com",
     description="A Python interface to boardgamegeek.com's API",
