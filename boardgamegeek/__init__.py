@@ -7,5 +7,6 @@
 .. moduleauthor:: Cosmin Luță <q4break@gmail.com>
 """
 from .api import BoardGameGeek
+from .version import __version__
 
 __all__ = [BoardGameGeek]
