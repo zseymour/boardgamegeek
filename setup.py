@@ -3,13 +3,6 @@
 from distutils.core import setup
 from setuptools import find_packages
 
-from getver import get_git_version
-
-version = get_git_version()
-
-with open("boardgamegeek/version.py", "w") as f:
-    f.write("__version__ = '{}'".format(version))
-
 import sys
 
 if sys.version_info >= (3,):
@@ -20,7 +13,7 @@ else:
 
 setup(
     name="boardgamegeek",
-    version=version,
+    version="0.0.5",
     packages=find_packages(),
     license="BSD",
     author="Cosmin Luță",
