@@ -8,7 +8,7 @@ version = {}
 with open("boardgamegeek/version.py") as fp:
     exec(fp.read(), version)
 
-long_description = open("README.txt", encoding="utf-8").read()
+long_description = open("README.rst", encoding="utf-8").read()
 
 setup(
     name="boardgamegeek",
