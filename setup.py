@@ -13,7 +13,7 @@ else:
     long_description = open("README.txt").read()
 
 setup(
-    name="boargamegeek",
+    name="boardgamegeek",
     version=__version__,
     packages=find_packages(),
     license="BSD License",
