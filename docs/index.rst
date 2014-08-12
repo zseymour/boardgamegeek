@@ -44,7 +44,9 @@ To install ``boardgamegeek``, just use pip::
 Usage
 =====
 
-Here's a quick usage example::
+Here's a quick usage example:
+
+.. code-block:: pycon
 
     >>> from boardgamegeek import BoardGameGeek
     >>> bgg = BoardGameGeek()
