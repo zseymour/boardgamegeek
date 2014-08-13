@@ -3,7 +3,7 @@ import xml.etree.ElementTree as ET
 from xml.etree.ElementTree import ParseError as ETParseError
 
 
-from .exceptions import BoardGameGeekAPIError
+from .exceptions import BoardGameGeekAPIError, BoardGameGeekAPIRetryError
 
 
 class DictObject(object):
@@ -103,7 +103,13 @@ def get_parsed_xml_response(requests_session, url, params=None):
     :return:
     """
     try:
-        xml = requests_session.get(url, params=params).text
+        r = requests_session.get(url, params=params)
+
+        if r.status_code == 202:
+            # BoardGameGeek API says that on status code 202 we need to retry the operation after a delay
+            raise BoardGameGeekAPIRetryError()
+
+        xml = r.text
 
         if sys.version_info >= (3,):
             root_elem = ET.fromstring(xml)

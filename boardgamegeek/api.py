@@ -25,7 +25,7 @@ from .games import BoardGame
 from .guild import Guild
 from .user import User
 from .collection import Collection
-from .exceptions import BoardGameGeekAPIError, BoardGameGeekError
+from .exceptions import BoardGameGeekAPIError, BoardGameGeekError, BoardGameGeekAPIRetryError
 from .utils import xml_subelement_attr, xml_subelement_text, xml_subelement_attr_list, get_parsed_xml_response
 
 
@@ -150,30 +150,27 @@ class BGGNAPI(object):
 
         while retry > 0:
 
-            # this call needs to be retried so make sure we don't cache it
-            if self.cache:
-                with requests_cache.disabled():
+            try:
+                # this call needs to be retried so make sure we don't cache it
+                if self.cache:
+                    with requests_cache.disabled():
+                        root = get_parsed_xml_response(self.requests_session,
+                                                       self._collection_api_url,
+                                                       params={"username": name, "stats": 1})
+                else:
                     root = get_parsed_xml_response(self.requests_session,
                                                    self._collection_api_url,
                                                    params={"username": name, "stats": 1})
-            else:
-                root = get_parsed_xml_response(self.requests_session,
-                                               self._collection_api_url,
-                                               params={"username": name, "stats": 1})
+            except BoardGameGeekAPIRetryError:
+                retry -= 1
+                sleep(BGGNAPI.COLLECTION_FETCH_DELAY)
+                log.debug("retrying collection fetch")
+                continue
 
             # check if there's an error (e.g. invalid username)
             error = root.find(".//error")
             if error is not None:
                 raise BoardGameGeekAPIError("API error: {}".format(xml_subelement_text(error, "message")))
-
-            # check if we retrieved the collection
-            if root.tag == "items":
-                found = True
-                break
-            retry -= 1
-            sleep(BGGNAPI.COLLECTION_FETCH_DELAY)
-            log.debug("retrying collection fetch")
-            continue
 
         if not found:
             raise BoardGameGeekAPIError("failed to get {}'s collection after multiple retries".format(name))
