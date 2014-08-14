@@ -139,19 +139,21 @@ class BoardGameGeekNetworkAPI(object):
                 root = get_parsed_xml_response(self.requests_session,
                                                self._collection_api_url,
                                                params={"username": name, "stats": 1})
+                found = True
+                break
             except BoardGameGeekAPIRetryError:
                 retry -= 1
                 sleep(BoardGameGeekNetworkAPI.COLLECTION_FETCH_DELAY)
                 log.debug("retrying collection fetch")
                 continue
 
-            # check if there's an error (e.g. invalid username)
-            error = root.find(".//error")
-            if error is not None:
-                raise BoardGameGeekAPIError("API error: {}".format(xml_subelement_text(error, "message")))
-
         if not found:
             raise BoardGameGeekAPIError("failed to get {}'s collection after multiple retries".format(name))
+
+        # check if there's an error (e.g. invalid username)
+        error = root.find(".//error")
+        if error is not None:
+            raise BoardGameGeekAPIError("API error: {}".format(xml_subelement_text(error, "message")))
 
         collection = Collection({"owner": name, "items": []})
 
