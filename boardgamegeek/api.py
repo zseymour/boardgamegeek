@@ -9,7 +9,6 @@
 """
 import logging
 import requests
-import requests_cache
 from time import sleep
 import sys
 
@@ -35,20 +34,11 @@ html_parser = hp.HTMLParser()
 
 
 class BoardGameGeekNetworkAPI(object):
-    """
-    Implements common API functionality for all boargamegeek sites
-
-    """
     COLLECTION_FETCH_RETRIES = 5
     COLLECTION_FETCH_DELAY = 5
 
     def __init__(self, api_endpoint, cache=None):
-        """
 
-        :param api_endpoint:
-        :param cache: Use a cache, in-memory by default
-        :return:
-        """
         self._search_api_url = api_endpoint + "/search"
         self._thing_api_url = api_endpoint + "/thing"
         self._guild_api_url = api_endpoint + "/guild"
@@ -199,7 +189,20 @@ class BoardGameGeekNetworkAPI(object):
 
 class BoardGameGeek(BoardGameGeekNetworkAPI):
     """
-        API for www.boardgamegeek.com
+        Pyhton interface for www.boardgamegeek.com's XML API.
+
+        Caching for the requests can be used by specifying an URI for the ``cache`` parameter. By default, an in-memory
+        cache is used, with "sqlite" being the other currently supported option.
+
+        Example usage::
+
+            >>> bgg = BoardGameGeek()
+            >>> game = bgg.game("Android: Netrunner")
+            >>> game.id
+            124742
+            >>> bgg_no_cache = BoardGameGeek(cache=None)
+            >>> bgg_sqlite_cache = BoardGameGeek(cache="sqlite:///path/to/cache.db?ttl=3600")
+
     """
     def __init__(self, cache="memory:///?ttl=3600"):
         super(BoardGameGeek, self).__init__(api_endpoint="http://www.boardgamegeek.com/xmlapi2", cache=cache)
