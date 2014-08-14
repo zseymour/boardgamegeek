@@ -145,18 +145,10 @@ class BoardGameGeekNetworkAPI(object):
         found = False
 
         while retry > 0:
-
             try:
-                # this call needs to be retried so make sure we don't cache it
-                if self.cache:
-                    with requests_cache.disabled():
-                        root = get_parsed_xml_response(self.requests_session,
-                                                       self._collection_api_url,
-                                                       params={"username": name, "stats": 1})
-                else:
-                    root = get_parsed_xml_response(self.requests_session,
-                                                   self._collection_api_url,
-                                                   params={"username": name, "stats": 1})
+                root = get_parsed_xml_response(self.requests_session,
+                                               self._collection_api_url,
+                                               params={"username": name, "stats": 1})
             except BoardGameGeekAPIRetryError:
                 retry -= 1
                 sleep(BoardGameGeekNetworkAPI.COLLECTION_FETCH_DELAY)

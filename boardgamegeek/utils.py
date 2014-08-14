@@ -143,7 +143,6 @@ def get_cache_session_from_uri(uri):
     :raises BoardGameGeekError in case of error
     """
 
-
     try:
         r = urlparse.urlparse(uri)
 
