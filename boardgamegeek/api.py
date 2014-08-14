@@ -83,7 +83,6 @@ class BoardGameGeekNetworkAPI(object):
         return game_id
 
     def guild(self, gid):
-
         root = get_parsed_xml_response(self.requests_session,
                                        self._guild_api_url,
                                        params={"id": gid, "members": 1})
@@ -101,11 +100,10 @@ class BoardGameGeekNetworkAPI(object):
         total_pages = int(2 + (count / 25))   # 25 memebers per page according to BGGAPI
 
         for page in range(1, total_pages):
-            params = {"id": gid, "members": 1, "page": page}
 
             root = get_parsed_xml_response(self.requests_session,
                                            self._guild_api_url,
-                                           params=params)
+                                           params={"id": gid, "members": 1, "page": page})
             log.debug("fetched guild page {} of {}".format(page, total_pages))
 
             for el in root.findall(".//member"):
@@ -212,8 +210,7 @@ class BoardGameGeek(BoardGameGeekNetworkAPI):
         API for www.boardgamegeek.com
     """
     def __init__(self, cache="memory:///?ttl=3600"):
-        super(BoardGameGeek, self).__init__(api_endpoint="http://www.boardgamegeek.com/xmlapi2",
-                                            cache=cache)
+        super(BoardGameGeek, self).__init__(api_endpoint="http://www.boardgamegeek.com/xmlapi2", cache=cache)
 
     def get_game_id(self, name):
         return self._get_game_id(name, "boardgame")
