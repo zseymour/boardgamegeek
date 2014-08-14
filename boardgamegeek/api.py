@@ -27,22 +27,26 @@ from .user import User
 from .collection import Collection
 from .exceptions import BoardGameGeekAPIError, BoardGameGeekError, BoardGameGeekAPIRetryError
 from .utils import xml_subelement_attr, xml_subelement_text, xml_subelement_attr_list, get_parsed_xml_response
+from .utils import get_cache_session_from_uri
 
 
 log = logging.getLogger("boardgamegeek.api")
 html_parser = hp.HTMLParser()
 
 
-class BGGNAPI(object):
+class BoardGameGeekNetworkAPI(object):
+    """
+    Implements common API functionality for all boargamegeek sites
 
+    """
     COLLECTION_FETCH_RETRIES = 5
     COLLECTION_FETCH_DELAY = 5
 
-    def __init__(self, api_endpoint, cache=True, **kwargs):
+    def __init__(self, api_endpoint, cache=None):
         """
 
         :param api_endpoint:
-        :param cache: Use caching (default True)
+        :param cache: Use a cache, in-memory by default
         :return:
         """
         self._search_api_url = api_endpoint + "/search"
@@ -50,15 +54,9 @@ class BGGNAPI(object):
         self._guild_api_url = api_endpoint + "/guild"
         self._user_api_url = api_endpoint + "/user"
         self._collection_api_url = api_endpoint + "/collection"
-        self.cache = cache
 
         if cache:
-            cache_args = {"cache_name": kwargs.get("cache_name", "bggnapi-cache"),
-                          "backend": kwargs.get("cache_backend", "sqlite"),
-                          "expire_after": kwargs.get("cache_time", 3600*3),
-                          "extension": ".cache"}
-
-            self.requests_session = requests_cache.core.CachedSession(**cache_args)
+            self.requests_session = get_cache_session_from_uri(cache)
         else:
             self.requests_session = requests.Session()
 
@@ -144,7 +142,7 @@ class BGGNAPI(object):
         return User(kwargs)
 
     def collection(self, name):
-        retry = BGGNAPI.COLLECTION_FETCH_RETRIES
+        retry = BoardGameGeekNetworkAPI.COLLECTION_FETCH_RETRIES
         root = None
         found = False
 
@@ -163,7 +161,7 @@ class BGGNAPI(object):
                                                    params={"username": name, "stats": 1})
             except BoardGameGeekAPIRetryError:
                 retry -= 1
-                sleep(BGGNAPI.COLLECTION_FETCH_DELAY)
+                sleep(BoardGameGeekNetworkAPI.COLLECTION_FETCH_DELAY)
                 log.debug("retrying collection fetch")
                 continue
 
@@ -209,14 +207,13 @@ class BGGNAPI(object):
         return collection
 
 
-class BoardGameGeek(BGGNAPI):
+class BoardGameGeek(BoardGameGeekNetworkAPI):
     """
         API for www.boardgamegeek.com
     """
-    def __init__(self, cache=True, **kwargs):
+    def __init__(self, cache="memory:///?ttl=3600"):
         super(BoardGameGeek, self).__init__(api_endpoint="http://www.boardgamegeek.com/xmlapi2",
-                                            cache=cache,
-                                            **kwargs)
+                                            cache=cache)
 
     def get_game_id(self, name):
         return self._get_game_id(name, "boardgame")

@@ -1,9 +1,14 @@
 import sys
 import xml.etree.ElementTree as ET
 from xml.etree.ElementTree import ParseError as ETParseError
+import requests_cache
 
+try:
+    import urllib.parse as urlparse
+except:
+    import urlparse
 
-from .exceptions import BoardGameGeekAPIError, BoardGameGeekAPIRetryError
+from .exceptions import BoardGameGeekAPIError, BoardGameGeekAPIRetryError, BoardGameGeekError
 
 
 class DictObject(object):
@@ -124,3 +129,55 @@ def get_parsed_xml_response(requests_session, url, params=None):
         raise BoardGameGeekAPIError("error fetching BGG API response: {}".format(e))
 
     return root_elem
+
+
+def get_cache_session_from_uri(uri):
+    """
+    Returns a requests-cache session using caching specified in the URI. Valid uris are:
+
+    * memory:///?ttl=<seconds>
+    * sqlite:///path/to/sqlite.db?ttl=<seconds>&fast_save=<0|1>
+
+    :param uri: URI specifying the type of cache to use and its parameters
+    :return: CachedSession instance, which can be used as a regular ``requests`` session.
+    :raises BoardGameGeekError in case of error
+    """
+
+
+    try:
+        r = urlparse.urlparse(uri)
+
+        args = urlparse.parse_qs(r.query)
+
+        # if not specified, default cache time is 3600 seconds
+        ttl = int(args.get("ttl", ['3600'])[0])
+
+        if r.scheme == "memory":
+            return requests_cache.core.CachedSession(backend="memory",
+                                                     expire_after=ttl,
+                                                     allowable_codes=(200,))
+
+        elif r.scheme == "sqlite":
+            fast_save = args.get("fast_save", ["0"])[0] != "0"
+            return requests_cache.core.CachedSession(cache_name=r.path,
+                                                     backend="sqlite",
+                                                     expire_after=ttl,
+                                                     extension="",
+                                                     fast_save=fast_save,
+                                                     allowable_codes=(200,))
+
+        # TODO: add the redis backend
+        # elif r.scheme == "redis":
+        #     return requests_cache.core.CachedSession(cache_name=args.get("prefix", ["cache"])[0],
+        #                                              backend="redis",
+        #                                              expire_after=ttl,
+        #                                              allowable_codes=(200,))
+
+        # TODO: add the mongo backend
+
+    except Exception as e:
+        raise BoardGameGeekError("error trying to create a CachedSession from '{}': {}".format(uri, e))
+
+    raise BoardGameGeekError("invalid cache URI: {}".format(uri))
+
+
