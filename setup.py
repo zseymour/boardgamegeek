@@ -9,6 +9,8 @@ with open("boardgamegeek/version.py") as fp:
 
 long_description = open("README.rst", encoding="utf-8").read()
 
+tests_require = ["pytest"]
+
 setup(
     name="boardgamegeek",
     version=version["__version__"],
@@ -19,6 +21,8 @@ setup(
     description="A Python interface to boardgamegeek.com's API",
     long_description=long_description,
     url="https://github.com/lcosmin/boardgamegeek",
+    tests_require=tests_require,
+    extras_require={'test': tests_require},
     classifiers=[
         "Programming Language :: Python",
         "License :: OSI Approved :: BSD License",
