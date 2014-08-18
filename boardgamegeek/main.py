@@ -36,7 +36,10 @@ def main():
             game._format(log)
 
     if args.guild:
-        guild = bgg.guild(args.guild)
+        def fetch_cb(members, total):
+            log.debug("fetching members: {}% complete".format(members*100/total))
+
+        guild = bgg.guild(args.guild, progress=fetch_cb)
         if guild:
             guild._format(log)
 

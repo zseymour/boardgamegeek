@@ -36,6 +36,7 @@ html_parser = hp.HTMLParser()
 class BoardGameGeekNetworkAPI(object):
     COLLECTION_FETCH_RETRIES = 5
     COLLECTION_FETCH_DELAY = 5
+    GUILD_MEMBERS_PER_PAGE = 25
 
     def __init__(self, api_endpoint, cache=None):
 
@@ -72,42 +73,75 @@ class BoardGameGeekNetworkAPI(object):
             raise BoardGameGeekAPIError("response didn't contain the game id")
         return game_id
 
-    def guild(self, gid):
+    def guild(self, guild_id, progress=None):
+        """
+        Retrieves details about a guild
+
+        :param guild_id: The ID of the guild
+        :param progress: Optional progress callback for member fetching
+        :return: a Guild object containing the details
+        """
         root = get_parsed_xml_response(self.requests_session,
                                        self._guild_api_url,
-                                       params={"id": gid, "members": 1})
+                                       params={"id": guild_id, "members": 1})
 
         if "name" not in root.attrib:
-            log.warn(u"unable to get guild information (name not found)".format(gid))
+            log.warn(u"unable to get guild information (name not found)".format(guild_id))
             return None
 
         kwargs = {"name": root.attrib["name"],
-                  "gid": gid,
+                  "created": root.attrib.get("created"),
+                  "id": guild_id,
                   "members": []}
+
+        # grab initial info from first page
+        for tag in ["category", "website", "manager"]:
+            kwargs[tag] = xml_subelement_text(root, tag)
+
+        description = xml_subelement_text(root, "description")
+        if description is not None:
+            kwargs["description"] = html_parser.unescape(description)
+        else:
+            kwargs["description"] = None
+
+        # Grab location info
+        location = root.find("location")
+        if location is not None:
+            kwargs["city"] = xml_subelement_text(location, "city")
+            kwargs["country"] = xml_subelement_text(location, "country")
+            kwargs["postalcode"] = xml_subelement_text(location, "postalcode")
+            kwargs["addr1"] = xml_subelement_text(location, "addr1")
+            kwargs["addr2"] = xml_subelement_text(location, "addr2")
+            kwargs["stateorprovince"] = xml_subelement_text(location, "stateorprovince")
 
         el = root.find(".//members[@count]")
         count = int(el.attrib["count"])
-        total_pages = int(2 + (count / 25))   # 25 memebers per page according to BGGAPI
 
-        for page in range(1, total_pages):
+        # add 1 to the division because in python the result is an integer,
+        # rounded down.
+        total_pages = 1 + count / BoardGameGeekNetworkAPI.GUILD_MEMBERS_PER_PAGE
 
+        log.debug("there are {} members in this guild => {} pages".format(count, total_pages))
+
+        # first page of members has already been retrieved with the initial call
+        for el in root.findall(".//member"):
+            kwargs["members"].append(el.attrib["name"])
+
+        if progress is not None:
+            progress(len(kwargs["members"]), count)
+
+        # continue from page #2 up to total_pages + 1, since pages on BGG start from 1
+        for page in range(2, total_pages + 1):
+            log.debug("fetching page {} of {}".format(page, total_pages))
             root = get_parsed_xml_response(self.requests_session,
                                            self._guild_api_url,
-                                           params={"id": gid, "members": 1, "page": page})
-            log.debug("fetched guild page {} of {}".format(page, total_pages))
+                                           params={"id": guild_id, "members": 1, "page": page})
 
             for el in root.findall(".//member"):
                 kwargs["members"].append(el.attrib["name"])
 
-            if page == 1:
-                # grab initial info from first page
-                for tag in ["category", "website", "manager"]:
-                    kwargs[tag] = xml_subelement_text(root, tag)
-                description = xml_subelement_text(root, "description")
-                if description is not None:
-                    kwargs["description"] = html_parser.unescape(description)
-                else:
-                    kwargs["description"] = None
+            if progress is not None:
+                progress(len(kwargs["members"]), count)
 
         return Guild(kwargs)
 
