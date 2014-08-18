@@ -223,7 +223,7 @@ class BoardGame(DictObject):
 
     @property
     def max_players(self):
-        return self._data.get("max_players")
+        return self._data.get("maxplayers")
 
     @property
     def playing_time(self):
