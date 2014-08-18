@@ -158,8 +158,12 @@ class BoardGameGeekNetworkAPI(object):
                                        self._user_api_url,
                                        params={"name": name, "buddies": 1, "guilds": 1})
 
-        kwargs = {"name": root.attrib["name"],
-                  "id": int(root.attrib["id"])}
+        # when the user is not found, the API returns an response, but with most fields empty. id is empty too
+        try:
+            kwargs = {"name": root.attrib["name"],
+                      "id": int(root.attrib["id"])}
+        except:
+            raise BoardGameGeekError("invalid user name")
 
         for i in ["firstname", "lastname", "avatarlink", "lastlogin",
                   "stateorprovince", "country", "webaddress", "xboxaccount",
