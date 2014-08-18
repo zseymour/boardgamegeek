@@ -41,13 +41,13 @@ def xml_subelement_attr(xml_elem, subelement, convert=None, attribute="value"):
     if xml_elem is None:
         return None
 
+    value = None
     subel = xml_elem.find(subelement)
     if subel is not None:
         value = subel.attrib.get(attribute)
         if convert and value is not None:
             value = convert(value)
-        return value
-    return None
+    return value
 
 
 def xml_subelement_attr_list(xml_elem, subelement, convert=None, attribute="value"):
@@ -90,13 +90,13 @@ def xml_subelement_text(xml_elem, subelement, convert=None):
     if xml_elem is None:
         return None
 
+    text = None
     subel = xml_elem.find(subelement)
     if subel is not None:
         text = subel.text
         if convert and text is not None:
             text = convert(text)
-        return text
-    return None
+    return text
 
 
 def get_parsed_xml_response(requests_session, url, params=None):
