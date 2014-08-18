@@ -1,0 +1,12 @@
+0.0.9
+=====
+
+Features
+
+    * Added support for retrieving an user's buddy and guild lists
+    * Started implementing some basic unit tests
+  
+Bugfixes
+
+    * Fixed handling of non-existing user names
+    * Properly returning the maximum number of players for a game

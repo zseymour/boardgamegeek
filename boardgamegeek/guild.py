@@ -1,7 +1,20 @@
 from .utils import DictObject
 
 
-class Guild(DictObject):
+class BasicGuild(DictObject):
+    """
+    Basic guild information, name and id.
+    """
+    @property
+    def name(self):
+        return self._data.get("name")
+
+    @property
+    def id(self):
+        return self._data.get("id")
+
+
+class Guild(BasicGuild):
 
     def _format(self, log):
         log.info(u"id         : {}".format(self.id))
@@ -63,14 +76,6 @@ class Guild(DictObject):
     @property
     def category(self):
         return self._data.get("category")
-
-    @property
-    def name(self):
-        return self._data.get("name")
-
-    @property
-    def id(self):
-        return self._data.get("id")
 
     @property
     def members(self):
