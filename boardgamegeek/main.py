@@ -23,10 +23,13 @@ def main():
         logging.getLogger("requests").setLevel(logging.WARNING)
         logging.basicConfig(level=logging.INFO)
 
+    def progress_cb(items, total):
+        log.debug("fetching items: {}% complete".format(items*100/total))
+
     bgg = BoardGameGeek()
 
     if args.user:
-        user = bgg.user(args.user)
+        user = bgg.user(args.user, progress=progress_cb)
         if user:
             user._format(log)
 
@@ -36,10 +39,7 @@ def main():
             game._format(log)
 
     if args.guild:
-        def fetch_cb(members, total):
-            log.debug("fetching members: {}% complete".format(members*100/total))
-
-        guild = bgg.guild(args.guild, progress=fetch_cb)
+        guild = bgg.guild(args.guild, progress=progress_cb)
         if guild:
             guild._format(log)
 
