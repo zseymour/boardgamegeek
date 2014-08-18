@@ -1,15 +1,45 @@
+from copy import copy
+
+from .guild import BasicGuild
 from .utils import DictObject
 
 
-class User(DictObject):
+class BasicUser(DictObject):
+    """
+    A basic user which holds information common to all user types
+    """
+    @property
+    def name(self):
+        return self._data.get("name")
 
-    # FIXME: look for an user with top10 and hot10
+    @property
+    def id(self):
+        return self._data.get("id")
+
+
+class User(BasicUser):
+    """
+    Regular user
+    """
+    def __init__(self, data):
+        kw = copy(data)
+        if "buddies" not in kw:
+            kw["buddies"] = []
+        if "guilds" not in kw:
+            kw["guilds"] = []
+        super(User, self).__init__(kw)
 
     def __unicode__(self):
         return u"user: {} {}".format(self.firstname, self.lastname)
 
     def __repr__(self):
         return u"username: {} (id: {})".format(self.name, self.id).encode("utf-8")
+
+    def add_buddy(self, data):
+        self._data["buddies"].append(data)
+
+    def add_guild(self, data):
+        self._data["guilds"].append(data)
 
     def _format(self, log):
         log.info(u"id          : {}".format(self.id))
@@ -27,13 +57,34 @@ class User(DictObject):
         log.info(u"last login  : {}".format(self.last_login))
         log.info(u"trade rating: {}".format(self.trade_rating))
 
-    @property
-    def name(self):
-        return self._data.get("name")
+        log.info(u"user has {} buddies{}".format(self.total_buddies,
+                                                 " (forever alone :'( )" if self.total_buddies == 0 else ""))
+        buddies = self.buddies
+        if buddies:
+            for b in buddies:
+                log.info(u"- {}".format(b.name))
+
+        log.info(u"user is member in {} guilds".format(self.total_guilds))
+        guilds = self.guilds
+        if guilds:
+            for g in guilds:
+                log.info(u"- {}".format(g.name))
 
     @property
-    def id(self):
-        return self._data.get("id")
+    def total_buddies(self):
+        return len(self._data["buddies"])
+
+    @property
+    def total_guilds(self):
+        return len(self._data["guilds"])
+
+    @property
+    def buddies(self):
+        return [BasicUser(x) for x in self._data["buddies"]]
+
+    @property
+    def guilds(self):
+        return [BasicGuild(x) for x in self._data["guilds"]]
 
     @property
     def firstname(self):

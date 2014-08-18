@@ -36,7 +36,8 @@ html_parser = hp.HTMLParser()
 class BoardGameGeekNetworkAPI(object):
     COLLECTION_FETCH_RETRIES = 5
     COLLECTION_FETCH_DELAY = 5
-    GUILD_MEMBERS_PER_PAGE = 25
+    GUILD_MEMBERS_PER_PAGE = 25         # how many guild members are per page when listing guild members
+    USER_GUILD_BUDDIES_PER_PAGE = 100   # how many buddies/guilds are per page when retrieving user info
 
     def __init__(self, api_endpoint, cache=None):
 
@@ -145,11 +146,17 @@ class BoardGameGeekNetworkAPI(object):
 
         return Guild(kwargs)
 
-    def user(self, name):
+    def user(self, name, progress=None):
+        """
+        Retrieves details about an user
+
+        :param name: user's login name
+        :return:
+        """
 
         root = get_parsed_xml_response(self.requests_session,
                                        self._user_api_url,
-                                       params={"name": name})
+                                       params={"name": name, "buddies": 1, "guilds": 1})
 
         kwargs = {"name": root.attrib["name"],
                   "id": int(root.attrib["id"])}
@@ -161,7 +168,56 @@ class BoardGameGeekNetworkAPI(object):
 
         kwargs["yearregistered"] = xml_subelement_attr(root, "yearregistered", convert=int)
 
-        return User(kwargs)
+        user = User(kwargs)
+
+        total_buddies = 0
+        total_guilds = 0
+
+        buddies = root.find("buddies")
+        if buddies is not None:
+            total_buddies = int(buddies.attrib["total"])
+            if total_buddies > 0:
+                # add the buddies from the first page
+                for buddy in buddies.findall(".//buddy"):
+                    user.add_buddy({"name": buddy.attrib["name"],
+                                    "id": buddy.attrib["id"]})
+
+        guilds = root.find("guilds")
+        if guilds is not None:
+            total_guilds = int(guilds.attrib["total"])
+            if total_guilds > 0:
+                # add the guilds from the first page
+                for guild in guilds.findall(".//guild"):
+                    user.add_guild({"name": guild.attrib["name"],
+                                    "id": guild.attrib["id"]})
+
+        # determine how many pages we should fetch in order to retrieve a complete buddy/guild list
+        max_items_to_fetch = max(total_buddies, total_guilds)
+        total_pages = 1 + max_items_to_fetch / BoardGameGeekNetworkAPI.USER_GUILD_BUDDIES_PER_PAGE
+
+        def _progress_cb():
+            if progress is not None:
+                progress(max(user.total_buddies, user.total_guilds), max_items_to_fetch)
+
+        _progress_cb()
+
+        # repeat the API call and retrieve everything
+        for page in range(2, total_pages + 1):
+            root = get_parsed_xml_response(self.requests_session,
+                                           self._user_api_url,
+                                           params={"name": name, "buddies": 1, "guilds": 1, "page": page})
+
+            for buddy in root.findall(".//buddy"):
+                user.add_buddy({"name": buddy.attrib["name"],
+                                "id": buddy.attrib["id"]})
+
+            for guild in root.findall(".//guild"):
+                user.add_guild({"name": guild.attrib["name"],
+                                "id": guild.attrib["id"]})
+
+            _progress_cb()
+
+        return user
 
     def collection(self, name):
         retry = BoardGameGeekNetworkAPI.COLLECTION_FETCH_RETRIES
