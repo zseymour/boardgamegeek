@@ -3,6 +3,9 @@ boardgamegeek - A Python API for boardgamegeek.com
 ==================================================
 
 
+.. image:: https://travis-ci.org/lcosmin/boardgamegeek.svg?branch=master
+    :target: https://travis-ci.org/lcosmin/boardgamegeek
+
 Introduction
 ============
 
