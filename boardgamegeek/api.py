@@ -185,7 +185,7 @@ class BoardGameGeekNetworkAPI(object):
             if total_buddies > 0:
                 # add the buddies from the first page
                 for buddy in buddies.findall(".//buddy"):
-                    user.add_buddy({"name": buddy.attrib["name"],
+                    user._add_buddy({"name": buddy.attrib["name"],
                                     "id": buddy.attrib["id"]})
 
         guilds = root.find("guilds")
@@ -194,7 +194,7 @@ class BoardGameGeekNetworkAPI(object):
             if total_guilds > 0:
                 # add the guilds from the first page
                 for guild in guilds.findall(".//guild"):
-                    user.add_guild({"name": guild.attrib["name"],
+                    user._add_guild({"name": guild.attrib["name"],
                                     "id": guild.attrib["id"]})
 
         # determine how many pages we should fetch in order to retrieve a complete buddy/guild list
@@ -214,11 +214,11 @@ class BoardGameGeekNetworkAPI(object):
                                            params={"name": name, "buddies": 1, "guilds": 1, "page": page})
 
             for buddy in root.findall(".//buddy"):
-                user.add_buddy({"name": buddy.attrib["name"],
+                user._add_buddy({"name": buddy.attrib["name"],
                                 "id": buddy.attrib["id"]})
 
             for guild in root.findall(".//guild"):
-                user.add_guild({"name": guild.attrib["name"],
+                user._add_guild({"name": guild.attrib["name"],
                                 "id": guild.attrib["id"]})
 
             _progress_cb()
@@ -280,7 +280,7 @@ class BoardGameGeekNetworkAPI(object):
                                                                     "wishlist",
                                                                     "wishlistpriority"]})
 
-            collection.add_game(game)
+            collection._add_game(game)
 
         return collection
 

@@ -24,7 +24,7 @@ class Collection(DictObject):
             i._format(log)
             log.info("---------------------")
 
-    def add_game(self, game):
+    def _add_game(self, game):
         # Collections can have duplicate elements (different collection ids), so don't add the same thing multiple times
         if game["id"] not in self.game_ids:
             self._data["items"].append(game)
