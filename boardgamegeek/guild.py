@@ -100,3 +100,7 @@ class Guild(BasicGuild):
 
     def __repr__(self):
         return "guild: {} (id: {})".format(self.name, self.id)
+
+    def __iter__(self):
+        for member in self._data.get("members"):
+            yield member
