@@ -1,5 +1,6 @@
 from __future__ import unicode_literals
 from copy import copy
+from collections import Iterator
 
 from .games import CollectionBoardGame
 from .utils import DictObject
@@ -48,6 +49,6 @@ class Collection(DictObject):
     def items(self):
         return [CollectionBoardGame(x) for x in self._data["items"]]
 
-    def iteritems(self):
+    def __iter__(self):
         for item in self._data["items"]:
             yield CollectionBoardGame(item)
