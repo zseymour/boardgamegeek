@@ -35,7 +35,7 @@ class User(BasicUser):
         return "user: {} {}".format(self.firstname, self.lastname)
 
     def __repr__(self):
-        return "username: {} (id: {})".format(self.name, self.id).encode("utf-8")
+        return "username: {} (id: {})".format(self.name, self.id)
 
     def add_buddy(self, data):
         self._data["buddies"].append(data)

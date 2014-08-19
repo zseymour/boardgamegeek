@@ -92,7 +92,7 @@ class BoardGame(DictObject):
         return "{}".format(self.name)
 
     def __repr__(self):
-        return "boardgame: {} (id: {})".format(self.name, self.id).encode("utf-8")
+        return "boardgame: {} (id: {})".format(self.name, self.id)
 
     def _format(self, log):
         log.info("boardgame id      : {}".format(self.id))

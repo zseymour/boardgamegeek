@@ -99,4 +99,4 @@ class Guild(BasicGuild):
         return "BGG guild: {}".format(self.name, self.id)
 
     def __repr__(self):
-        return "guild: {} (id: {})".format(self.name, self.id).encode("utf-8")
+        return "guild: {} (id: {})".format(self.name, self.id)
