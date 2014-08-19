@@ -1,5 +1,5 @@
+from __future__ import unicode_literals
 from copy import copy
-from collections import Iterable
 
 from .games import CollectionBoardGame
 from .utils import DictObject
@@ -15,10 +15,10 @@ class Collection(DictObject):
         super(Collection, self).__init__(kw)
 
     def _format(self, log):
-        log.info(u"owner    : {}".format(self.owner))
-        log.info(u"size     : {} items".format(len(self)))
+        log.info("owner    : {}".format(self.owner))
+        log.info("size     : {} items".format(len(self)))
 
-        log.info(u"items")
+        log.info("items")
 
         for i in self.iteritems():
             i._format(log)

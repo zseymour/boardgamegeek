@@ -1,15 +1,57 @@
 # coding: utf-8
+from __future__ import unicode_literals
 
+import os
+import tempfile
 import pytest
 
 from boardgamegeek import BoardGameGeek, BoardGameGeekError
 
 progress_called = False
 
+TEST_VALID_USER = "fagentu007"
+TEST_INVALID_USER = "someOneThatHopefullyWontExistPlsGuysDontCreateThisUser"
+
 
 def progress_cb(items, total):
     global progress_called
     progress_called = True
+
+
+def test_caching():
+
+    # test that we can disable caching
+    bgg = BoardGameGeek(cache=None)
+
+    user = bgg.user(TEST_VALID_USER)
+
+    assert user is not None
+    assert user.name == TEST_VALID_USER
+
+    # test that we can use the SQLite cache
+    # generate a temporary file
+    fd, name = tempfile.mkstemp(suffix=".cache")
+
+    # close the file and unlink it, we only need the temporary name
+    os.close(fd)
+    os.unlink(name)
+
+    assert not os.path.isfile(name)
+
+    with pytest.raises(BoardGameGeekError):
+        # invalid value for the ttl parameter
+        bgg = BoardGameGeek(cache="sqlite://{}?ttl=blabla&fast_save=0".format(name))
+
+    bgg = BoardGameGeek(cache="sqlite://{}?ttl=1000".format(name))
+
+    user = bgg.user(TEST_VALID_USER)
+    assert user is not None
+    assert user.name == TEST_VALID_USER
+
+    assert os.path.isfile(name)
+
+    # clean up..
+    os.unlink(name)
 
 
 def test_user_fetch():
@@ -20,11 +62,11 @@ def test_user_fetch():
     #
     bgg = BoardGameGeek()
 
-    user = bgg.user("fagentu007", progress=progress_cb)
+    user = bgg.user(TEST_VALID_USER, progress=progress_cb)
 
     assert user is not None
-    assert user.name == "fagentu007"
-    assert user.id == 818216
+    assert user.name == TEST_VALID_USER
+    assert type(user.id) == int
     assert progress_called
 
     assert type(user.buddies) == list
@@ -34,7 +76,7 @@ def test_user_fetch():
 
     # test with some user that doesn't exist
     with pytest.raises(BoardGameGeekError):
-        bgg.user("someOneThatHopefullyWontExistPlsGuysDontCreateThisUser")
+        bgg.user(TEST_INVALID_USER)
 
 
 def test_game_fetch():
@@ -63,21 +105,22 @@ def test_game_fetch():
                                "Hasbro", "Jumbo", "Kidconnection", "Kids Fun Factory",
                                "MB Juegos", "MB Spellen", "MB Spiele", "Milton Bradley", "Tri-ang"]
 
-    assert game.alternative_names == [u"Bedrock",
-                                      u"Enredos",
-                                      u"The Jungle Book Twister",
-                                      u"Let's Twist Again",
-                                      u"Lil' Twister",
-                                      u"Melktwister",
-                                      u"Pretzel",
-                                      u"Twist",
-                                      u"Twister Kersteditie",
-                                      u"Twister Pink",
-                                      u"Wygibajtus",
-                                      u"Твистер",
-                                      u"פלונטר" ]
+    assert game.alternative_names == ["Bedrock",
+                                      "Enredos",
+                                      "The Jungle Book Twister",
+                                      "Let's Twist Again",
+                                      "Lil' Twister",
+                                      "Melktwister",
+                                      "Pretzel",
+                                      "Twist",
+                                      "Twister Kersteditie",
+                                      "Twister Pink",
+                                      "Wygibajtus",
+                                      "Твистер",
+                                      "פלונטר" ]
 
     # some not so exact assertions
     assert game.users_rated >= 1965
     assert 0.0 <= game.rating_average <= 10.0
     assert 0.0 <= game.rating_bayes_average <= 10.0
+

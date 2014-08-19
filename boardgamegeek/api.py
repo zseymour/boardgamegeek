@@ -7,6 +7,8 @@
 
 .. moduleauthor:: Cosmin Luță <q4break@gmail.com>
 """
+from __future__ import unicode_literals
+
 import logging
 import requests
 from time import sleep
@@ -57,7 +59,7 @@ class BoardGameGeekNetworkAPI(object):
         if game_type not in ["rpgitem", "videogame", "boardgame", "boardgameexpansion"]:
             raise BoardGameGeekError("invalid game type: {}".format(game_type))
 
-        log.debug(u"getting game id of '{}'".format(name))
+        log.debug("getting game id of '{}'".format(name))
 
         root = get_parsed_xml_response(self.requests_session,
                                        self._search_api_url,
@@ -66,7 +68,7 @@ class BoardGameGeekNetworkAPI(object):
         # game_type can be rpgitem, videogame, boardgame, or boardgameexpansion
         game = root.find(".//item[@type='{}']".format(game_type))
         if game is None:
-            log.warn(u"game not found: {}".format(name))
+            log.warn("game not found: {}".format(name))
             return None
 
         game_id = int(game.attrib.get("id"))
@@ -87,7 +89,7 @@ class BoardGameGeekNetworkAPI(object):
                                        params={"id": guild_id, "members": 1})
 
         if "name" not in root.attrib:
-            log.warn(u"unable to get guild information (name not found)".format(guild_id))
+            log.warn("unable to get guild information (name not found)".format(guild_id))
             return None
 
         kwargs = {"name": root.attrib["name"],
@@ -120,7 +122,7 @@ class BoardGameGeekNetworkAPI(object):
 
         # add 1 to the division because in python the result is an integer,
         # rounded down.
-        total_pages = 1 + count / BoardGameGeekNetworkAPI.GUILD_MEMBERS_PER_PAGE
+        total_pages = 1 + count // BoardGameGeekNetworkAPI.GUILD_MEMBERS_PER_PAGE
 
         log.debug("there are {} members in this guild => {} pages".format(count, total_pages))
 
@@ -197,7 +199,7 @@ class BoardGameGeekNetworkAPI(object):
 
         # determine how many pages we should fetch in order to retrieve a complete buddy/guild list
         max_items_to_fetch = max(total_buddies, total_guilds)
-        total_pages = 1 + max_items_to_fetch / BoardGameGeekNetworkAPI.USER_GUILD_BUDDIES_PER_PAGE
+        total_pages = 1 + max_items_to_fetch // BoardGameGeekNetworkAPI.USER_GUILD_BUDDIES_PER_PAGE
 
         def _progress_cb():
             if progress is not None:
@@ -317,7 +319,7 @@ class BoardGameGeek(BoardGameGeekNetworkAPI):
                 log.error("couldn't find any game named '{}'".format(name))
                 return None
 
-        log.debug(u"retrieving game id {}{}".format(game_id, u" ({})".format(name) if name is not None else ""))
+        log.debug("retrieving game id {}{}".format(game_id, " ({})".format(name) if name is not None else ""))
 
         root = get_parsed_xml_response(self.requests_session,
                                        self._thing_api_url,
@@ -326,8 +328,8 @@ class BoardGameGeek(BoardGameGeekNetworkAPI):
         # xml is structured like <items blablabla><item>..
         root = root.find("item")
         if root is None:
-            msg = u"error parsing game data for game id: {}{}".format(game_id,
-                                                                      u" ({})".format(name) if name is not None else "")
+            msg = "error parsing game data for game id: {}{}".format(game_id,
+                                                                      " ({})".format(name) if name is not None else "")
             raise BoardGameGeekAPIError(msg)
 
         kwargs = {"id": game_id,

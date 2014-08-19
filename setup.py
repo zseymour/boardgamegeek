@@ -37,7 +37,7 @@ setup(
     url="https://github.com/lcosmin/boardgamegeek",
     tests_require=tests_require,
     extras_require={'test': tests_require},
-    cmdclass = {'test': PyTest},
+    cmdclass={'test': PyTest},
     classifiers=[
         "Programming Language :: Python",
         "License :: OSI Approved :: BSD License",
@@ -47,8 +47,8 @@ setup(
         "Topic :: Games/Entertainment :: Board Games",
         "Topic :: Internet :: WWW/HTTP :: Dynamic Content",
     ],
-    install_requires=["requests",
-                      "requests-cache"],
+    install_requires=["requests>=2.3.0",
+                      "requests-cache>=0.4.4"],
     entry_points={
         "console_scripts": [
             "boardgamegeek = boardgamegeek.main:main"

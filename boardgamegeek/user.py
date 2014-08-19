@@ -1,3 +1,5 @@
+from __future__ import unicode_literals
+
 from copy import copy
 
 from .guild import BasicGuild
@@ -30,10 +32,10 @@ class User(BasicUser):
         super(User, self).__init__(kw)
 
     def __unicode__(self):
-        return u"user: {} {}".format(self.firstname, self.lastname)
+        return "user: {} {}".format(self.firstname, self.lastname)
 
     def __repr__(self):
-        return u"username: {} (id: {})".format(self.name, self.id).encode("utf-8")
+        return "username: {} (id: {})".format(self.name, self.id).encode("utf-8")
 
     def add_buddy(self, data):
         self._data["buddies"].append(data)
@@ -42,33 +44,33 @@ class User(BasicUser):
         self._data["guilds"].append(data)
 
     def _format(self, log):
-        log.info(u"id          : {}".format(self.id))
-        log.info(u"login name  : {}".format(self.name))
-        log.info(u"first name  : {}".format(self.firstname))
-        log.info(u"last name   : {}".format(self.lastname))
-        log.info(u"state       : {}".format(self.state))
-        log.info(u"country     : {}".format(self.country))
-        log.info(u"home page   : {}".format(self.homepage))
-        log.info(u"avatar      : {}".format(self.avatar))
-        log.info(u"xbox acct   : {}".format(self.xbox_account))
-        log.info(u"wii acct    : {}".format(self.wii_account))
-        log.info(u"steam acct  : {}".format(self.steam_account))
-        log.info(u"psn acct    : {}".format(self.psn_account))
-        log.info(u"last login  : {}".format(self.last_login))
-        log.info(u"trade rating: {}".format(self.trade_rating))
+        log.info("id          : {}".format(self.id))
+        log.info("login name  : {}".format(self.name))
+        log.info("first name  : {}".format(self.firstname))
+        log.info("last name   : {}".format(self.lastname))
+        log.info("state       : {}".format(self.state))
+        log.info("country     : {}".format(self.country))
+        log.info("home page   : {}".format(self.homepage))
+        log.info("avatar      : {}".format(self.avatar))
+        log.info("xbox acct   : {}".format(self.xbox_account))
+        log.info("wii acct    : {}".format(self.wii_account))
+        log.info("steam acct  : {}".format(self.steam_account))
+        log.info("psn acct    : {}".format(self.psn_account))
+        log.info("last login  : {}".format(self.last_login))
+        log.info("trade rating: {}".format(self.trade_rating))
 
-        log.info(u"user has {} buddies{}".format(self.total_buddies,
+        log.info("user has {} buddies{}".format(self.total_buddies,
                                                  " (forever alone :'( )" if self.total_buddies == 0 else ""))
         buddies = self.buddies
         if buddies:
             for b in buddies:
-                log.info(u"- {}".format(b.name))
+                log.info("- {}".format(b.name))
 
-        log.info(u"user is member in {} guilds".format(self.total_guilds))
+        log.info("user is member in {} guilds".format(self.total_guilds))
         guilds = self.guilds
         if guilds:
             for g in guilds:
-                log.info(u"- {}".format(g.name))
+                log.info("- {}".format(g.name))
 
     @property
     def total_buddies(self):
