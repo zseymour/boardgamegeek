@@ -88,7 +88,15 @@ Changelog
 0.0.10
 ------
 
+Features
+
   * Updated documentation
+  * Improved Python 3.x compatibility (using unicode_literals)
+  * Added Travis integration
+
+Bugfixes
+
+  * Fixed float division for Python 3.x
 
 0.0.9
 -----
