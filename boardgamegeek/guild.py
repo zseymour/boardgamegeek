@@ -95,8 +95,8 @@ class Guild(BasicGuild):
     def website(self):
         return self._data.get("website")
 
-    def __unicode__(self):
-        return "BGG guild: {}".format(self.name, self.id)
+    def __str__(self):
+        return "BGG Guild: {}".format(self.name, self.id)
 
     def __repr__(self):
         return "guild: {} (id: {})".format(self.name, self.id)

@@ -10,8 +10,8 @@ class CollectionBoardGame(DictObject):
     also contains some user-specific information
     """
 
-    def __unicode__(self):
-        return "{}".format(self.name)
+    def __str__(self):
+        return "Boardgame: {}".format(self.name)
 
     def __repr__(self):
         return "boardgame: {} (id: {})".format(self.name, self.id).encode("utf-8")
@@ -88,8 +88,8 @@ class CollectionBoardGame(DictObject):
 
 class BoardGame(DictObject):
 
-    def __unicode__(self):
-        return "{}".format(self.name)
+    def __str__(self):
+        return "Boardgame: {}".format(self.name)
 
     def __repr__(self):
         return "boardgame: {} (id: {})".format(self.name, self.id)

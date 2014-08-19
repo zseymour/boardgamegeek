@@ -30,7 +30,7 @@ class Collection(DictObject):
             self._data["items"].append(game)
             self.__game_ids.add(game["id"])
 
-    def __unicode__(self):
+    def __str__(self):
         return "{}'s collection, {} items".format(self.username, len(self.games))
 
     def __len__(self):

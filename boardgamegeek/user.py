@@ -31,8 +31,8 @@ class User(BasicUser):
             kw["guilds"] = []
         super(User, self).__init__(kw)
 
-    def __unicode__(self):
-        return "user: {} {}".format(self.firstname, self.lastname)
+    def __str__(self):
+        return "User: {} {}".format(self.firstname, self.lastname)
 
     def __repr__(self):
         return "username: {} (id: {})".format(self.name, self.id)
