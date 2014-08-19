@@ -86,6 +86,17 @@ Contributions/suggestions are welcome.
 Changelog
 =========
 
+0.0.11
+------
+
+Features
+
+  * Collections and Guilds are now iterable
+
+Bugfixes
+
+  * Fixed __str__ for Collection
+
 0.0.10
 ------
 
