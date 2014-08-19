@@ -120,7 +120,7 @@ class BoardGameGeekNetworkAPI(object):
 
         # add 1 to the division because in python the result is an integer,
         # rounded down.
-        total_pages = 1 + count / BoardGameGeekNetworkAPI.GUILD_MEMBERS_PER_PAGE
+        total_pages = 1 + count // BoardGameGeekNetworkAPI.GUILD_MEMBERS_PER_PAGE
 
         log.debug("there are {} members in this guild => {} pages".format(count, total_pages))
 
@@ -197,7 +197,7 @@ class BoardGameGeekNetworkAPI(object):
 
         # determine how many pages we should fetch in order to retrieve a complete buddy/guild list
         max_items_to_fetch = max(total_buddies, total_guilds)
-        total_pages = 1 + max_items_to_fetch / BoardGameGeekNetworkAPI.USER_GUILD_BUDDIES_PER_PAGE
+        total_pages = 1 + max_items_to_fetch // BoardGameGeekNetworkAPI.USER_GUILD_BUDDIES_PER_PAGE
 
         def _progress_cb():
             if progress is not None:
