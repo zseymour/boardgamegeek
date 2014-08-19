@@ -30,8 +30,7 @@ This library exposes (as Python objects with properties) the following BoardGame
 requests-cache_ is used for locally caching replies in order to reduce the amount of requests sent to the server.
 
 .. warning::
-    At the moment, the cache is enabled by default and it's configured to save data in an Sqlite database
-    in the current directory.
+    At the moment, the cache is enabled by default and it's configured to use a memory cache only.
 
 Quick Install
 =============
@@ -65,17 +64,45 @@ Here's a quick usage example:
     ...
     安卓纪元：矩阵潜袭
 
+If you want to use the disk cache:
+
+.. code-block:: pycon
+
+    >>> bgg = BoardGameGeek(cache="sqlite:///tmp/cache.db?ttl=3600&fast_save=0")
+    >>> g = bgg.game("Celtica")
+    >>> g.id
+    21293
 
 To Do
 =====
 
 * Not all the information exposed by the official API is stored into the Python objects. Need to improve this.
 * Try to support the other sites from the boardgamegeek's family
-* Allow better control for configuring the cache
 * Improve documentation :)
 
-
 Contributions/suggestions are welcome.
+
+Changelog
+=========
+
+0.0.10
+------
+
+  * Updated documentation
+
+0.0.9
+-----
+
+Features
+
+  * Added support for retrieving an user's buddy and guild lists
+  * Started implementing some basic unit tests
+
+Bugfixes
+
+  * Fixed handling of non-existing user names
+  * Properly returning the maximum number of players for a game
+
 
 
 .. _BoardGameGeek: http://www.boardgamegeek.com

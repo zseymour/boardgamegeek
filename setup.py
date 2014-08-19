@@ -37,7 +37,7 @@ setup(
     url="https://github.com/lcosmin/boardgamegeek",
     tests_require=tests_require,
     extras_require={'test': tests_require},
-    cmdclass = {'test': PyTest},
+    cmdclass={'test': PyTest},
     classifiers=[
         "Programming Language :: Python",
         "License :: OSI Approved :: BSD License",
