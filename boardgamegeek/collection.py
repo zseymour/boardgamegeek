@@ -42,10 +42,6 @@ class Collection(DictObject):
         return self._data.get("owner")
 
     @property
-    def size(self):
-        return len(self._data["items"])
-
-    @property
     def items(self):
         return [CollectionBoardGame(x) for x in self._data["items"]]
 
