@@ -1,4 +1,6 @@
 # coding: utf-8
+from __future__ import unicode_literals
+
 import os
 import tempfile
 import pytest
@@ -103,19 +105,19 @@ def test_game_fetch():
                                "Hasbro", "Jumbo", "Kidconnection", "Kids Fun Factory",
                                "MB Juegos", "MB Spellen", "MB Spiele", "Milton Bradley", "Tri-ang"]
 
-    assert game.alternative_names == [u"Bedrock",
-                                      u"Enredos",
-                                      u"The Jungle Book Twister",
-                                      u"Let's Twist Again",
-                                      u"Lil' Twister",
-                                      u"Melktwister",
-                                      u"Pretzel",
-                                      u"Twist",
-                                      u"Twister Kersteditie",
-                                      u"Twister Pink",
-                                      u"Wygibajtus",
-                                      u"Твистер",
-                                      u"פלונטר" ]
+    assert game.alternative_names == ["Bedrock",
+                                      "Enredos",
+                                      "The Jungle Book Twister",
+                                      "Let's Twist Again",
+                                      "Lil' Twister",
+                                      "Melktwister",
+                                      "Pretzel",
+                                      "Twist",
+                                      "Twister Kersteditie",
+                                      "Twister Pink",
+                                      "Wygibajtus",
+                                      "Твистер",
+                                      "פלונטר" ]
 
     # some not so exact assertions
     assert game.users_rated >= 1965

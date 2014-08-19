@@ -1,3 +1,5 @@
+from __future__ import unicode_literals
+
 from .utils import DictObject
 
 
@@ -17,21 +19,21 @@ class BasicGuild(DictObject):
 class Guild(BasicGuild):
 
     def _format(self, log):
-        log.info(u"id         : {}".format(self.id))
-        log.info(u"name       : {}".format(self.name))
-        log.info(u"category   : {}".format(self.category))
-        log.info(u"manager    : {}".format(self.manager))
-        log.info(u"website    : {}".format(self.website))
-        log.info(u"description: {}".format(self.description))
-        log.info(u"country    : {}".format(self.country))
-        log.info(u"state      : {}".format(self.state))
-        log.info(u"city       : {}".format(self.city))
-        log.info(u"address    : {}".format(self.address))
-        log.info(u"postal code: {}".format(self.postalcode))
+        log.info("id         : {}".format(self.id))
+        log.info("name       : {}".format(self.name))
+        log.info("category   : {}".format(self.category))
+        log.info("manager    : {}".format(self.manager))
+        log.info("website    : {}".format(self.website))
+        log.info("description: {}".format(self.description))
+        log.info("country    : {}".format(self.country))
+        log.info("state      : {}".format(self.state))
+        log.info("city       : {}".format(self.city))
+        log.info("address    : {}".format(self.address))
+        log.info("postal code: {}".format(self.postalcode))
         if self.members:
-            log.info(u"{} members".format(len(self.members)))
+            log.info("{} members".format(len(self.members)))
             for i in self.members:
-                log.info(u" - {}".format(i))
+                log.info(" - {}".format(i))
 
     @property
     def country(self):
@@ -94,7 +96,7 @@ class Guild(BasicGuild):
         return self._data.get("website")
 
     def __unicode__(self):
-        return u"BGG guild: {}".format(self.name, self.id)
+        return "BGG guild: {}".format(self.name, self.id)
 
     def __repr__(self):
-        return u"guild: {} (id: {})".format(self.name, self.id).encode("utf-8")
+        return "guild: {} (id: {})".format(self.name, self.id).encode("utf-8")

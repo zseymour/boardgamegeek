@@ -1,3 +1,5 @@
+from __future__ import unicode_literals
+
 from .utils import DictObject
 
 
@@ -9,27 +11,27 @@ class CollectionBoardGame(DictObject):
     """
 
     def __unicode__(self):
-        return u"{}".format(self.name)
+        return "{}".format(self.name)
 
     def __repr__(self):
-        return u"boardgame: {} (id: {})".format(self.name, self.id).encode("utf-8")
+        return "boardgame: {} (id: {})".format(self.name, self.id).encode("utf-8")
 
     def _format(self, log):
-        log.info(u"boardgame id      : {}".format(self.id))
-        log.info(u"boardgame name    : {}".format(self.name))
+        log.info("boardgame id      : {}".format(self.id))
+        log.info("boardgame name    : {}".format(self.name))
 
-        log.info(u"last modified     : {}".format(self.lastmodified))
+        log.info("last modified     : {}".format(self.lastmodified))
 
-        log.info(u"rating            : {}".format(self.rating))
-        log.info(u"own               : {}".format(self.owned))
-        log.info(u"preordered        : {}".format(self.preordered))
-        log.info(u"previously owned  : {}".format(self.prev_owned))
-        log.info(u"want              : {}".format(self.want))
-        log.info(u"want to buy       : {}".format(self.want_to_buy))
-        log.info(u"want to play      : {}".format(self.want_to_play))
-        log.info(u"wishlist          : {}".format(self.wishlist))
-        log.info(u"wishlist priority : {}".format(self.wishlist_priority))
-        log.info(u"for trade         : {}".format(self.for_trade))
+        log.info("rating            : {}".format(self.rating))
+        log.info("own               : {}".format(self.owned))
+        log.info("preordered        : {}".format(self.preordered))
+        log.info("previously owned  : {}".format(self.prev_owned))
+        log.info("want              : {}".format(self.want))
+        log.info("want to buy       : {}".format(self.want_to_buy))
+        log.info("want to play      : {}".format(self.want_to_play))
+        log.info("wishlist          : {}".format(self.wishlist))
+        log.info("wishlist priority : {}".format(self.wishlist_priority))
+        log.info("for trade         : {}".format(self.for_trade))
 
     @property
     def lastmodified(self):
@@ -87,75 +89,75 @@ class CollectionBoardGame(DictObject):
 class BoardGame(DictObject):
 
     def __unicode__(self):
-        return u"{}".format(self.name)
+        return "{}".format(self.name)
 
     def __repr__(self):
-        return u"boardgame: {} (id: {})".format(self.name, self.id).encode("utf-8")
+        return "boardgame: {} (id: {})".format(self.name, self.id).encode("utf-8")
 
     def _format(self, log):
-        log.info(u"boardgame id      : {}".format(self.id))
-        log.info(u"boardgame name    : {}".format(self.name))
+        log.info("boardgame id      : {}".format(self.id))
+        log.info("boardgame name    : {}".format(self.name))
         if self.alternative_names:
             for i in self.alternative_names:
-                log.info(u"alternative name  : {}".format(i))
-        log.info(u"publishing year   : {}".format(self.year))
-        log.info(u"minimum players   : {}".format(self.min_players))
-        log.info(u"maximum players   : {}".format(self.max_players))
-        log.info(u"playing time      : {}".format(self.playing_time))
-        log.info(u"minimum age       : {}".format(self.min_age))
-        log.info(u"thumbnail         : {}".format(self.thumbnail))
-        log.info(u"image             : {}".format(self.image))
+                log.info("alternative name  : {}".format(i))
+        log.info("publishing year   : {}".format(self.year))
+        log.info("minimum players   : {}".format(self.min_players))
+        log.info("maximum players   : {}".format(self.max_players))
+        log.info("playing time      : {}".format(self.playing_time))
+        log.info("minimum age       : {}".format(self.min_age))
+        log.info("thumbnail         : {}".format(self.thumbnail))
+        log.info("image             : {}".format(self.image))
 
         if self.expansions:
             log.info("expansions")
             for i in self.expansions:
-                log.info(u"- {}".format(i))
+                log.info("- {}".format(i))
 
         if self.categories:
             log.info("categories")
             for i in self.categories:
-                log.info(u"- {}".format(i))
+                log.info("- {}".format(i))
 
         if self.families:
             log.info("families")
             for i in self.families:
-                log.info(u"- {}".format(i))
+                log.info("- {}".format(i))
 
         if self.mechanics:
             log.info("mechanics")
             for i in self.mechanics:
-                log.info(u"- {}".format(i))
+                log.info("- {}".format(i))
 
         if self.implementations:
             log.info("implementations")
             for i in self.implementations:
-                log.info(u"- {}".format(i))
+                log.info("- {}".format(i))
 
         if self.designers:
             log.info("designers")
             for i in self.designers:
-                log.info(u"- {}".format(i))
+                log.info("- {}".format(i))
 
         if self.artists:
             log.info("artistis")
             for i in self.artists:
-                log.info(u"- {}".format(i))
+                log.info("- {}".format(i))
 
         if self.publishers:
             log.info("publishers")
             for i in self.publishers:
-                log.info(u"- {}".format(i))
+                log.info("- {}".format(i))
 
-        log.info(u"users rated game  : {}".format(self.users_rated))
-        log.info(u"users avg rating  : {}".format(self.rating_average))
-        log.info(u"users b-avg rating: {}".format(self.rating_bayes_average))
-        log.info(u"users commented   : {}".format(self.users_commented))
-        log.info(u"users owned       : {}".format(self.users_owned))
-        log.info(u"users wanting     : {}".format(self.users_wanting))
-        log.info(u"users wishing     : {}".format(self.users_wishing))
-        log.info(u"users trading     : {}".format(self.users_trading))
-        log.info(u"ranks             : {}".format(self.ranks))
-        log.info(u"description       : {}".format(self.description))
+        log.info("users rated game  : {}".format(self.users_rated))
+        log.info("users avg rating  : {}".format(self.rating_average))
+        log.info("users b-avg rating: {}".format(self.rating_bayes_average))
+        log.info("users commented   : {}".format(self.users_commented))
+        log.info("users owned       : {}".format(self.users_owned))
+        log.info("users wanting     : {}".format(self.users_wanting))
+        log.info("users wishing     : {}".format(self.users_wishing))
+        log.info("users trading     : {}".format(self.users_trading))
+        log.info("ranks             : {}".format(self.ranks))
+        log.info("description       : {}".format(self.description))
 
     @property
     def name(self):

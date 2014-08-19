@@ -1,3 +1,4 @@
+from __future__ import unicode_literals
 import sys
 import xml.etree.ElementTree as ET
 from xml.etree.ElementTree import ParseError as ETParseError
