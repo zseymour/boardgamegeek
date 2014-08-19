@@ -26,9 +26,6 @@ class DictObject(object):
     def data(self):
         return self._data
 
-    def __str__(self):
-        return self.__unicode__().encode("utf-8")
-
 
 def xml_subelement_attr(xml_elem, subelement, convert=None, attribute="value"):
     """

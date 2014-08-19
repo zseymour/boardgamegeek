@@ -79,16 +79,36 @@ To Do
 * Not all the information exposed by the official API is stored into the Python objects. Need to improve this.
 * Try to support the other sites from the boardgamegeek's family
 * Improve documentation :)
+* Improve unit testing
 
 Contributions/suggestions are welcome.
 
 Changelog
 =========
 
+0.0.11
+------
+
+Features
+
+  * Collections and Guilds are now iterable
+
+Bugfixes
+
+  * Fixed __str__ for Collection
+
 0.0.10
 ------
 
+Features
+
   * Updated documentation
+  * Improved Python 3.x compatibility (using unicode_literals)
+  * Added Travis integration
+
+Bugfixes
+
+  * Fixed float division for Python 3.x
 
 0.0.9
 -----

@@ -11,6 +11,7 @@ progress_called = False
 
 TEST_VALID_USER = "fagentu007"
 TEST_INVALID_USER = "someOneThatHopefullyWontExistPlsGuysDontCreateThisUser"
+TEST_GUILD_ID = 669
 
 
 def progress_cb(items, total):
@@ -78,6 +79,45 @@ def test_user_fetch():
     with pytest.raises(BoardGameGeekError):
         bgg.user(TEST_INVALID_USER)
 
+    str(user)
+    repr(user)
+
+
+def test_collection_fetch():
+    bgg = BoardGameGeek()
+
+    with pytest.raises(BoardGameGeekError):
+        bgg.collection(TEST_INVALID_USER)
+
+    c = bgg.collection(TEST_VALID_USER)
+
+    assert c is not None
+    assert c.owner == TEST_VALID_USER
+    assert type(len(c)) == int
+    assert type(c.items) == list
+
+    # make sure we can iterate through the collection
+    for g in c:
+        pass
+
+    str(c)
+    repr(c)
+
+
+def test_guild_fetch():
+    bgg = BoardGameGeek()
+
+    guild = bgg.guild(TEST_GUILD_ID)
+
+    assert guild.id == TEST_GUILD_ID
+    assert guild.name == "BGG in Romana"
+
+    for member in guild:
+        pass
+
+    str(guild)
+    repr(guild)
+
 
 def test_game_fetch():
     bgg = BoardGameGeek()
@@ -124,3 +164,6 @@ def test_game_fetch():
     assert 0.0 <= game.rating_average <= 10.0
     assert 0.0 <= game.rating_bayes_average <= 10.0
 
+    # make sure no exception gets thrown
+    str(game)
+    repr(game)

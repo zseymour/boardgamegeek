@@ -31,16 +31,16 @@ class User(BasicUser):
             kw["guilds"] = []
         super(User, self).__init__(kw)
 
-    def __unicode__(self):
-        return "user: {} {}".format(self.firstname, self.lastname)
+    def __str__(self):
+        return "User: {} {}".format(self.firstname, self.lastname)
 
     def __repr__(self):
-        return "username: {} (id: {})".format(self.name, self.id).encode("utf-8")
+        return "username: {} (id: {})".format(self.name, self.id)
 
-    def add_buddy(self, data):
+    def _add_buddy(self, data):
         self._data["buddies"].append(data)
 
-    def add_guild(self, data):
+    def _add_guild(self, data):
         self._data["guilds"].append(data)
 
     def _format(self, log):
@@ -60,7 +60,7 @@ class User(BasicUser):
         log.info("trade rating: {}".format(self.trade_rating))
 
         log.info("user has {} buddies{}".format(self.total_buddies,
-                                                 " (forever alone :'( )" if self.total_buddies == 0 else ""))
+                                                " (forever alone :'( )" if self.total_buddies == 0 else ""))
         buddies = self.buddies
         if buddies:
             for b in buddies:
