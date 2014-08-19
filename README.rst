@@ -79,6 +79,7 @@ To Do
 * Not all the information exposed by the official API is stored into the Python objects. Need to improve this.
 * Try to support the other sites from the boardgamegeek's family
 * Improve documentation :)
+* Improve unit testing
 
 Contributions/suggestions are welcome.
 
