@@ -9,12 +9,8 @@ class CollectionBoardGame(DictObject):
     less information than the one retrieved via the /thing api and which
     also contains some user-specific information
     """
-
-    def __str__(self):
-        return "Boardgame: {}".format(self.name)
-
     def __repr__(self):
-        return "boardgame: {} (id: {})".format(self.name, self.id).encode("utf-8")
+        return "CollectionBoardGame (id: {})".format(self.id)
 
     def _format(self, log):
         log.info("boardgame id      : {}".format(self.id))
@@ -88,11 +84,8 @@ class CollectionBoardGame(DictObject):
 
 class BoardGame(DictObject):
 
-    def __str__(self):
-        return "Boardgame: {}".format(self.name)
-
     def __repr__(self):
-        return "boardgame: {} (id: {})".format(self.name, self.id)
+        return "BoardGame (id: {})".format(self.id)
 
     def _format(self, log):
         log.info("boardgame id      : {}".format(self.id))

@@ -4,5 +4,9 @@ python:
   - "3.2"
   - "3.3"
 install:
+  - pip install python-coveralls
   - python setup.py install
-script: py.test
+script:
+  - coverage run --source boardgamegeek -m py.test 
+after_success:
+  - coveralls

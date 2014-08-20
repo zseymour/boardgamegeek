@@ -3,6 +3,14 @@ boardgamegeek - A Python API for boardgamegeek.com
 ==================================================
 
 
+.. image:: https://travis-ci.org/lcosmin/boardgamegeek.svg?branch=master
+    :target: https://travis-ci.org/lcosmin/boardgamegeek
+
+
+.. image:: https://coveralls.io/repos/lcosmin/boardgamegeek/badge.png?branch=master
+  :target: https://coveralls.io/r/lcosmin/boardgamegeek?branch=master
+
+
 Introduction
 ============
 
@@ -85,6 +93,15 @@ Contributions/suggestions are welcome.
 
 Changelog
 =========
+
+0.0.12
+------
+
+Features
+
+  * Added some basic argument validation to prevent pointless calls to BGG's API
+  * When some object (game, user name, etc.) is not found, the functions return None instead of raising an exception
+
 
 0.0.11
 ------

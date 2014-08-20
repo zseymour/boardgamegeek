@@ -84,6 +84,12 @@ class BoardGameGeekNetworkAPI(object):
         :param progress: Optional progress callback for member fetching
         :return: a Guild object containing the details
         """
+
+        try:
+            guild_id = int(guild_id)
+        except:
+            raise BoardGameGeekError("invalid guild id")
+
         root = get_parsed_xml_response(self.requests_session,
                                        self._guild_api_url,
                                        params={"id": guild_id, "members": 1})
@@ -156,6 +162,9 @@ class BoardGameGeekNetworkAPI(object):
         :return:
         """
 
+        if not name:
+            raise BoardGameGeekError("no user name specified")
+
         root = get_parsed_xml_response(self.requests_session,
                                        self._user_api_url,
                                        params={"name": name, "buddies": 1, "guilds": 1})
@@ -165,7 +174,7 @@ class BoardGameGeekNetworkAPI(object):
             kwargs = {"name": root.attrib["name"],
                       "id": int(root.attrib["id"])}
         except:
-            raise BoardGameGeekError("invalid user name")
+            return None
 
         for i in ["firstname", "lastname", "avatarlink", "lastlogin",
                   "stateorprovince", "country", "webaddress", "xboxaccount",
@@ -197,6 +206,12 @@ class BoardGameGeekNetworkAPI(object):
                     user._add_guild({"name": guild.attrib["name"],
                                     "id": guild.attrib["id"]})
 
+
+        # TODO: it seems that the BGG API returns more results than what's specified in the documentation (they say
+        # page size is 100, but for an user with 114 friends, all buddies are there on the first page). Therefore,
+        # the algorithm needs to be changed, will keep fetching pages until we match the total number of buddies and
+        # guilds.
+
         # determine how many pages we should fetch in order to retrieve a complete buddy/guild list
         max_items_to_fetch = max(total_buddies, total_guilds)
         total_pages = 1 + max_items_to_fetch // BoardGameGeekNetworkAPI.USER_GUILD_BUDDIES_PER_PAGE
@@ -226,6 +241,17 @@ class BoardGameGeekNetworkAPI(object):
         return user
 
     def collection(self, name):
+        """
+        Retrieves the user's game collection
+
+        :param name: user name to retrieve the collection for
+        :return: Collection or None if user not found
+        :raises BoardGameGeekAPIError if there was a problem fetching the collection
+        :raises
+        """
+        if not name:
+            raise BoardGameGeekError("no user name specified")
+
         retry = BoardGameGeekNetworkAPI.COLLECTION_FETCH_RETRIES
         root = None
         found = False
@@ -249,7 +275,9 @@ class BoardGameGeekNetworkAPI(object):
         # check if there's an error (e.g. invalid username)
         error = root.find(".//error")
         if error is not None:
-            raise BoardGameGeekAPIError("API error: {}".format(xml_subelement_text(error, "message")))
+            message = xml_subelement_text(error, "message")
+            log.error("error fetching collection for {}: {}".format(name, message))
+            return None
 
         collection = Collection({"owner": name, "items": []})
 
@@ -310,7 +338,7 @@ class BoardGameGeek(BoardGameGeekNetworkAPI):
 
     def game(self, name=None, game_id=None):
 
-        if name is None and game_id is None:
+        if not name and game_id is None:
             raise BoardGameGeekError("game name or id not specified")
 
         if game_id is None:

@@ -21,7 +21,7 @@ class Collection(DictObject):
 
         log.info("items")
 
-        for i in self.iteritems():
+        for i in self:
             i._format(log)
             log.info("---------------------")
 
@@ -33,6 +33,9 @@ class Collection(DictObject):
 
     def __str__(self):
         return "{}'s collection, {} items".format(self.owner, len(self))
+
+    def __repr__(self):
+        return "Collection: (owner: {}, items: {})".format(self.owner, len(self))
 
     def __len__(self):
         return len(self._data["items"])
