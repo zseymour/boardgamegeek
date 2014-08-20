@@ -6,6 +6,11 @@ boardgamegeek - A Python API for boardgamegeek.com
 .. image:: https://travis-ci.org/lcosmin/boardgamegeek.svg?branch=master
     :target: https://travis-ci.org/lcosmin/boardgamegeek
 
+
+.. image:: https://coveralls.io/repos/lcosmin/boardgamegeek/badge.png?branch=master
+  :target: https://coveralls.io/r/lcosmin/boardgamegeek?branch=master
+
+
 Introduction
 ============
 
