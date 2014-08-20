@@ -5,8 +5,10 @@ import logging
 import os
 import tempfile
 import pytest
-
+import xml.etree.ElementTree as ET
 from boardgamegeek import BoardGameGeek, BoardGameGeekError
+import boardgamegeek.utils as bggutil
+
 
 progress_called = False
 
@@ -17,6 +19,24 @@ TEST_USER_WITH_LOTS_OF_FRIENDS = "Solamar"        # user chosen randomly (..afte
 TEST_INVALID_USER = "someOneThatHopefullyWontExistPlsGuysDontCreateThisUser"
 TEST_GAME_NAME = "Agricola"
 TEST_GAME_ID = 31260
+
+
+@pytest.fixture
+def xml():
+    xml_code = """
+    <root>
+        <node1 attr="hello1" int_attr="1">text</node1>
+        <node2 attr="hello2" int_attr="2" />
+        <list>
+            <li attr="elem1" int_attr="1" />
+            <li attr="elem2" int_attr="2" />
+            <li attr="elem3" int_attr="3" />
+            <li attr="elem4" int_attr="4" />
+        </list>
+    </root>
+    """
+    return ET.fromstring(xml_code)
+
 
 @pytest.fixture
 def bgg():
@@ -118,6 +138,7 @@ def test_get_valid_user_info(bgg, null_logger):
 
     # for coverage's sake
     user._format(null_logger)
+    assert type(user.data()) == dict
 
 
 #
@@ -154,6 +175,7 @@ def test_get_valid_users_collection(bgg, null_logger):
 
     # for coverage's sake
     collection._format(null_logger)
+    assert type(collection.data()) == dict
 
 
 #
@@ -188,6 +210,7 @@ def test_get_valid_guild_info(bgg, null_logger):
 
     # for coverage's sake
     guild._format(null_logger)
+    assert type(guild.data()) == dict
 
 
 def test_get_invalid_guild_info(bgg):
@@ -285,7 +308,67 @@ def test_get_known_game_info(bgg, null_logger):
     # for coverage's sake
     game._format(null_logger)
 
+    assert type(game.data()) == dict
+
 
 def test_get_known_game_info_by_id(bgg):
     game = bgg.game(None, game_id=TEST_GAME_ID)
     check_game(game)
+
+
+#
+# Utils testing
+#
+def test_get_xml_subelement_attr(xml):
+
+    node = bggutil.xml_subelement_attr(None, "hello")
+    assert node is None
+
+    node = bggutil.xml_subelement_attr(xml, None)
+    assert node is None
+
+    node = bggutil.xml_subelement_attr(xml, "")
+    assert node is None
+
+    node = bggutil.xml_subelement_attr(xml, "node1", attribute="attr")
+    assert node == "hello1"
+
+    node = bggutil.xml_subelement_attr(xml, "node1", attribute="int_attr", convert=int)
+    assert node == 1
+
+
+def test_get_xml_subelement_attr_list(xml):
+
+    node = bggutil.xml_subelement_attr_list(None, "list")
+    assert node is None
+
+    node = bggutil.xml_subelement_attr_list(xml, None)
+    assert node is None
+
+    node = bggutil.xml_subelement_attr_list(xml, "")
+    assert node is None
+
+    list_root = xml.find("list")
+    node = bggutil.xml_subelement_attr_list(list_root, "li", attribute="attr")
+    assert node == ["elem1", "elem2", "elem3", "elem4"]
+
+    node = bggutil.xml_subelement_attr_list(list_root, "li", attribute="int_attr", convert=int)
+    assert node == [1, 2, 3, 4]
+
+    node = bggutil.xml_subelement_attr_list(xml, "node1", attribute="attr")
+    assert node == ["hello1"]
+
+
+def test_get_xml_subelement_text(xml):
+
+    node = bggutil.xml_subelement_text(None, "node1")
+    assert node is None
+
+    node = bggutil.xml_subelement_text(xml, None)
+    assert node is None
+
+    node = bggutil.xml_subelement_text(None, "")
+    assert node is None
+
+    node = bggutil.xml_subelement_text(xml, "node1")
+    assert node == "text"
