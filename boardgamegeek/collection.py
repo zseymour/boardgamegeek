@@ -21,7 +21,7 @@ class Collection(DictObject):
 
         log.info("items")
 
-        for i in self.iteritems():
+        for i in self:
             i._format(log)
             log.info("---------------------")
 
