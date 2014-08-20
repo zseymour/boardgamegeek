@@ -89,6 +89,15 @@ Contributions/suggestions are welcome.
 Changelog
 =========
 
+0.0.12
+------
+
+Features
+
+  * Added some basic argument validation to prevent pointless calls to BGG's API
+  * When some object (game, user name, etc.) is not found, the functions return None instead of raising an exception
+
+
 0.0.11
 ------
 
