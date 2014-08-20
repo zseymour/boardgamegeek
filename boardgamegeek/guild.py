@@ -15,6 +15,12 @@ class BasicGuild(DictObject):
     def id(self):
         return self._data.get("id")
 
+    def __str__(self):
+        return "BasicGuild: {}".format(self.name)
+
+    def __repr__(self):
+        return "BasicGuild: {} (id: {})".format(self.name, self.id)
+
 
 class Guild(BasicGuild):
 
@@ -96,10 +102,10 @@ class Guild(BasicGuild):
         return self._data.get("website")
 
     def __str__(self):
-        return "BGG Guild: {}".format(self.name, self.id)
+        return "Guild: {}".format(self.name, self.id)
 
     def __repr__(self):
-        return "guild: {} (id: {})".format(self.name, self.id)
+        return "Guild: {} (id: {})".format(self.name, self.id)
 
     def __iter__(self):
         for member in self._data.get("members"):

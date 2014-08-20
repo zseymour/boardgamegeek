@@ -18,6 +18,12 @@ class BasicUser(DictObject):
     def id(self):
         return self._data.get("id")
 
+    def __str__(self):
+        return "BasicUser: {}".format(self.name)
+
+    def __repr__(self):
+        return "BasicUser: {} (id: {})".format(self.name, self.id)
+
 
 class User(BasicUser):
     """
@@ -35,7 +41,7 @@ class User(BasicUser):
         return "User: {} {}".format(self.firstname, self.lastname)
 
     def __repr__(self):
-        return "username: {} (id: {})".format(self.name, self.id)
+        return "User: {} (id: {})".format(self.name, self.id)
 
     def _add_buddy(self, data):
         self._data["buddies"].append(data)
