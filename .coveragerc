@@ -1,0 +1,8 @@
+[run]
+batch = True
+omit = boardgamegeek/main.py
+
+[report]
+ignore_errors = True
+show-missing = True
+
