@@ -9,6 +9,5 @@ install:
   - python setup.py install
 script:
   - py.test --cov boardgamegeek --cov-report term-missing --cov-report annotate --cov-config .coveragerc --cov=. test/
-  - ls -la 
 after_success:
   - coveralls
