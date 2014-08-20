@@ -4,5 +4,9 @@ python:
   - "3.2"
   - "3.3"
 install:
+  - pip install pytest-cov
+  - pip install python-coveralls
   - python setup.py install
-script: py.test
+script: py.test --cov boardgamegeek --cov-report term-missing test/
+after_success:
+  - coveralls
