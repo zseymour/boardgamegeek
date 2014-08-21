@@ -206,15 +206,12 @@ class BoardGameGeekNetworkAPI(object):
                     user._add_guild({"name": guild.attrib["name"],
                                     "id": guild.attrib["id"]})
 
+        # It seems that the BGG API can return more results than what's specified in the documentation (they say
+        # page size is 100, but for an user with 114 friends, all buddies are there on the first page).
+        # Therefore, we'll keep fetching pages until we reach the number of items we're expecting or we don't get
+        # any more data
 
-        # TODO: it seems that the BGG API returns more results than what's specified in the documentation (they say
-        # page size is 100, but for an user with 114 friends, all buddies are there on the first page). Therefore,
-        # the algorithm needs to be changed, will keep fetching pages until we match the total number of buddies and
-        # guilds.
-
-        # determine how many pages we should fetch in order to retrieve a complete buddy/guild list
         max_items_to_fetch = max(total_buddies, total_guilds)
-        total_pages = 1 + max_items_to_fetch // BoardGameGeekNetworkAPI.USER_GUILD_BUDDIES_PER_PAGE
 
         def _progress_cb():
             if progress is not None:
@@ -222,8 +219,10 @@ class BoardGameGeekNetworkAPI(object):
 
         _progress_cb()
 
-        # repeat the API call and retrieve everything
-        for page in range(2, total_pages + 1):
+        page = 2
+        while max(user.total_buddies, user.total_guilds) < max_items_to_fetch:
+            added_buddy = False
+            added_guild = False
             root = get_parsed_xml_response(self.requests_session,
                                            self._user_api_url,
                                            params={"name": name, "buddies": 1, "guilds": 1, "page": page})
@@ -231,12 +230,19 @@ class BoardGameGeekNetworkAPI(object):
             for buddy in root.findall(".//buddy"):
                 user._add_buddy({"name": buddy.attrib["name"],
                                 "id": buddy.attrib["id"]})
+                added_buddy = True
 
             for guild in root.findall(".//guild"):
                 user._add_guild({"name": guild.attrib["name"],
                                 "id": guild.attrib["id"]})
+                added_guild = True
 
             _progress_cb()
+            page += 1
+
+            if not added_buddy and not added_guild:
+                log.debug("didn't add any buddy/guild after fetching page {}, stopping here".format(page))
+                break
 
         return user
 
