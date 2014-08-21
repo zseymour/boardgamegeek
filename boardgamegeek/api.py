@@ -126,31 +126,35 @@ class BoardGameGeekNetworkAPI(object):
         el = root.find(".//members[@count]")
         count = int(el.attrib["count"])
 
-        # add 1 to the division because in python the result is an integer,
-        # rounded down.
-        total_pages = 1 + count // BoardGameGeekNetworkAPI.GUILD_MEMBERS_PER_PAGE
-
-        log.debug("there are {} members in this guild => {} pages".format(count, total_pages))
-
         # first page of members has already been retrieved with the initial call
         for el in root.findall(".//member"):
             kwargs["members"].append(el.attrib["name"])
 
-        if progress is not None:
-            progress(len(kwargs["members"]), count)
+        def _call_progress_cb():
+            if progress is not None:
+                progress(len(kwargs["members"]), count)
 
-        # continue from page #2 up to total_pages + 1, since pages on BGG start from 1
-        for page in range(2, total_pages + 1):
-            log.debug("fetching page {} of {}".format(page, total_pages))
+        page = 2
+
+        _call_progress_cb()
+
+        while len(kwargs["members"]) < count:
+            added_member = False
+            log.debug("fetching page {}".format(page))
             root = get_parsed_xml_response(self.requests_session,
                                            self._guild_api_url,
                                            params={"id": guild_id, "members": 1, "page": page})
 
             for el in root.findall(".//member"):
                 kwargs["members"].append(el.attrib["name"])
+                added_member = True
 
-            if progress is not None:
-                progress(len(kwargs["members"]), count)
+            _call_progress_cb()
+
+            page += 1
+            if not added_member:
+                # didn't add anything anymore? break
+                break
 
         return Guild(kwargs)
 
@@ -213,11 +217,11 @@ class BoardGameGeekNetworkAPI(object):
 
         max_items_to_fetch = max(total_buddies, total_guilds)
 
-        def _progress_cb():
+        def _call_progress_cb():
             if progress is not None:
                 progress(max(user.total_buddies, user.total_guilds), max_items_to_fetch)
 
-        _progress_cb()
+        _call_progress_cb()
 
         page = 2
         while max(user.total_buddies, user.total_guilds) < max_items_to_fetch:
@@ -237,7 +241,7 @@ class BoardGameGeekNetworkAPI(object):
                                 "id": guild.attrib["id"]})
                 added_guild = True
 
-            _progress_cb()
+            _call_progress_cb()
             page += 1
 
             if not added_buddy and not added_guild:
