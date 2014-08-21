@@ -8,18 +8,26 @@ import pytest
 import xml.etree.ElementTree as ET
 from boardgamegeek import BoardGameGeek, BoardGameGeekError
 import boardgamegeek.utils as bggutil
-
+import datetime
 
 progress_called = False
 
 # Kinda hard to test without having a "test" user
 TEST_VALID_USER = "fagentu007"
+TEST_VALID_USER_ID = 818216
 TEST_USER_WITH_LOTS_OF_FRIENDS = "Solamar"        # user chosen randomly (..after a long search :)) ), just needed
                                                   # someone with lots of friends :D
 TEST_INVALID_USER = "someOneThatHopefullyWontExistPlsGuysDontCreateThisUser"
+TEST_INVALID_GAME_NAME = "blablablathisgamewonteverexist"
 TEST_GAME_NAME = "Agricola"
 TEST_GAME_ID = 31260
 
+TEST_GAME_NAME_2 = "Inrah"
+TEST_GAME_ID_2 = 86084  # a game with very few plays
+
+
+TEST_GUILD_ID = 1229
+TEST_GUILD_ID_2 = 930
 
 @pytest.fixture
 def xml():
@@ -49,11 +57,15 @@ def null_logger():
     logger.setLevel(logging.ERROR)
     return logger
 
+
 def progress_cb(items, total):
     global progress_called
     progress_called = True
 
 
+#
+# Test caches
+#
 def test_no_caching():
 
     # test that we can disable caching
@@ -91,10 +103,10 @@ def test_sqlite_caching():
     # clean up..
     os.unlink(name)
 
+
 #
 # Users testing
 #
-
 def test_get_user_with_invalid_parameters(bgg):
     # test how the module reacts to unexpected parameters
     for invalid in [None, ""]:
@@ -193,10 +205,10 @@ def test_get_valid_guild_info(bgg, null_logger):
 
     progress_called = False
     # Test with a guild with a big number members so that we can cover the code that fetches the next pages
-    guild = bgg.guild(1229, progress=progress_cb)
+    guild = bgg.guild(TEST_GUILD_ID, progress=progress_cb)
 
     assert progress_called
-    assert guild.id == 1229
+    assert guild.id == TEST_GUILD_ID
     assert guild.name == "Geek Tools"
 
     assert guild.addr1 is None
@@ -214,6 +226,14 @@ def test_get_valid_guild_info(bgg, null_logger):
     guild._format(null_logger)
     assert type(guild.data()) == dict
 
+    # try to fetch a guild that also has an address besides members :D
+    guild = bgg.guild(TEST_GUILD_ID_2)
+
+    assert guild.id == TEST_GUILD_ID_2
+    assert guild.addr1 is not None
+    assert guild.addr2 is not None
+    assert guild.address == "{} {}".format(guild.addr1, guild.addr2)
+
 
 def test_get_invalid_guild_info(bgg):
     global progress_called
@@ -229,7 +249,7 @@ def test_get_invalid_guild_info(bgg):
 # Game testing
 #
 def test_get_unknown_game_info(bgg):
-    game = bgg.game("Whaaaat? An invalid game you say?")
+    game = bgg.game(TEST_INVALID_GAME_NAME)
     assert game is None
 
 
@@ -316,6 +336,82 @@ def test_get_known_game_info(bgg, null_logger):
 def test_get_known_game_info_by_id(bgg):
     game = bgg.game(None, game_id=TEST_GAME_ID)
     check_game(game)
+
+
+def test_get_game_id_by_name(bgg):
+    game_id = bgg.get_game_id(TEST_GAME_NAME)
+    assert game_id == TEST_GAME_ID
+
+
+#
+# Plays testing
+#
+def test_get_plays_with_invalid_parameters(bgg):
+    with pytest.raises(BoardGameGeekError):
+        bgg.plays(name=None, game_id=None)
+
+    with pytest.raises(BoardGameGeekError):
+        bgg.plays(name="", game_id=None)
+
+    with pytest.raises(BoardGameGeekError):
+        bgg.plays(name=None, game_id="asd")
+
+
+def test_get_plays_with_unknown_username_and_id(bgg):
+    plays = bgg.plays(name=TEST_INVALID_USER)
+    assert plays is None
+
+    # the api is a bit weird, if the game id is invalid, it still returns some answer, but of empty size
+    plays = bgg.plays(name=None, game_id=1928391829)
+    assert len(plays) == 0
+
+
+def test_get_plays_of_user(bgg, null_logger):
+    global progress_called
+
+    plays = bgg.plays(name=TEST_VALID_USER, progress=progress_cb)
+
+    assert plays.user == TEST_VALID_USER
+    assert plays.user_id == TEST_VALID_USER_ID
+    assert plays.game_id is None    # None since we got the plays for an user
+
+    for p in plays.plays:
+        assert type(p.id) == int
+        assert p.user_id == TEST_VALID_USER_ID
+        assert type(p.date) == datetime.datetime
+        assert p.quantity >= 0
+        assert p.duration >= 0
+        assert type(p.incomplete) == int
+        assert type(p.nowinstats) == int
+        assert type(p.game_id) == int
+        assert type(p.game_name) == str
+        assert type(p.comment) in [type(None), str]
+
+    plays._format(null_logger)
+
+
+def test_get_plays_of_game(bgg, null_logger):
+    global progress_called
+
+    plays = bgg.plays(game_id=TEST_GAME_ID_2, progress=progress_cb)
+
+    assert plays.user is None
+    assert plays.user_id is None
+    assert plays.game_id == TEST_GAME_ID_2
+
+    for p in plays.plays:
+        assert type(p.id) == int
+        assert type(p.user_id) == int
+        assert type(p.date) == datetime.datetime
+        assert p.quantity >= 0
+        assert p.duration >= 0
+        assert type(p.incomplete) == int
+        assert type(p.nowinstats) == int
+        assert p.game_id == TEST_GAME_ID_2
+        assert p.game_name == TEST_GAME_NAME_2
+        assert type(p.comment) in [type(None), str]
+
+    plays._format(null_logger)
 
 
 #

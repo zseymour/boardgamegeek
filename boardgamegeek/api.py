@@ -272,11 +272,20 @@ class BoardGameGeekNetworkAPI(object):
         if name:
             params = {"username": name}
         else:
-            params = {"id": game_id}
+            try:
+                params = {"id": int(game_id)}
+            except:
+                raise BoardGameGeekError("invalid game id")
 
-        root = get_parsed_xml_response(self.requests_session,
-                                       self._plays_api_url,
-                                       params=params)
+        try:
+            root = get_parsed_xml_response(self.requests_session,
+                                           self._plays_api_url,
+                                           params=params)
+        except Exception as e:
+            # The API seems to return HTML in case of an invalid username.
+            # just return None for the time being.
+            log.error("error trying to fetch plays: {}".format(e))
+            return None
 
         count = int(root.attrib["total"])   # how many plays
 
