@@ -1,6 +1,14 @@
 Changelog
 =========
 
+0.0.14
+------
+
+Changes
+
+  * The ``.last_login`` property of an :class:`boardgamegeek.user.User` object now returns a ``datetime.datetime``
+
+
 0.0.13
 ------
 
