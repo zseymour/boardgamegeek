@@ -11,6 +11,7 @@ from __future__ import unicode_literals
 
 import logging
 import requests
+import datetime
 from time import sleep
 import sys
 
@@ -26,6 +27,7 @@ from .games import BoardGame
 from .guild import Guild
 from .user import User
 from .collection import Collection
+from .plays import Plays
 from .exceptions import BoardGameGeekAPIError, BoardGameGeekError, BoardGameGeekAPIRetryError
 from .utils import xml_subelement_attr, xml_subelement_text, xml_subelement_attr_list, get_parsed_xml_response
 from .utils import get_cache_session_from_uri
@@ -47,6 +49,7 @@ class BoardGameGeekNetworkAPI(object):
         self._thing_api_url = api_endpoint + "/thing"
         self._guild_api_url = api_endpoint + "/guild"
         self._user_api_url = api_endpoint + "/user"
+        self._plays_api_url = api_endpoint + "/plays"
         self._collection_api_url = api_endpoint + "/collection"
 
         if cache:
@@ -134,9 +137,9 @@ class BoardGameGeekNetworkAPI(object):
             if progress is not None:
                 progress(len(kwargs["members"]), count)
 
-        page = 2
-
         _call_progress_cb()
+
+        page = 2
 
         while len(kwargs["members"]) < count:
             added_member = False
@@ -249,6 +252,89 @@ class BoardGameGeekNetworkAPI(object):
                 break
 
         return user
+
+    def plays(self, name=None, game_id=None, progress=None):
+        """
+        Retrieves the user's plays list
+
+        :param name: user name to retrieve the plays for
+        :param game_id: game id to retrieve the plays for
+        :return: Plays object containing all the plays
+        :raises BoardGameGeekError on errors
+
+        """
+        if not name and not game_id:
+            raise BoardGameGeekError("no user name specified")
+
+        if name and game_id:
+            raise BoardGameGeekError("can't retrieve by user and by game at the same time")
+
+        if name:
+            params = {"username": name}
+        else:
+            params = {"id": game_id}
+
+        root = get_parsed_xml_response(self.requests_session,
+                                       self._plays_api_url,
+                                       params=params)
+
+        count = int(root.attrib["total"])   # how many plays
+
+        if name:
+            plays = Plays({"username": root.attrib["username"],
+                           "user_id": int(root.attrib["userid"])})
+        else:
+            plays = Plays({"game_id": game_id})
+
+        def _add_plays(plays, root):
+            added_plays = False
+            for play in root.findall(".//play"):
+                added_plays = True
+
+                # if we're listing plays by game, each <play> has an userid. If this isn't set, we must be listing
+                # an user's collection, thus set it from plays.user_id
+                userid = int(play.attrib.get("userid", plays.user_id))
+
+                # TODO: add the game subtype too
+                kwargs = {"id": int(play.attrib["id"]),
+                          "date": datetime.datetime.strptime(play.attrib["date"], "%Y-%m-%d"),
+                          "quantity": int(play.attrib["quantity"]),
+                          "duration": int(play.attrib["length"]),
+                          "incomplete": int(play.attrib["incomplete"]),
+                          "nowinstats": int(play.attrib["nowinstats"]),
+                          "user_id": userid,
+                          "game_id": xml_subelement_attr(play, "item", attribute="objectid", convert=int),
+                          "game_name": xml_subelement_attr(play, "item", attribute="name"),
+                          "comment": xml_subelement_text(play, "comments")}
+                plays._add_play(kwargs)
+            return added_plays
+
+        _add_plays(plays, root)
+
+        def _call_progress_cb():
+            if progress is not None:
+                progress(len(plays), count)
+
+        _call_progress_cb()
+
+        page = 2
+        while len(plays) < count:
+            log.debug("fetching page {} of plays".format(page))
+
+            params["page"] = page
+
+            # fetch the next pages of plays
+            root = get_parsed_xml_response(self.requests_session,
+                                           self._plays_api_url,
+                                           params=params)
+
+            if not _add_plays(plays, root):
+                break
+
+            page += 1
+            _call_progress_cb()
+
+        return plays
 
     def collection(self, name):
         """

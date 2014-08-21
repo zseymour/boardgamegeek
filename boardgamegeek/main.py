@@ -13,6 +13,8 @@ def main():
     p.add_argument("-g", "--game", help="Query by game name")
     p.add_argument("-G", "--guild", help="Query by guild id")
     p.add_argument("-c", "--collection", help="Query user's collection")
+    p.add_argument("-p", "--plays", help="Query user's play list")
+    p.add_argument("-P", "--plays-by-game", help="Query a game's plays", type=int)
     p.add_argument("--debug", action="store_true")
 
     args = p.parse_args()
@@ -50,3 +52,12 @@ def main():
         if collection:
             collection._format(log)
 
+    if args.plays:
+        plays = bgg.plays(name=args.plays, progress=progress_cb)
+        if plays:
+            plays._format(log)
+
+    if args.plays_by_game:
+        plays = bgg.plays(game_id=args.plays_by_game, progress=progress_cb)
+        if plays:
+            plays._format(log)
