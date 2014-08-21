@@ -15,7 +15,7 @@ Introduction
 ============
 
 
-``boardgamegeek`` is a Python library which makes it easy to access data off BoardGameGeek_ using their official XML
+``boardgamegeek`` is a Python library which makes it easy to access data from BoardGameGeek_ using their official XML
 API.
 
 It's an almost completely rewritten fork of libBGG_.
@@ -24,29 +24,6 @@ It's an almost completely rewritten fork of libBGG_.
 .. warning::
     The module's API is still considered unstable at this point and it might change in the future, especially if wanting
     to add support for the other sites.
-
-Features
-========
-
-This library exposes (as Python objects with properties) the following BoardGameGeek_ entities:
-
-* Users
-* Games
-* User collections
-* Player guilds
-
-requests-cache_ is used for locally caching replies in order to reduce the amount of requests sent to the server.
-
-.. warning::
-    At the moment, the cache is enabled by default and it's configured to use a memory cache only.
-
-Quick Install
-=============
-
-To install ``boardgamegeek``, just use pip::
-
-    > pip install boardgamegeek
-
 
 Documentation
 =============
@@ -91,65 +68,7 @@ To Do
 
 Contributions/suggestions are welcome.
 
-Changelog
-=========
-
-0.0.13
-------
-
-Features
-
-  * Improved code for fetching an user's buddies and guilds
-  * Improved code for fetching guild members
-  * Added support for listing Plays by user and by game
-
-
-0.0.12
-------
-
-Features
-
-  * Added some basic argument validation to prevent pointless calls to BGG's API
-  * When some object (game, user name, etc.) is not found, the functions return None instead of raising an exception
-
-
-0.0.11
-------
-
-Features
-
-  * Collections and Guilds are now iterable
-
-Bugfixes
-
-  * Fixed __str__ for Collection
-
-0.0.10
-------
-
-Features
-
-  * Updated documentation
-  * Improved Python 3.x compatibility (using unicode_literals)
-  * Added Travis integration
-
-Bugfixes
-
-  * Fixed float division for Python 3.x
-
-0.0.9
------
-
-Features
-
-  * Added support for retrieving an user's buddy and guild lists
-  * Started implementing some basic unit tests
-
-Bugfixes
-
-  * Fixed handling of non-existing user names
-  * Properly returning the maximum number of players for a game
-
+.. include docs/changelog.rst
 
 
 .. _BoardGameGeek: http://www.boardgamegeek.com

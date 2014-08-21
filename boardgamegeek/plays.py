@@ -1,9 +1,24 @@
+# coding: utf-8
+"""
+:mod:`boardgamegeek.plays` - Classes for storing plays information
+==================================================================
+
+.. module:: boardgamegeek.plays
+   :platform: Unix, Windows
+   :synopsis: classes for storing plays information
+
+.. moduleauthor:: Cosmin Luță <q4break@gmail.com>
+
+"""
 from __future__ import unicode_literals
 from copy import copy
 from .utils import DictObject
 
 
 class PlaySession(DictObject):
+    """
+    Container for a play session information.
+    """
 
     def _format(self, log):
         log.info("play id         : {}".format(self.id))
@@ -18,6 +33,10 @@ class PlaySession(DictObject):
 
     @property
     def id(self):
+        """
+
+        :return: Returns the play session's id
+        """
         return self._data.get("id")
 
     @property

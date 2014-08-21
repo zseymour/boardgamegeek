@@ -1,3 +1,16 @@
+# coding: utf-8
+"""
+:mod:`boardgamegeek.utils` - Generic helper functions
+=====================================================
+
+.. module:: boardgamegeek.utils
+   :platform: Unix, Windows
+   :synopsis: generic helper functions
+
+.. moduleauthor:: Cosmin Luță <q4break@gmail.com>
+
+
+"""
 from __future__ import unicode_literals
 import sys
 import xml.etree.ElementTree as ET
@@ -29,12 +42,25 @@ class DictObject(object):
 
 def xml_subelement_attr(xml_elem, subelement, convert=None, attribute="value"):
     """
-    Return the value of <xml_elem><subelement attribute="THIS" /></xml_elem>
-    :param xml_elem: xml Element
-    :param subelement: Name of the subelement to retrieve
+    Search for a sub-element and return the value of its attribute.
+
+    For the following XML document:
+
+    .. code-block:: xml
+
+        <xml_elem>
+            <subelement value="THIS" />
+        </xml_elem>
+
+    a call to ``xml_subelement_attr(xml_elem, "subelement")`` would return ``"THIS"``
+
+
+    :param xml_elem: search the children nodes of this element
+    :param subelement: Name of the sub-element to search for
     :param convert: if not None, a callable to perform the conversion of this attribute to a certain object type
     :param attribute: name of the attribute to get
-    :return: value of the attribute
+    :return: value of the attribute or ``None`` in error cases
+
     """
     if xml_elem is None or not subelement:
         return None
@@ -50,18 +76,23 @@ def xml_subelement_attr(xml_elem, subelement, convert=None, attribute="value"):
 
 def xml_subelement_attr_list(xml_elem, subelement, convert=None, attribute="value"):
     """
-    Return the value of multiple subelements as a list
+    Search for sub-elements and return a list of the specified attribute.
+
+    .. code-block:: xml
+
         <xml_elem>
             <subelement value="THIS" />
             <subelement value="THIS2" />
             ...
         </xml_elem>
 
-    :param xml_elem: xml Element
-    :param subelement: name of the subelement to retrieve
+    For the above document, ["THIS", "THIS2"] will be returned
+
+    :param xml_elem: search the children nodes of this element
+    :param subelement: name of the sub-element to search for
     :param convert: if not None, a callable used to perform the conversion of this attribute to a certain object type
     :param attribute: name of the attribute to get
-    :return: list containing the values of the attributes
+    :return: list containing the values of the attributes or ``None`` in error cases
     """
     if xml_elem is None or not subelement:
         return None
@@ -79,11 +110,22 @@ def xml_subelement_attr_list(xml_elem, subelement, convert=None, attribute="valu
 
 def xml_subelement_text(xml_elem, subelement, convert=None):
     """
-    Return the text from the specified subelement
-    :param xml_elem: xml Element
+    Return the text of the specified subelement
+
+    For the document below:
+
+    .. code-block:: xml
+
+        <xml_elem>
+            <subelement>text</subelement>
+        </xml_elem>
+
+    ``"text"`` will be returned
+
+    :param xml_elem: search the children nodes of this element
     :param subelement: name of the subelement whose text will be retrieved
     :param convert: if not None, a callable used to perform the conversion of the text to a certain object type
-    :return:
+    :return: The text associated with the sub-element or ``None`` in case of error
     """
     if xml_elem is None or not subelement:
         return None
@@ -99,11 +141,14 @@ def xml_subelement_text(xml_elem, subelement, convert=None):
 
 def get_parsed_xml_response(requests_session, url, params=None):
     """
-    Returns a parsed XML
+    Downloads an XML from the specified url, parses it and returns the xml ElementTree.
 
-    :param url:
-    :param params:
-    :return:
+    :param requests_session: A Session of the ``requests`` library, used to fetch the url
+    :param url: the address where to get the XML from
+    :param params: dictionary containing the parameters which should be sent with the request
+    :return: :func:`xml.etree.ElementTree` corresponding to the XML
+    :raises BoardGameGeekAPIRetryError if this request should be retried after a short delay
+    :raises BoardGameGeekAPIError if the response couldn't be parsed
     """
     try:
         r = requests_session.get(url, params=params)

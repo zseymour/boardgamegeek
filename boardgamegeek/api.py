@@ -1,6 +1,12 @@
 # coding: utf-8
 
 """
+:mod:`boardgamegeek.api` - Core functions
+=========================================
+
+This module contains the core functionality needed to retrieve data from boardgamegeek.com and parse it into usable
+objects.
+
 .. module:: boardgamegeek.api
    :platform: Unix, Windows
    :synopsis: module handling communication with the online BGG API

@@ -7,7 +7,7 @@ Introduction
 ============
 
 
-``boardgamegeek`` is a Python library which makes it easy to access data off BoardGameGeek_ using their official XML
+``boardgamegeek`` is a Python library which makes it easy to access data from BoardGameGeek_ using their official XML
 API.
 
 It's an almost completely rewritten fork of libBGG_.
@@ -16,6 +16,15 @@ It's an almost completely rewritten fork of libBGG_.
 .. warning::
     The module's API is still considered unstable at this point and it might change in the future, especially if wanting
     to add support for the other sites.
+
+Table of Contents
+=================
+
+.. toctree::
+   :maxdepth: 2
+
+   changelog
+   modules
 
 Features
 ========
@@ -26,12 +35,14 @@ This library exposes (as Python objects with properties) the following BoardGame
 * Games
 * User collections
 * Player guilds
+* Plays
 
 requests-cache_ is used for locally caching replies in order to reduce the amount of requests sent to the server.
 
-.. warning::
-    At the moment, the cache is enabled by default and it's configured to save data in an Sqlite database
-    in the current directory.
+.. note::
+    The cache is enabled by default and it's configured to use memory only. It's also possible to use SQLite for a
+    persistent cache.
+
 
 Quick Install
 =============
@@ -71,6 +82,12 @@ To Do
 
 Contributions/suggestions are welcome.
 
+Indices and tables
+==================
+
+* :ref:`genindex`
+* :ref:`modindex`
+* :ref:`search`
 
 .. _BoardGameGeek: http://www.boardgamegeek.com
 .. _libBGG: https://github.com/philsstein/libBGG

@@ -1,3 +1,15 @@
+# coding: utf-8
+"""
+:mod:`boardgamegeek.user` - Classes for storing user information
+================================================================
+
+.. module:: boardgamegeek.user
+   :platform: Unix, Windows
+   :synopsis: classes for storing user information
+
+.. moduleauthor:: Cosmin Luță <q4break@gmail.com>
+
+"""
 from __future__ import unicode_literals
 
 from copy import copy
