@@ -22,7 +22,7 @@ class PlaySession(DictObject):
 
     @property
     def user_id(self):
-        return self._data.get("userid")
+        return self._data.get("user_id")
 
     @property
     def date(self):
