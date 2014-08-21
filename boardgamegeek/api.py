@@ -11,6 +11,7 @@ from __future__ import unicode_literals
 
 import logging
 import requests
+import datetime
 from time import sleep
 import sys
 
@@ -26,6 +27,7 @@ from .games import BoardGame
 from .guild import Guild
 from .user import User
 from .collection import Collection
+from .plays import Plays
 from .exceptions import BoardGameGeekAPIError, BoardGameGeekError, BoardGameGeekAPIRetryError
 from .utils import xml_subelement_attr, xml_subelement_text, xml_subelement_attr_list, get_parsed_xml_response
 from .utils import get_cache_session_from_uri
@@ -47,6 +49,7 @@ class BoardGameGeekNetworkAPI(object):
         self._thing_api_url = api_endpoint + "/thing"
         self._guild_api_url = api_endpoint + "/guild"
         self._user_api_url = api_endpoint + "/user"
+        self._plays_api_url = api_endpoint + "/plays"
         self._collection_api_url = api_endpoint + "/collection"
 
         if cache:
@@ -126,31 +129,35 @@ class BoardGameGeekNetworkAPI(object):
         el = root.find(".//members[@count]")
         count = int(el.attrib["count"])
 
-        # add 1 to the division because in python the result is an integer,
-        # rounded down.
-        total_pages = 1 + count // BoardGameGeekNetworkAPI.GUILD_MEMBERS_PER_PAGE
-
-        log.debug("there are {} members in this guild => {} pages".format(count, total_pages))
-
         # first page of members has already been retrieved with the initial call
         for el in root.findall(".//member"):
             kwargs["members"].append(el.attrib["name"])
 
-        if progress is not None:
-            progress(len(kwargs["members"]), count)
+        def _call_progress_cb():
+            if progress is not None:
+                progress(len(kwargs["members"]), count)
 
-        # continue from page #2 up to total_pages + 1, since pages on BGG start from 1
-        for page in range(2, total_pages + 1):
-            log.debug("fetching page {} of {}".format(page, total_pages))
+        _call_progress_cb()
+
+        page = 2
+
+        while len(kwargs["members"]) < count:
+            added_member = False
+            log.debug("fetching page {}".format(page))
             root = get_parsed_xml_response(self.requests_session,
                                            self._guild_api_url,
                                            params={"id": guild_id, "members": 1, "page": page})
 
             for el in root.findall(".//member"):
                 kwargs["members"].append(el.attrib["name"])
+                added_member = True
 
-            if progress is not None:
-                progress(len(kwargs["members"]), count)
+            _call_progress_cb()
+
+            page += 1
+            if not added_member:
+                # didn't add anything anymore? break
+                break
 
         return Guild(kwargs)
 
@@ -206,24 +213,23 @@ class BoardGameGeekNetworkAPI(object):
                     user._add_guild({"name": guild.attrib["name"],
                                     "id": guild.attrib["id"]})
 
+        # It seems that the BGG API can return more results than what's specified in the documentation (they say
+        # page size is 100, but for an user with 114 friends, all buddies are there on the first page).
+        # Therefore, we'll keep fetching pages until we reach the number of items we're expecting or we don't get
+        # any more data
 
-        # TODO: it seems that the BGG API returns more results than what's specified in the documentation (they say
-        # page size is 100, but for an user with 114 friends, all buddies are there on the first page). Therefore,
-        # the algorithm needs to be changed, will keep fetching pages until we match the total number of buddies and
-        # guilds.
-
-        # determine how many pages we should fetch in order to retrieve a complete buddy/guild list
         max_items_to_fetch = max(total_buddies, total_guilds)
-        total_pages = 1 + max_items_to_fetch // BoardGameGeekNetworkAPI.USER_GUILD_BUDDIES_PER_PAGE
 
-        def _progress_cb():
+        def _call_progress_cb():
             if progress is not None:
                 progress(max(user.total_buddies, user.total_guilds), max_items_to_fetch)
 
-        _progress_cb()
+        _call_progress_cb()
 
-        # repeat the API call and retrieve everything
-        for page in range(2, total_pages + 1):
+        page = 2
+        while max(user.total_buddies, user.total_guilds) < max_items_to_fetch:
+            added_buddy = False
+            added_guild = False
             root = get_parsed_xml_response(self.requests_session,
                                            self._user_api_url,
                                            params={"name": name, "buddies": 1, "guilds": 1, "page": page})
@@ -231,14 +237,113 @@ class BoardGameGeekNetworkAPI(object):
             for buddy in root.findall(".//buddy"):
                 user._add_buddy({"name": buddy.attrib["name"],
                                 "id": buddy.attrib["id"]})
+                added_buddy = True
 
             for guild in root.findall(".//guild"):
                 user._add_guild({"name": guild.attrib["name"],
                                 "id": guild.attrib["id"]})
+                added_guild = True
 
-            _progress_cb()
+            _call_progress_cb()
+            page += 1
+
+            if not added_buddy and not added_guild:
+                log.debug("didn't add any buddy/guild after fetching page {}, stopping here".format(page))
+                break
 
         return user
+
+    def plays(self, name=None, game_id=None, progress=None):
+        """
+        Retrieves the user's plays list
+
+        :param name: user name to retrieve the plays for
+        :param game_id: game id to retrieve the plays for
+        :return: Plays object containing all the plays
+        :raises BoardGameGeekError on errors
+
+        """
+        if not name and not game_id:
+            raise BoardGameGeekError("no user name specified")
+
+        if name and game_id:
+            raise BoardGameGeekError("can't retrieve by user and by game at the same time")
+
+        if name:
+            params = {"username": name}
+        else:
+            try:
+                params = {"id": int(game_id)}
+            except:
+                raise BoardGameGeekError("invalid game id")
+
+        try:
+            root = get_parsed_xml_response(self.requests_session,
+                                           self._plays_api_url,
+                                           params=params)
+        except Exception as e:
+            # The API seems to return HTML in case of an invalid username.
+            # just return None for the time being.
+            log.error("error trying to fetch plays: {}".format(e))
+            return None
+
+        count = int(root.attrib["total"])   # how many plays
+
+        if name:
+            plays = Plays({"username": root.attrib["username"],
+                           "user_id": int(root.attrib["userid"])})
+        else:
+            plays = Plays({"game_id": game_id})
+
+        def _add_plays(plays, root):
+            added_plays = False
+            for play in root.findall(".//play"):
+                added_plays = True
+
+                # if we're listing plays by game, each <play> has an userid. If this isn't set, we must be listing
+                # an user's collection, thus set it from plays.user_id
+                userid = int(play.attrib.get("userid", plays.user_id))
+
+                # TODO: add the game subtype too
+                kwargs = {"id": int(play.attrib["id"]),
+                          "date": datetime.datetime.strptime(play.attrib["date"], "%Y-%m-%d"),
+                          "quantity": int(play.attrib["quantity"]),
+                          "duration": int(play.attrib["length"]),
+                          "incomplete": int(play.attrib["incomplete"]),
+                          "nowinstats": int(play.attrib["nowinstats"]),
+                          "user_id": userid,
+                          "game_id": xml_subelement_attr(play, "item", attribute="objectid", convert=int),
+                          "game_name": xml_subelement_attr(play, "item", attribute="name"),
+                          "comment": xml_subelement_text(play, "comments")}
+                plays._add_play(kwargs)
+            return added_plays
+
+        _add_plays(plays, root)
+
+        def _call_progress_cb():
+            if progress is not None:
+                progress(len(plays), count)
+
+        _call_progress_cb()
+
+        page = 2
+        while len(plays) < count:
+            log.debug("fetching page {} of plays".format(page))
+
+            params["page"] = page
+
+            # fetch the next pages of plays
+            root = get_parsed_xml_response(self.requests_session,
+                                           self._plays_api_url,
+                                           params=params)
+
+            if not _add_plays(plays, root):
+                break
+
+            page += 1
+            _call_progress_cb()
+
+        return plays
 
     def collection(self, name):
         """

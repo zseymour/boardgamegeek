@@ -94,6 +94,16 @@ Contributions/suggestions are welcome.
 Changelog
 =========
 
+0.0.13
+------
+
+Features
+
+  * Improved code for fetching an user's buddies and guilds
+  * Improved code for fetching guild members
+  * Added support for listing Plays by user and by game
+
+
 0.0.12
 ------
 

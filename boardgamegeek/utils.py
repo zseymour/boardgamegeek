@@ -36,7 +36,7 @@ def xml_subelement_attr(xml_elem, subelement, convert=None, attribute="value"):
     :param attribute: name of the attribute to get
     :return: value of the attribute
     """
-    if xml_elem is None:
+    if xml_elem is None or not subelement:
         return None
 
     value = None
@@ -63,7 +63,7 @@ def xml_subelement_attr_list(xml_elem, subelement, convert=None, attribute="valu
     :param attribute: name of the attribute to get
     :return: list containing the values of the attributes
     """
-    if xml_elem is None:
+    if xml_elem is None or not subelement:
         return None
 
     subel = xml_elem.findall(subelement)
@@ -85,7 +85,7 @@ def xml_subelement_text(xml_elem, subelement, convert=None):
     :param convert: if not None, a callable used to perform the conversion of the text to a certain object type
     :return:
     """
-    if xml_elem is None:
+    if xml_elem is None or not subelement:
         return None
 
     text = None

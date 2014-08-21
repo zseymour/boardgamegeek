@@ -46,6 +46,7 @@ class Collection(DictObject):
 
     @property
     def items(self):
+        # TODO: create this list when _add_game instead of doing it on each items() call.
         return [CollectionBoardGame(x) for x in self._data["items"]]
 
     def __iter__(self):
