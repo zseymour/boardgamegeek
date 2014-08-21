@@ -208,6 +208,8 @@ def test_get_valid_guild_info(bgg, null_logger):
 
     repr(guild)
 
+    assert len(guild) > 0
+
     # for coverage's sake
     guild._format(null_logger)
     assert type(guild.data()) == dict

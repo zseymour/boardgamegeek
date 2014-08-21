@@ -98,6 +98,9 @@ class Guild(BasicGuild):
     def website(self):
         return self._data.get("website")
 
+    def __len__(self):
+        return len(self._data.get("members", []))
+
     def __repr__(self):
         return "Guild (id: {})".format(self.id)
 
