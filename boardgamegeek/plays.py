@@ -34,49 +34,79 @@ class PlaySession(DictObject):
     @property
     def id(self):
         """
-
-        :return: Returns the play session's id
+        :return: the play session id
         """
         return self._data.get("id")
 
     @property
     def user_id(self):
+        """
+        :return: user ID whom this play session belongs to
+        """
         return self._data.get("user_id")
 
     @property
     def date(self):
+        """
+        :return: the date when this play session was recorded
+        """
         return self._data.get("date")
 
     @property
     def quantity(self):
+        """
+        :return:
+        """
         return self._data.get("quantity")
 
     @property
     def duration(self):
+        """
+        :return: duration of the play session
+        """
         return self._data.get("duration")
 
     @property
     def incomplete(self):
+        """
+        :return: whether the session was incomplete or not
+        """
         return self._data.get("incomplete")
 
     @property
     def nowinstats(self):
+        """
+        :return:
+        """
         return self._data.get("nowinstats")
 
     @property
     def game_id(self):
+        """
+
+        :return: id of the game played
+        """
         return self._data.get("game_id")
 
     @property
     def game_name(self):
+        """
+        :return: name of the game played
+        """
         return self._data.get("game_name")
 
     @property
     def comment(self):
+        """
+        :return: comment on the play session
+        """
         return self._data.get("comment")
 
 
 class Plays(DictObject):
+    """
+    A list of play sessions, associated either to an user or to a game.
+    """
 
     def __init__(self, data):
         kw = copy(data)
@@ -104,16 +134,33 @@ class Plays(DictObject):
 
     @property
     def user(self):
+        """
+        :return: account name of the user owning this list of plays
+        :return: ``None`` if this list is that of a game and not an user's
+        """
         return self._data.get("username")
 
     @property
     def user_id(self):
+        """
+
+        :return: id of the user owning this list of plays
+        :return: ``None`` if this list is that of a game and not an user's
+        """
         return self._data.get("user_id")
 
     @property
     def game_id(self):
+        """
+
+        :return: id of the game this plays list belongs to
+        :return: ``None`` if this list is that of an user
+        """
         return self._data.get("game_id")
 
     @property
     def plays(self):
+        """
+        :return: list of :class:`PlaySession`
+        """
         return self._plays

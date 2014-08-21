@@ -20,14 +20,21 @@ from .utils import DictObject
 
 class BasicUser(DictObject):
     """
-    A basic user which holds information common to all user types
+    Container for the most generic user information, ``id`` and ``name``.
+
     """
     @property
     def name(self):
+        """
+        :return: account name of the user
+        """
         return self._data.get("name")
 
     @property
     def id(self):
+        """
+        :return: id of the user
+        """
         return self._data.get("id")
 
     def __str__(self):
@@ -39,7 +46,8 @@ class BasicUser(DictObject):
 
 class User(BasicUser):
     """
-    Regular user
+    Information about an user on BGG.
+
     """
     def __init__(self, data):
         kw = copy(data)
@@ -92,30 +100,58 @@ class User(BasicUser):
 
     @property
     def total_buddies(self):
+        """
+
+        :return: number of buddies this user has
+        """
         return len(self._data["buddies"])
 
     @property
     def total_guilds(self):
+        """
+
+        :return: number of guilds this user is a member of
+        """
         return len(self._data["guilds"])
 
     @property
     def buddies(self):
+        """
+
+        :return: list of :class:`BasicUser` with all the buddies this user has
+        """
         return [BasicUser(x) for x in self._data["buddies"]]
 
     @property
     def guilds(self):
+        """
+
+        :return: list of :class:`BasicGuild` with all the guilds this user is a member of
+        """
         return [BasicGuild(x) for x in self._data["guilds"]]
 
     @property
     def firstname(self):
+        """
+
+        :return: user's first name
+        """
         return self._data.get("firstname")
 
     @property
     def lastname(self):
+        """
+
+        :return: user's last name
+        """
         return self._data.get("lastname")
 
     @property
     def avatar(self):
+        """
+
+        :return: link to user's avatar image
+        """
         return self._data.get("avatarlink")
 
     @property

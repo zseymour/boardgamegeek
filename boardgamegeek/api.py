@@ -261,12 +261,12 @@ class BoardGameGeekNetworkAPI(object):
 
     def plays(self, name=None, game_id=None, progress=None):
         """
-        Retrieves the user's plays list
+        Retrieves the user's play list
 
         :param name: user name to retrieve the plays for
         :param game_id: game id to retrieve the plays for
-        :return: Plays object containing all the plays
-        :raises BoardGameGeekError on errors
+        :return: :class:`Plays` object containing all the plays
+        :raises: :class:`BoardGameGeekError` on errors
 
         """
         if not name and not game_id:
@@ -353,12 +353,12 @@ class BoardGameGeekNetworkAPI(object):
 
     def collection(self, name):
         """
-        Retrieves the user's game collection
+        Returns the user's game collection
 
         :param name: user name to retrieve the collection for
-        :return: Collection or None if user not found
-        :raises BoardGameGeekAPIError if there was a problem fetching the collection
-        :raises
+        :return: :class:`Collection` or ``None`` if user not found
+        :raises: :class:`BoardGameGeekAPIError` if there was a problem getting the collection
+        :raises: :class:`BoardGameGeekError` in case of invalid parameters
         """
         if not name:
             raise BoardGameGeekError("no user name specified")

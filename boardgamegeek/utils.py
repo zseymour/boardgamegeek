@@ -9,7 +9,6 @@
 
 .. moduleauthor:: Cosmin Luță <q4break@gmail.com>
 
-
 """
 from __future__ import unicode_literals
 import sys
@@ -26,6 +25,9 @@ from .exceptions import BoardGameGeekAPIError, BoardGameGeekAPIRetryError, Board
 
 
 class DictObject(object):
+    """
+    Just a fancy wrapper over a dictionary
+    """
 
     def __init__(self, data):
         self._data = data
@@ -37,6 +39,10 @@ class DictObject(object):
         raise AttributeError
 
     def data(self):
+        """
+        Access to the internal data dictionary, for easy dumping
+        :return: the internal data dictionary
+        """
         return self._data
 
 
@@ -147,8 +153,8 @@ def get_parsed_xml_response(requests_session, url, params=None):
     :param url: the address where to get the XML from
     :param params: dictionary containing the parameters which should be sent with the request
     :return: :func:`xml.etree.ElementTree` corresponding to the XML
-    :raises BoardGameGeekAPIRetryError if this request should be retried after a short delay
-    :raises BoardGameGeekAPIError if the response couldn't be parsed
+    :raises: :class:`BoardGameGeekAPIRetryError` if this request should be retried after a short delay
+    :raises: :class:`BoardGameGeekAPIError` if the response couldn't be parsed
     """
     try:
         r = requests_session.get(url, params=params)
@@ -156,6 +162,9 @@ def get_parsed_xml_response(requests_session, url, params=None):
         if r.status_code == 202:
             # BoardGameGeek API says that on status code 202 we need to retry the operation after a delay
             raise BoardGameGeekAPIRetryError()
+
+        if not r.headers.get("content-type").startswith("text/xml"):
+            raise BoardGameGeekAPIError("non-XML reply")
 
         xml = r.text
 
@@ -183,7 +192,7 @@ def get_cache_session_from_uri(uri):
 
     :param uri: URI specifying the type of cache to use and its parameters
     :return: CachedSession instance, which can be used as a regular ``requests`` session.
-    :raises BoardGameGeekError in case of error
+    :raises: :class:`BoardGameGeekError` in case of error
     """
 
     try:
