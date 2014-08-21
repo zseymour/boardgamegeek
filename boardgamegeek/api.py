@@ -189,10 +189,14 @@ class BoardGameGeekNetworkAPI(object):
         except:
             return None
 
-        for i in ["firstname", "lastname", "avatarlink", "lastlogin",
+        for i in ["firstname", "lastname", "avatarlink",
                   "stateorprovince", "country", "webaddress", "xboxaccount",
                   "wiiaccount", "steamaccount", "psnaccount", "traderating"]:
             kwargs[i] = xml_subelement_attr(root, i)
+
+        kwargs["lastlogin"] = xml_subelement_attr(root,
+                                                  "lastlogin",
+                                                  convert=lambda x: datetime.datetime.strptime(x, "%Y-%m-%d"))
 
         kwargs["yearregistered"] = xml_subelement_attr(root, "yearregistered", convert=int)
 

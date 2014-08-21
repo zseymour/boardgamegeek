@@ -137,6 +137,8 @@ def test_get_valid_user_info(bgg, null_logger):
 
     assert type(user.buddies) == list
     assert type(user.guilds) == list
+    assert type(user.last_login) == datetime.datetime
+
 
     str(user)
     repr(user)
