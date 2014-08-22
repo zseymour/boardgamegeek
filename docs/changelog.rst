@@ -12,6 +12,10 @@ Features
 
   * Added support for an user's top and hot lists
 
+Bugfixes
+
+  * Exceptions raised from :func:`get_parsed_xml_response` where not properly propagated to the calling code
+
 0.0.13
 ------
 
