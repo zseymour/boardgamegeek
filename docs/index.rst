@@ -2,6 +2,10 @@
 boardgamegeek - A Python API for boardgamegeek.com
 ==================================================
 
+.. warning::
+   
+   The documentation is a work in progress. You can check out the unit tests for how to use the library.
+   
 
 Introduction
 ============
