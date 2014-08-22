@@ -21,7 +21,7 @@ try:
 except:
     import urlparse
 
-from .exceptions import BoardGameGeekAPIError, BoardGameGeekAPIRetryError, BoardGameGeekError
+from .exceptions import BoardGameGeekAPIError, BoardGameGeekAPIRetryError, BoardGameGeekError, BoardGameGeekAPINonXMLError
 
 
 class DictObject(object):
@@ -164,7 +164,7 @@ def get_parsed_xml_response(requests_session, url, params=None):
             raise BoardGameGeekAPIRetryError()
 
         if not r.headers.get("content-type").startswith("text/xml"):
-            raise BoardGameGeekAPIError("non-XML reply")
+            raise BoardGameGeekAPINonXMLError("non-XML reply")
 
         xml = r.text
 
@@ -176,6 +176,9 @@ def get_parsed_xml_response(requests_session, url, params=None):
 
     except ETParseError as e:
         raise BoardGameGeekAPIError("error decoding BGG API response: {}".format(e))
+
+    except (BoardGameGeekAPIRetryError, BoardGameGeekAPINonXMLError):
+        raise
 
     except Exception as e:
         raise BoardGameGeekAPIError("error fetching BGG API response: {}".format(e))
