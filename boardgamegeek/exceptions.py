@@ -10,3 +10,6 @@ class BoardGameGeekAPIRetryError(BoardGameGeekError):
 class BoardGameGeekAPIError(BoardGameGeekError):
     pass
 
+
+class BoardGameGeekAPINonXMLError(BoardGameGeekError):
+    pass

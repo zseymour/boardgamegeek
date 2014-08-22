@@ -34,7 +34,7 @@ from .guild import Guild
 from .user import User
 from .collection import Collection
 from .plays import Plays
-from .exceptions import BoardGameGeekAPIError, BoardGameGeekError, BoardGameGeekAPIRetryError
+from .exceptions import BoardGameGeekAPIError, BoardGameGeekError, BoardGameGeekAPIRetryError, BoardGameGeekAPINonXMLError
 from .utils import xml_subelement_attr, xml_subelement_text, xml_subelement_attr_list, get_parsed_xml_response
 from .utils import get_cache_session_from_uri
 
@@ -178,9 +178,15 @@ class BoardGameGeekNetworkAPI(object):
         if not name:
             raise BoardGameGeekError("no user name specified")
 
-        root = get_parsed_xml_response(self.requests_session,
-                                       self._user_api_url,
-                                       params={"name": name, "buddies": 1, "guilds": 1})
+        params = {"name": name, "buddies": 1, "guilds": 1, "hot": 1, "top": 1}
+
+        try:
+            root = get_parsed_xml_response(self.requests_session,
+                                           self._user_api_url,
+                                           params=params)
+        except BoardGameGeekAPINonXMLError:
+            # if the api doesn't return XML, assume the user wasn't found
+            return None
 
         # when the user is not found, the API returns an response, but with most fields empty. id is empty too
         try:
@@ -250,9 +256,10 @@ class BoardGameGeekNetworkAPI(object):
         while max(user.total_buddies, user.total_guilds) < max_items_to_fetch:
             added_buddy = False
             added_guild = False
+            params["page"] = page
             root = get_parsed_xml_response(self.requests_session,
                                            self._user_api_url,
-                                           params={"name": name, "buddies": 1, "guilds": 1, "page": page})
+                                           params=params)
 
             for buddy in root.findall(".//buddy"):
                 user._add_buddy({"name": buddy.attrib["name"],
