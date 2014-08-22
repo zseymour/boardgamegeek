@@ -16,6 +16,7 @@ from copy import copy
 
 from .guild import BasicGuild
 from .utils import DictObject
+from .games import BasicGame
 
 
 class BasicUser(DictObject):
@@ -55,6 +56,13 @@ class User(BasicUser):
             kw["buddies"] = []
         if "guilds" not in kw:
             kw["guilds"] = []
+        if "hot" not in kw:
+            kw["hot"] = []
+        if "top" not in kw:
+            kw["top"] = []
+
+        self._top = []
+        self._hot = []
         super(User, self).__init__(kw)
 
     def __str__(self):
@@ -68,6 +76,14 @@ class User(BasicUser):
 
     def _add_guild(self, data):
         self._data["guilds"].append(data)
+
+    def _add_top_item(self, data):
+        self._data["top"].append(data)
+        self._top.append(BasicGame(data))
+
+    def _add_hot_item(self, data):
+        self._data["hot"].append(data)
+        self._hot.append(BasicGame(data))
 
     def _format(self, log):
         log.info("id          : {}".format(self.id))
@@ -98,6 +114,14 @@ class User(BasicUser):
             for g in guilds:
                 log.info("- {}".format(g.name))
 
+        log.info("top10 items")
+        for i in self.top10:
+            log.info("- {} (id: {})".format(i.name, i.id))
+
+        log.info("hot10 items")
+        for i in self.hot10:
+            log.info("- {} (id: {})".format(i.name, i.id))
+
     @property
     def total_buddies(self):
         """
@@ -113,6 +137,14 @@ class User(BasicUser):
         :return: number of guilds this user is a member of
         """
         return len(self._data["guilds"])
+
+    @property
+    def top10(self):
+        return self._top
+
+    @property
+    def hot10(self):
+        return self._hot
 
     @property
     def buddies(self):

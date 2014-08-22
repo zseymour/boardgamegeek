@@ -3,7 +3,21 @@ from __future__ import unicode_literals
 from .utils import DictObject
 
 
-class CollectionBoardGame(DictObject):
+class BasicGame(DictObject):
+
+    @property
+    def name(self):
+        return self._data.get("name")
+
+    @property
+    def id(self):
+        return self._data.get("id")
+
+    def __repr__(self):
+        return "BasicGame (id: {})".format(self.id)
+
+
+class CollectionBoardGame(BasicGame):
     """
     A boardgame retrieved from the collection information, which has
     less information than the one retrieved via the /thing api and which
@@ -32,14 +46,6 @@ class CollectionBoardGame(DictObject):
     @property
     def lastmodified(self):
         return self._data.get("lastmodified")
-
-    @property
-    def name(self):
-        return self._data.get("name")
-
-    @property
-    def id(self):
-        return self._data.get("id")
 
     @property
     def rating(self):
@@ -82,7 +88,7 @@ class CollectionBoardGame(DictObject):
         return (self._data.get("wishlistpriority"))
 
 
-class BoardGame(DictObject):
+class BoardGame(BasicGame):
 
     def __repr__(self):
         return "BoardGame (id: {})".format(self.id)
@@ -153,16 +159,8 @@ class BoardGame(DictObject):
         log.info("description       : {}".format(self.description))
 
     @property
-    def name(self):
-        return self._data.get("name")
-
-    @property
     def alternative_names(self):
         return self._data.get("alternative_names")
-
-    @property
-    def id(self):
-        return self._data.get("id")
 
     @property
     def thumbnail(self):

@@ -8,6 +8,9 @@ Changes
 
   * The ``.last_login`` property of an :class:`boardgamegeek.user.User` object now returns a ``datetime.datetime``
 
+Features
+
+  * Added support for an user's top and hot lists
 
 0.0.13
 ------

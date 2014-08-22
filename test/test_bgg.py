@@ -139,7 +139,6 @@ def test_get_valid_user_info(bgg, null_logger):
     assert type(user.guilds) == list
     assert type(user.last_login) == datetime.datetime
 
-
     str(user)
     repr(user)
 
@@ -149,6 +148,16 @@ def test_get_valid_user_info(bgg, null_logger):
 
     for guild in user.guilds:
         repr(guild)
+
+    for i in user.top10:
+        repr(i)
+        assert i.id >= 0
+        assert i.name is not None
+
+    for i in user.hot10:
+        repr(i)
+        assert i.id >= 0
+        assert i.name is not None
 
     # for coverage's sake
     user._format(null_logger)
