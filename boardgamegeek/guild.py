@@ -1,3 +1,15 @@
+# coding: utf-8
+"""
+:mod:`boardgamegeek.guild` - Classes for storing guild information
+==================================================================
+
+.. module:: boardgamegeek.guild
+   :platform: Unix, Windows
+   :synopsis: classes for storing guild information
+
+.. moduleauthor:: Cosmin Luță <q4break@gmail.com>
+
+"""
 from __future__ import unicode_literals
 
 from .utils import DictObject

@@ -1,21 +1,41 @@
+# coding: utf-8
+"""
+:mod:`boardgamegeek.user` - Classes for storing user information
+================================================================
+
+.. module:: boardgamegeek.user
+   :platform: Unix, Windows
+   :synopsis: classes for storing user information
+
+.. moduleauthor:: Cosmin Luță <q4break@gmail.com>
+
+"""
 from __future__ import unicode_literals
 
 from copy import copy
 
 from .guild import BasicGuild
 from .utils import DictObject
+from .games import BasicGame
 
 
 class BasicUser(DictObject):
     """
-    A basic user which holds information common to all user types
+    Container for the most generic user information, ``id`` and ``name``.
+
     """
     @property
     def name(self):
+        """
+        :return: account name of the user
+        """
         return self._data.get("name")
 
     @property
     def id(self):
+        """
+        :return: id of the user
+        """
         return self._data.get("id")
 
     def __str__(self):
@@ -27,7 +47,8 @@ class BasicUser(DictObject):
 
 class User(BasicUser):
     """
-    Regular user
+    Information about an user on BGG.
+
     """
     def __init__(self, data):
         kw = copy(data)
@@ -35,6 +56,13 @@ class User(BasicUser):
             kw["buddies"] = []
         if "guilds" not in kw:
             kw["guilds"] = []
+        if "hot" not in kw:
+            kw["hot"] = []
+        if "top" not in kw:
+            kw["top"] = []
+
+        self._top = []
+        self._hot = []
         super(User, self).__init__(kw)
 
     def __str__(self):
@@ -48,6 +76,14 @@ class User(BasicUser):
 
     def _add_guild(self, data):
         self._data["guilds"].append(data)
+
+    def _add_top_item(self, data):
+        self._data["top"].append(data)
+        self._top.append(BasicGame(data))
+
+    def _add_hot_item(self, data):
+        self._data["hot"].append(data)
+        self._hot.append(BasicGame(data))
 
     def _format(self, log):
         log.info("id          : {}".format(self.id))
@@ -78,32 +114,76 @@ class User(BasicUser):
             for g in guilds:
                 log.info("- {}".format(g.name))
 
+        log.info("top10 items")
+        for i in self.top10:
+            log.info("- {} (id: {})".format(i.name, i.id))
+
+        log.info("hot10 items")
+        for i in self.hot10:
+            log.info("- {} (id: {})".format(i.name, i.id))
+
     @property
     def total_buddies(self):
+        """
+
+        :return: number of buddies this user has
+        """
         return len(self._data["buddies"])
 
     @property
     def total_guilds(self):
+        """
+
+        :return: number of guilds this user is a member of
+        """
         return len(self._data["guilds"])
 
     @property
+    def top10(self):
+        return self._top
+
+    @property
+    def hot10(self):
+        return self._hot
+
+    @property
     def buddies(self):
+        """
+
+        :return: list of :class:`BasicUser` with all the buddies this user has
+        """
         return [BasicUser(x) for x in self._data["buddies"]]
 
     @property
     def guilds(self):
+        """
+
+        :return: list of :class:`BasicGuild` with all the guilds this user is a member of
+        """
         return [BasicGuild(x) for x in self._data["guilds"]]
 
     @property
     def firstname(self):
+        """
+
+        :return: user's first name
+        """
         return self._data.get("firstname")
 
     @property
     def lastname(self):
+        """
+
+        :return: user's last name
+        """
         return self._data.get("lastname")
 
     @property
     def avatar(self):
+        """
+
+        :return: link to user's avatar image
+        """
         return self._data.get("avatarlink")
 
     @property

@@ -1,6 +1,12 @@
 # coding: utf-8
 
 """
+:mod:`boardgamegeek.api` - Core functions
+=========================================
+
+This module contains the core functionality needed to retrieve data from boardgamegeek.com and parse it into usable
+objects.
+
 .. module:: boardgamegeek.api
    :platform: Unix, Windows
    :synopsis: module handling communication with the online BGG API
@@ -28,7 +34,7 @@ from .guild import Guild
 from .user import User
 from .collection import Collection
 from .plays import Plays
-from .exceptions import BoardGameGeekAPIError, BoardGameGeekError, BoardGameGeekAPIRetryError
+from .exceptions import BoardGameGeekAPIError, BoardGameGeekError, BoardGameGeekAPIRetryError, BoardGameGeekAPINonXMLError
 from .utils import xml_subelement_attr, xml_subelement_text, xml_subelement_attr_list, get_parsed_xml_response
 from .utils import get_cache_session_from_uri
 
@@ -172,9 +178,15 @@ class BoardGameGeekNetworkAPI(object):
         if not name:
             raise BoardGameGeekError("no user name specified")
 
-        root = get_parsed_xml_response(self.requests_session,
-                                       self._user_api_url,
-                                       params={"name": name, "buddies": 1, "guilds": 1})
+        params = {"name": name, "buddies": 1, "guilds": 1, "hot": 1, "top": 1}
+
+        try:
+            root = get_parsed_xml_response(self.requests_session,
+                                           self._user_api_url,
+                                           params=params)
+        except BoardGameGeekAPINonXMLError:
+            # if the api doesn't return XML, assume the user wasn't found
+            return None
 
         # when the user is not found, the API returns an response, but with most fields empty. id is empty too
         try:
@@ -183,14 +195,28 @@ class BoardGameGeekNetworkAPI(object):
         except:
             return None
 
-        for i in ["firstname", "lastname", "avatarlink", "lastlogin",
+        for i in ["firstname", "lastname", "avatarlink",
                   "stateorprovince", "country", "webaddress", "xboxaccount",
                   "wiiaccount", "steamaccount", "psnaccount", "traderating"]:
             kwargs[i] = xml_subelement_attr(root, i)
 
+        kwargs["lastlogin"] = xml_subelement_attr(root,
+                                                  "lastlogin",
+                                                  convert=lambda x: datetime.datetime.strptime(x, "%Y-%m-%d"))
+
         kwargs["yearregistered"] = xml_subelement_attr(root, "yearregistered", convert=int)
 
         user = User(kwargs)
+
+        # add top items
+        for top_item in root.findall(".//top/item"):
+            user._add_top_item({"id": int(top_item.attrib["id"]),
+                                "name": top_item.attrib["name"]})
+
+        # add hot items
+        for hot_item in root.findall(".//hot/item"):
+            user._add_hot_item({"id": int(hot_item.attrib["id"]),
+                                "name": hot_item.attrib["name"]})
 
         total_buddies = 0
         total_guilds = 0
@@ -230,9 +256,10 @@ class BoardGameGeekNetworkAPI(object):
         while max(user.total_buddies, user.total_guilds) < max_items_to_fetch:
             added_buddy = False
             added_guild = False
+            params["page"] = page
             root = get_parsed_xml_response(self.requests_session,
                                            self._user_api_url,
-                                           params={"name": name, "buddies": 1, "guilds": 1, "page": page})
+                                           params=params)
 
             for buddy in root.findall(".//buddy"):
                 user._add_buddy({"name": buddy.attrib["name"],
@@ -255,12 +282,12 @@ class BoardGameGeekNetworkAPI(object):
 
     def plays(self, name=None, game_id=None, progress=None):
         """
-        Retrieves the user's plays list
+        Retrieves the user's play list
 
         :param name: user name to retrieve the plays for
         :param game_id: game id to retrieve the plays for
-        :return: Plays object containing all the plays
-        :raises BoardGameGeekError on errors
+        :return: :class:`Plays` object containing all the plays
+        :raises: :class:`BoardGameGeekError` on errors
 
         """
         if not name and not game_id:
@@ -347,12 +374,12 @@ class BoardGameGeekNetworkAPI(object):
 
     def collection(self, name):
         """
-        Retrieves the user's game collection
+        Returns the user's game collection
 
         :param name: user name to retrieve the collection for
-        :return: Collection or None if user not found
-        :raises BoardGameGeekAPIError if there was a problem fetching the collection
-        :raises
+        :return: :class:`Collection` or ``None`` if user not found
+        :raises: :class:`BoardGameGeekAPIError` if there was a problem getting the collection
+        :raises: :class:`BoardGameGeekError` in case of invalid parameters
         """
         if not name:
             raise BoardGameGeekError("no user name specified")
