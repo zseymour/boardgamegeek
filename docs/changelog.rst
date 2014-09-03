@@ -1,6 +1,13 @@
 Changelog
 =========
 
+0.1.0
+-----
+
+Features
+
+  * Allowing the user to specify timeouts for the requests library
+
 0.0.14
 ------
 

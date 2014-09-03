@@ -15,6 +15,7 @@ import sys
 import xml.etree.ElementTree as ET
 from xml.etree.ElementTree import ParseError as ETParseError
 import requests_cache
+import requests
 
 try:
     import urllib.parse as urlparse
@@ -145,7 +146,7 @@ def xml_subelement_text(xml_elem, subelement, convert=None):
     return text
 
 
-def get_parsed_xml_response(requests_session, url, params=None):
+def get_parsed_xml_response(requests_session, url, params=None, timeout=5):
     """
     Downloads an XML from the specified url, parses it and returns the xml ElementTree.
 
@@ -157,7 +158,7 @@ def get_parsed_xml_response(requests_session, url, params=None):
     :raises: :class:`BoardGameGeekAPIError` if the response couldn't be parsed
     """
     try:
-        r = requests_session.get(url, params=params)
+        r = requests_session.get(url, params=params, timeout=timeout)
 
         if r.status_code == 202:
             # BoardGameGeek API says that on status code 202 we need to retry the operation after a delay
@@ -173,6 +174,9 @@ def get_parsed_xml_response(requests_session, url, params=None):
         else:
             utf8_xml = xml.encode("utf-8")
             root_elem = ET.fromstring(utf8_xml)
+
+    except requests.exceptions.Timeout:
+        raise BoardGameGeekError("API request timeout")
 
     except ETParseError as e:
         raise BoardGameGeekAPIError("error decoding BGG API response: {}".format(e))
