@@ -68,8 +68,6 @@ To Do
 
 Contributions/suggestions are welcome.
 
-.. include docs/changelog.rst
-
 
 .. _BoardGameGeek: http://www.boardgamegeek.com
 .. _libBGG: https://github.com/philsstein/libBGG
