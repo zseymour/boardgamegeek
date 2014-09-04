@@ -3,7 +3,7 @@ from __future__ import unicode_literals
 import argparse
 import logging
 
-from boardgamegeek.api import BoardGameGeek
+from boardgamegeek.api import BoardGameGeek, HOT_ITEM_CHOICES
 
 
 def main():
@@ -15,6 +15,7 @@ def main():
     p.add_argument("-c", "--collection", help="Query user's collection")
     p.add_argument("-p", "--plays", help="Query user's play list")
     p.add_argument("-P", "--plays-by-game", help="Query a game's plays")
+    p.add_argument("-H", "--hot-items", help="List all hot items by type", choices=HOT_ITEM_CHOICES)
     p.add_argument("--debug", action="store_true")
 
     args = p.parse_args()
@@ -66,6 +67,11 @@ def main():
         plays = bgg.plays(game_id=game_id, progress=progress_cb)
         if plays:
             plays._format(log)
+
+    if args.hot_items:
+        hot_items = bgg.hot_items(args.hot_items)
+        for item in hot_items:
+            item._format(log)
 
 if __name__ == "__main__":
     main()

@@ -33,6 +33,7 @@ from .games import BoardGame
 from .guild import Guild
 from .user import User
 from .collection import Collection
+from .hotitems import HotItems
 from .plays import Plays
 from .exceptions import BoardGameGeekAPIError, BoardGameGeekError, BoardGameGeekAPIRetryError, BoardGameGeekAPINonXMLError
 from .utils import xml_subelement_attr, xml_subelement_text, xml_subelement_attr_list, get_parsed_xml_response
@@ -41,6 +42,9 @@ from .utils import get_cache_session_from_uri
 
 log = logging.getLogger("boardgamegeek.api")
 html_parser = hp.HTMLParser()
+
+HOT_ITEM_CHOICES = ["boardgame", "rpg", "videogame", "boardgameperson", "rpgperson", "boardgamecompany",
+                    "rpgcompany", "videogamecompany"]
 
 
 class BoardGameGeekNetworkAPI(object):
@@ -56,6 +60,7 @@ class BoardGameGeekNetworkAPI(object):
         self._guild_api_url = api_endpoint + "/guild"
         self._user_api_url = api_endpoint + "/user"
         self._plays_api_url = api_endpoint + "/plays"
+        self._hot_api_url = api_endpoint + "/hot"
         self._collection_api_url = api_endpoint + "/collection"
         self._timeout = timeout
 
@@ -93,7 +98,7 @@ class BoardGameGeekNetworkAPI(object):
 
         :param guild_id: The ID of the guild
         :param progress: Optional progress callback for member fetching
-        :return: a Guild object containing the details
+        :return: :class:`boardgamegeek.guild.Guild` object containing the details
         """
 
         try:
@@ -379,6 +384,39 @@ class BoardGameGeekNetworkAPI(object):
             _call_progress_cb()
 
         return plays
+
+    def hot_items(self, item_type):
+        """
+        Return the list of "Hot Items"
+        :param item_type: type of item (valid values: "boardgame", "rpg", "videogame", "boardgameperson", "rpgperson", "boardgamecompany", "rpgcompany", "videogamecompany")
+        :return: :class:`boardgamegeek.hotitems.HotItems` containing the hot items
+        """
+        if item_type not in HOT_ITEM_CHOICES:
+            raise BoardGameGeekError("invalid type specified")
+
+        params = {"type": item_type}
+
+        try:
+            root = get_parsed_xml_response(self.requests_session,
+                                           self._hot_api_url,
+                                           params=params,
+                                           timeout=self._timeout)
+        except BoardGameGeekAPINonXMLError:
+            # if the api doesn't return XML, assume there was some error
+            return None
+
+        hot_items = HotItems({})
+
+        for item in root.findall("item"):
+            kwargs = {"name": xml_subelement_attr(item, "name"),
+                      "id": int(item.attrib["id"]),
+                      "rank": int(item.attrib["rank"]),
+                      "yearpublished": xml_subelement_attr(item, "yearpublished", convert=int),
+                      "thumbnail": xml_subelement_attr(item, "thumbnail")}
+            hot_items.add_hot_item(kwargs)
+
+        return hot_items
+
 
     def collection(self, name):
         """
