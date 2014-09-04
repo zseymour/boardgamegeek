@@ -12,6 +12,7 @@ class Collection(DictObject):
         kw = copy(data)
         if "items" not in kw:
             kw["items"] = []
+        self._items = []
         self.__game_ids = set()
         super(Collection, self).__init__(kw)
 
@@ -30,6 +31,7 @@ class Collection(DictObject):
         if game["id"] not in self.__game_ids:
             self._data["items"].append(game)
             self.__game_ids.add(game["id"])
+            self._items.append(CollectionBoardGame(game))
 
     def __str__(self):
         return "{}'s collection, {} items".format(self.owner, len(self))
@@ -46,8 +48,7 @@ class Collection(DictObject):
 
     @property
     def items(self):
-        # TODO: create this list when _add_game instead of doing it on each items() call.
-        return [CollectionBoardGame(x) for x in self._data["items"]]
+        return self._items
 
     def __iter__(self):
         for item in self._data["items"]:
