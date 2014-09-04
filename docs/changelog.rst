@@ -1,6 +1,19 @@
 Changelog
 =========
 
+0.2.0
+-----
+
+Changes
+
+  * Changed the object hierarchy, replaced ``BasicUser``, ``BasicGuild``, ``BasicGame`` with a :class:`boardgamegeek.things.Thing`
+    which has a name and an id
+
+Features
+
+  * Added support for retrieving the hot lists
+
+
 0.1.0
 -----
 

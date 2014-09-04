@@ -40,6 +40,7 @@ This library exposes (as Python objects with properties) the following BoardGame
 * User collections
 * Player guilds
 * Plays
+* Hot items
 
 requests-cache_ is used for locally caching replies in order to reduce the amount of requests sent to the server.
 
