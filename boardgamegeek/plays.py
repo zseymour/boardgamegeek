@@ -1,11 +1,11 @@
 # coding: utf-8
 """
-:mod:`boardgamegeek.plays` - Classes for storing plays information
-==================================================================
+:mod:`boardgamegeek.plays` - BoardGameGeek "Plays"
+==================================================
 
 .. module:: boardgamegeek.plays
    :platform: Unix, Windows
-   :synopsis: classes for storing plays information
+   :synopsis: BGG "Plays"
 
 .. moduleauthor:: Cosmin Luță <q4break@gmail.com>
 

@@ -26,7 +26,15 @@ Modules
     :members:
     :undoc-members:
 
+.. automodule:: boardgamegeek.hotitems
+    :members:
+    :undoc-members:
+
 .. automodule:: boardgamegeek.plays
+    :members:
+    :undoc-members:
+
+.. automodule:: boardgamegeek.things
     :members:
     :undoc-members:
 
