@@ -12,26 +12,10 @@
 """
 from __future__ import unicode_literals
 
-from .utils import DictObject
+from .things import Thing
 
 
-class BasicGuild(DictObject):
-    """
-    Basic guild information, name and id.
-    """
-    @property
-    def name(self):
-        return self._data.get("name")
-
-    @property
-    def id(self):
-        return self._data.get("id")
-
-    def __repr__(self):
-        return "BasicGuild (id: {})".format(self.id)
-
-
-class Guild(BasicGuild):
+class Guild(Thing):
 
     def _format(self, log):
         log.info("id         : {}".format(self.id))

@@ -1,23 +1,9 @@
 from __future__ import unicode_literals
 
-from .utils import DictObject
+from .things import Thing
 
 
-class BasicGame(DictObject):
-
-    @property
-    def name(self):
-        return self._data.get("name")
-
-    @property
-    def id(self):
-        return self._data.get("id")
-
-    def __repr__(self):
-        return "BasicGame (id: {})".format(self.id)
-
-
-class CollectionBoardGame(BasicGame):
+class CollectionBoardGame(Thing):
     """
     A boardgame retrieved from the collection information, which has
     less information than the one retrieved via the /thing api and which
@@ -85,11 +71,13 @@ class CollectionBoardGame(BasicGame):
 
     @property
     def wishlist_priority(self):
-        return (self._data.get("wishlistpriority"))
+        return self._data.get("wishlistpriority")
 
 
-class BoardGame(BasicGame):
-
+class BoardGame(Thing):
+    """
+    An object containing the core information about a game.
+    """
     def __repr__(self):
         return "BoardGame (id: {})".format(self.id)
 

@@ -14,38 +14,10 @@ from __future__ import unicode_literals
 
 from copy import copy
 
-from .guild import BasicGuild
-from .utils import DictObject
-from .games import BasicGame
+from .things import Thing
 
 
-class BasicUser(DictObject):
-    """
-    Container for the most generic user information, ``id`` and ``name``.
-
-    """
-    @property
-    def name(self):
-        """
-        :return: account name of the user
-        """
-        return self._data.get("name")
-
-    @property
-    def id(self):
-        """
-        :return: id of the user
-        """
-        return self._data.get("id")
-
-    def __str__(self):
-        return "BasicUser: {}".format(self.name)
-
-    def __repr__(self):
-        return "BasicUser: {} (id: {})".format(self.name, self.id)
-
-
-class User(BasicUser):
+class User(Thing):
     """
     Information about an user on BGG.
 
@@ -79,11 +51,11 @@ class User(BasicUser):
 
     def _add_top_item(self, data):
         self._data["top"].append(data)
-        self._top.append(BasicGame(data))
+        self._top.append(Thing(data))
 
     def _add_hot_item(self, data):
         self._data["hot"].append(data)
-        self._hot.append(BasicGame(data))
+        self._hot.append(Thing(data))
 
     def _format(self, log):
         log.info("id          : {}".format(self.id))
@@ -150,17 +122,17 @@ class User(BasicUser):
     def buddies(self):
         """
 
-        :return: list of :class:`BasicUser` with all the buddies this user has
+        :return: list of :class:`Thing` with all the buddies (name and id) this user has
         """
-        return [BasicUser(x) for x in self._data["buddies"]]
+        return [Thing(x) for x in self._data["buddies"]]
 
     @property
     def guilds(self):
         """
 
-        :return: list of :class:`BasicGuild` with all the guilds this user is a member of
+        :return: list of :class:`Thing` with all the guilds (name and id) this user is a member of
         """
-        return [BasicGuild(x) for x in self._data["guilds"]]
+        return [Thing(x) for x in self._data["guilds"]]
 
     @property
     def firstname(self):
