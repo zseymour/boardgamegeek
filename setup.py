@@ -46,7 +46,7 @@ setup(
         "Programming Language :: Python :: 3.2",
         "Programming Language :: Python :: 3.3",
         "License :: OSI Approved :: BSD License",
-        "Development Status :: 3 - Alpha",
+        "Development Status :: 4 - Beta",
         "Operating System :: OS Independent",
         "Intended Audience :: Developers",
         "Topic :: Games/Entertainment :: Board Games",
