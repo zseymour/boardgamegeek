@@ -354,7 +354,7 @@ class BoardGameGeekNetworkAPI(object):
                           "game_id": xml_subelement_attr(play, "item", attribute="objectid", convert=int),
                           "game_name": xml_subelement_attr(play, "item", attribute="name"),
                           "comment": xml_subelement_text(play, "comments")}
-                plays._add_play(kwargs)
+                plays.add_play(kwargs)
             return added_plays
 
         _add_plays(plays, root)
