@@ -68,7 +68,11 @@ class HotItems(DictObject):
         kw = copy(data)
         if "items" not in kw:
             kw["items"] = []
+
         self._items = []
+        for data in kw["items"]:
+            self._items.append(HotItem(data))
+
         super(HotItems, self).__init__(kw)
 
     def add_hot_item(self, data):
