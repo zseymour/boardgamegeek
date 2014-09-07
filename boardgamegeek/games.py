@@ -95,10 +95,17 @@ class BoardGame(Thing):
         log.info("thumbnail         : {}".format(self.thumbnail))
         log.info("image             : {}".format(self.image))
 
+        log.info("is expansion      : {}".format(self.expansion))
+
         if self.expansions:
             log.info("expansions")
             for i in self.expansions:
-                log.info("- {}".format(i))
+                log.info("- {}".format(i.name))
+
+        if self.expands:
+            log.info("expands")
+            for i in self.expands:
+                log.info("- {}".format(i.name))
 
         if self.categories:
             log.info("categories")
@@ -176,7 +183,18 @@ class BoardGame(Thing):
 
     @property
     def expansions(self):
-        return self._data.get("expansions")
+        """
+
+        :return: list of expansions for this item
+        """
+        return self._data.get("expansions", [])
+
+    @property
+    def expands(self):
+        """
+        :return: list of games this item expands
+        """
+        return self._data.get("expands", [])
 
     @property
     def implementations(self):
@@ -193,6 +211,14 @@ class BoardGame(Thing):
     @property
     def publishers(self):
         return self._data.get("publishers")
+
+    @property
+    def expansion(self):
+        """
+
+        :return: True if this item is an expansion to some other item
+        """
+        return self._data.get("expansion", False)
 
     @property
     def year(self):

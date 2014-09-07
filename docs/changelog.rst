@@ -1,6 +1,16 @@
 Changelog
 =========
 
+0.3.0
+-----
+
+Changes
+
+  * Added a property to :class:`boardgamegeek.games.BoardGame`, ``expansion`` which indicates if this item is an expansion or not
+  * Changed the ``expansions`` property of :class:`boardgamegeek.games.BoardGame`, now it returns a list of :class:`boardgamegeek.things.Thing` for each expansion the game has
+  * Added a property to :class:`boardgamegeek.games.BoardGame`, ``extends`` which returns a list of :class:`boardgamegeek.things.Thing` for each item this game is an extension to
+
+
 0.2.0
 -----
 

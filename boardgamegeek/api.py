@@ -34,6 +34,7 @@ from .guild import Guild
 from .user import User
 from .collection import Collection
 from .hotitems import HotItems
+from .things import Thing
 from .plays import Plays
 from .exceptions import BoardGameGeekAPIError, BoardGameGeekError, BoardGameGeekAPIRetryError, BoardGameGeekAPINonXMLError
 from .utils import xml_subelement_attr, xml_subelement_text, xml_subelement_attr_list, get_parsed_xml_response
@@ -417,7 +418,6 @@ class BoardGameGeekNetworkAPI(object):
 
         return hot_items
 
-
     def collection(self, name):
         """
         Returns the user's game collection
@@ -533,24 +533,43 @@ class BoardGameGeek(BoardGameGeekNetworkAPI):
                                        params={"id": game_id, "stats": 1},
                                        timeout=self._timeout)
 
-        # xml is structured like <items blablabla><item>..
+        # xml is structured like <item ...> blablabla><item>..
         root = root.find("item")
         if root is None:
             msg = "error parsing game data for game id: {}{}".format(game_id,
                                                                       " ({})".format(name) if name is not None else "")
             raise BoardGameGeekAPIError(msg)
 
+        game_type = root.attrib["type"]
+        if game_type not in ["boardgame", "boardgameexpansion"]:
+            log.debug("item id {} is not a boardgame (type: {})".format(game_id, game_type))
+            raise BoardGameGeekError("item is not a board game")
+
         kwargs = {"id": game_id,
                   "thumbnail": xml_subelement_text(root, "thumbnail"),
                   "image": xml_subelement_text(root, "image"),
+                  "expansion": game_type == "boardgameexpansion",       # is this game an expansion?
                   "families": xml_subelement_attr_list(root, ".//link[@type='boardgamefamily']"),
                   "categories": xml_subelement_attr_list(root, ".//link[@type='boardgamecategory']"),
-                  "expansions": xml_subelement_attr_list(root, ".//link[@type='boardgameexpansion']"),
                   "implementations": xml_subelement_attr_list(root, ".//link[@type='boardgameimplementation']"),
                   "mechanics": xml_subelement_attr_list(root, ".//link[@type='boardgamemechanic']"),
                   "designers": xml_subelement_attr_list(root, ".//link[@type='boardgamedesigner']"),
                   "artists": xml_subelement_attr_list(root, ".//link[@type='boardgameartist']"),
                   "publishers": xml_subelement_attr_list(root, ".//link[@type='boardgamepublisher']")}
+
+        expands = []        # list of items this game expands
+        expansions = []     # list of expansions this game has
+        for e in root.findall(".//link[@type='boardgameexpansion']"):
+            item = Thing({"id": e.attrib["id"],
+                          "name": e.attrib["value"]})
+
+            if e.attrib.get("inbound"):
+                # this is an item this game expands
+                expands.append(item)
+            else:
+                expansions.append(item)
+        kwargs["expansions"] = expansions
+        kwargs["expands"] = expands
 
         description = xml_subelement_text(root, "description")
         if description is not None:
