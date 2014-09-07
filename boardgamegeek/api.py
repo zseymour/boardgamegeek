@@ -34,7 +34,6 @@ from .guild import Guild
 from .user import User
 from .collection import Collection
 from .hotitems import HotItems
-from .things import Thing
 from .plays import Plays
 from .exceptions import BoardGameGeekAPIError, BoardGameGeekError, BoardGameGeekAPIRetryError, BoardGameGeekAPINonXMLError
 from .utils import xml_subelement_attr, xml_subelement_text, xml_subelement_attr_list, get_parsed_xml_response
@@ -75,7 +74,7 @@ class BoardGameGeekNetworkAPI(object):
         if game_type not in ["rpgitem", "videogame", "boardgame", "boardgameexpansion"]:
             raise BoardGameGeekError("invalid game type: {}".format(game_type))
 
-        log.debug("getting game id of '{}'".format(name))
+        log.debug(u"getting game id for '{}'".format(name))
 
         root = get_parsed_xml_response(self.requests_session,
                                        self._search_api_url,
@@ -560,14 +559,15 @@ class BoardGameGeek(BoardGameGeekNetworkAPI):
         expands = []        # list of items this game expands
         expansions = []     # list of expansions this game has
         for e in root.findall(".//link[@type='boardgameexpansion']"):
-            item = Thing({"id": e.attrib["id"],
-                          "name": e.attrib["value"]})
+            item = {"id": e.attrib["id"],
+                    "name": e.attrib["value"]}
 
             if e.attrib.get("inbound", "false").lower()[0] == 't':
                 # this is an item expanded by game_id
                 expands.append(item)
             else:
                 expansions.append(item)
+
         kwargs["expansions"] = expansions
         kwargs["expands"] = expands
 
