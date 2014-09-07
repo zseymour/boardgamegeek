@@ -563,8 +563,8 @@ class BoardGameGeek(BoardGameGeekNetworkAPI):
             item = Thing({"id": e.attrib["id"],
                           "name": e.attrib["value"]})
 
-            if e.attrib.get("inbound"):
-                # this is an item this game expands
+            if e.attrib.get("inbound", "false").lower()[0] == 't':
+                # this is an item expanded by game_id
                 expands.append(item)
             else:
                 expansions.append(item)
