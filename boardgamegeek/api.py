@@ -74,7 +74,7 @@ class BoardGameGeekNetworkAPI(object):
         if game_type not in ["rpgitem", "videogame", "boardgame", "boardgameexpansion"]:
             raise BoardGameGeekError("invalid game type: {}".format(game_type))
 
-        log.debug(u"getting game id for '{}'".format(name))
+        log.debug("getting game id for '{}'".format(name))
 
         root = get_parsed_xml_response(self.requests_session,
                                        self._search_api_url,
