@@ -1,11 +1,11 @@
 # coding: utf-8
 """
-:mod:`boardgamegeek.user` - Classes for storing user information
-================================================================
+:mod:`boardgamegeek.user` - BoardGameGeek "Users"
+=================================================
 
 .. module:: boardgamegeek.user
    :platform: Unix, Windows
-   :synopsis: classes for storing user information
+   :synopsis: BGG "Users"
 
 .. moduleauthor:: Cosmin Luță <q4break@gmail.com>
 
@@ -14,38 +14,10 @@ from __future__ import unicode_literals
 
 from copy import copy
 
-from .guild import BasicGuild
-from .utils import DictObject
-from .games import BasicGame
+from .things import Thing
 
 
-class BasicUser(DictObject):
-    """
-    Container for the most generic user information, ``id`` and ``name``.
-
-    """
-    @property
-    def name(self):
-        """
-        :return: account name of the user
-        """
-        return self._data.get("name")
-
-    @property
-    def id(self):
-        """
-        :return: id of the user
-        """
-        return self._data.get("id")
-
-    def __str__(self):
-        return "BasicUser: {}".format(self.name)
-
-    def __repr__(self):
-        return "BasicUser: {} (id: {})".format(self.name, self.id)
-
-
-class User(BasicUser):
+class User(Thing):
     """
     Information about an user on BGG.
 
@@ -54,15 +26,29 @@ class User(BasicUser):
         kw = copy(data)
         if "buddies" not in kw:
             kw["buddies"] = []
+
+        self._buddies = []
+        for i in kw["buddies"]:
+            self._buddies.append(Thing(i))
+
         if "guilds" not in kw:
             kw["guilds"] = []
+        self._guilds = []
+        for i in kw["guilds"]:
+            self._guilds.append(Thing(i))
+
         if "hot" not in kw:
             kw["hot"] = []
+        self._hot = []
+        for i in kw["hot"]:
+            self._hot.append(Thing(i))
+
         if "top" not in kw:
             kw["top"] = []
-
         self._top = []
-        self._hot = []
+        for i in kw["top"]:
+            self._top.append(Thing(i))
+
         super(User, self).__init__(kw)
 
     def __str__(self):
@@ -71,19 +57,21 @@ class User(BasicUser):
     def __repr__(self):
         return "User: {} (id: {})".format(self.name, self.id)
 
-    def _add_buddy(self, data):
+    def add_buddy(self, data):
+        self._buddies.append(Thing(data))
         self._data["buddies"].append(data)
 
-    def _add_guild(self, data):
+    def add_guild(self, data):
+        self._guilds.append(Thing(data))
         self._data["guilds"].append(data)
 
-    def _add_top_item(self, data):
+    def add_top_item(self, data):
         self._data["top"].append(data)
-        self._top.append(BasicGame(data))
+        self._top.append(Thing(data))
 
-    def _add_hot_item(self, data):
+    def add_hot_item(self, data):
         self._data["hot"].append(data)
-        self._hot.append(BasicGame(data))
+        self._hot.append(Thing(data))
 
     def _format(self, log):
         log.info("id          : {}".format(self.id))
@@ -150,17 +138,17 @@ class User(BasicUser):
     def buddies(self):
         """
 
-        :return: list of :class:`BasicUser` with all the buddies this user has
+        :return: list of :class:`Thing` with all the buddies (name and id) this user has
         """
-        return [BasicUser(x) for x in self._data["buddies"]]
+        return self._buddies
 
     @property
     def guilds(self):
         """
 
-        :return: list of :class:`BasicGuild` with all the guilds this user is a member of
+        :return: list of :class:`Thing` with all the guilds (name and id) this user is a member of
         """
-        return [BasicGuild(x) for x in self._data["guilds"]]
+        return self._guilds
 
     @property
     def firstname(self):

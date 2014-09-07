@@ -1,11 +1,11 @@
 # coding: utf-8
 """
-:mod:`boardgamegeek.plays` - Classes for storing plays information
-==================================================================
+:mod:`boardgamegeek.plays` - BoardGameGeek "Plays"
+==================================================
 
 .. module:: boardgamegeek.plays
    :platform: Unix, Windows
-   :synopsis: classes for storing plays information
+   :synopsis: BGG "Plays"
 
 .. moduleauthor:: Cosmin Luță <q4break@gmail.com>
 
@@ -113,6 +113,10 @@ class Plays(DictObject):
         if "plays" not in kw:
             kw["plays"] = []
         self._plays = []
+
+        for p in kw["plays"]:
+            self._plays.append(PlaySession(p))
+
         super(Plays, self).__init__(kw)
 
     def _format(self, log):
@@ -128,7 +132,7 @@ class Plays(DictObject):
     def __len__(self):
         return len(self._plays)
 
-    def _add_play(self, data):
+    def add_play(self, data):
         self._data["plays"].append(data)
         self._plays.append(PlaySession(data))
 

@@ -33,6 +33,7 @@ from .games import BoardGame
 from .guild import Guild
 from .user import User
 from .collection import Collection
+from .hotitems import HotItems
 from .plays import Plays
 from .exceptions import BoardGameGeekAPIError, BoardGameGeekError, BoardGameGeekAPIRetryError, BoardGameGeekAPINonXMLError
 from .utils import xml_subelement_attr, xml_subelement_text, xml_subelement_attr_list, get_parsed_xml_response
@@ -41,6 +42,9 @@ from .utils import get_cache_session_from_uri
 
 log = logging.getLogger("boardgamegeek.api")
 html_parser = hp.HTMLParser()
+
+HOT_ITEM_CHOICES = ["boardgame", "rpg", "videogame", "boardgameperson", "rpgperson", "boardgamecompany",
+                    "rpgcompany", "videogamecompany"]
 
 
 class BoardGameGeekNetworkAPI(object):
@@ -56,6 +60,7 @@ class BoardGameGeekNetworkAPI(object):
         self._guild_api_url = api_endpoint + "/guild"
         self._user_api_url = api_endpoint + "/user"
         self._plays_api_url = api_endpoint + "/plays"
+        self._hot_api_url = api_endpoint + "/hot"
         self._collection_api_url = api_endpoint + "/collection"
         self._timeout = timeout
 
@@ -69,7 +74,7 @@ class BoardGameGeekNetworkAPI(object):
         if game_type not in ["rpgitem", "videogame", "boardgame", "boardgameexpansion"]:
             raise BoardGameGeekError("invalid game type: {}".format(game_type))
 
-        log.debug("getting game id of '{}'".format(name))
+        log.debug("getting game id for '{}'".format(name))
 
         root = get_parsed_xml_response(self.requests_session,
                                        self._search_api_url,
@@ -93,7 +98,7 @@ class BoardGameGeekNetworkAPI(object):
 
         :param guild_id: The ID of the guild
         :param progress: Optional progress callback for member fetching
-        :return: a Guild object containing the details
+        :return: :class:`boardgamegeek.guild.Guild` object containing the details
         """
 
         try:
@@ -215,12 +220,12 @@ class BoardGameGeekNetworkAPI(object):
 
         # add top items
         for top_item in root.findall(".//top/item"):
-            user._add_top_item({"id": int(top_item.attrib["id"]),
+            user.add_top_item({"id": int(top_item.attrib["id"]),
                                 "name": top_item.attrib["name"]})
 
         # add hot items
         for hot_item in root.findall(".//hot/item"):
-            user._add_hot_item({"id": int(hot_item.attrib["id"]),
+            user.add_hot_item({"id": int(hot_item.attrib["id"]),
                                 "name": hot_item.attrib["name"]})
 
         total_buddies = 0
@@ -232,7 +237,7 @@ class BoardGameGeekNetworkAPI(object):
             if total_buddies > 0:
                 # add the buddies from the first page
                 for buddy in buddies.findall(".//buddy"):
-                    user._add_buddy({"name": buddy.attrib["name"],
+                    user.add_buddy({"name": buddy.attrib["name"],
                                     "id": buddy.attrib["id"]})
 
         guilds = root.find("guilds")
@@ -241,7 +246,7 @@ class BoardGameGeekNetworkAPI(object):
             if total_guilds > 0:
                 # add the guilds from the first page
                 for guild in guilds.findall(".//guild"):
-                    user._add_guild({"name": guild.attrib["name"],
+                    user.add_guild({"name": guild.attrib["name"],
                                     "id": guild.attrib["id"]})
 
         # It seems that the BGG API can return more results than what's specified in the documentation (they say
@@ -268,12 +273,12 @@ class BoardGameGeekNetworkAPI(object):
                                            timeout=self._timeout)
 
             for buddy in root.findall(".//buddy"):
-                user._add_buddy({"name": buddy.attrib["name"],
+                user.add_buddy({"name": buddy.attrib["name"],
                                 "id": buddy.attrib["id"]})
                 added_buddy = True
 
             for guild in root.findall(".//guild"):
-                user._add_guild({"name": guild.attrib["name"],
+                user.add_guild({"name": guild.attrib["name"],
                                 "id": guild.attrib["id"]})
                 added_guild = True
 
@@ -349,7 +354,7 @@ class BoardGameGeekNetworkAPI(object):
                           "game_id": xml_subelement_attr(play, "item", attribute="objectid", convert=int),
                           "game_name": xml_subelement_attr(play, "item", attribute="name"),
                           "comment": xml_subelement_text(play, "comments")}
-                plays._add_play(kwargs)
+                plays.add_play(kwargs)
             return added_plays
 
         _add_plays(plays, root)
@@ -379,6 +384,38 @@ class BoardGameGeekNetworkAPI(object):
             _call_progress_cb()
 
         return plays
+
+    def hot_items(self, item_type):
+        """
+        Return the list of "Hot Items"
+        :param item_type: type of item (valid values: "boardgame", "rpg", "videogame", "boardgameperson", "rpgperson", "boardgamecompany", "rpgcompany", "videogamecompany")
+        :return: :class:`boardgamegeek.hotitems.HotItems` containing the hot items
+        """
+        if item_type not in HOT_ITEM_CHOICES:
+            raise BoardGameGeekError("invalid type specified")
+
+        params = {"type": item_type}
+
+        try:
+            root = get_parsed_xml_response(self.requests_session,
+                                           self._hot_api_url,
+                                           params=params,
+                                           timeout=self._timeout)
+        except BoardGameGeekAPINonXMLError:
+            # if the api doesn't return XML, assume there was some error
+            return None
+
+        hot_items = HotItems({})
+
+        for item in root.findall("item"):
+            kwargs = {"name": xml_subelement_attr(item, "name"),
+                      "id": int(item.attrib["id"]),
+                      "rank": int(item.attrib["rank"]),
+                      "yearpublished": xml_subelement_attr(item, "yearpublished", convert=int),
+                      "thumbnail": xml_subelement_attr(item, "thumbnail")}
+            hot_items.add_hot_item(kwargs)
+
+        return hot_items
 
     def collection(self, name):
         """
@@ -449,7 +486,7 @@ class BoardGameGeekNetworkAPI(object):
                                                                     "wishlist",
                                                                     "wishlistpriority"]})
 
-            collection._add_game(game)
+            collection.add_game(game)
 
         return collection
 
@@ -495,24 +532,44 @@ class BoardGameGeek(BoardGameGeekNetworkAPI):
                                        params={"id": game_id, "stats": 1},
                                        timeout=self._timeout)
 
-        # xml is structured like <items blablabla><item>..
+        # xml is structured like <item ...> blablabla><item>..
         root = root.find("item")
         if root is None:
             msg = "error parsing game data for game id: {}{}".format(game_id,
                                                                       " ({})".format(name) if name is not None else "")
             raise BoardGameGeekAPIError(msg)
 
+        game_type = root.attrib["type"]
+        if game_type not in ["boardgame", "boardgameexpansion"]:
+            log.debug("item id {} is not a boardgame (type: {})".format(game_id, game_type))
+            raise BoardGameGeekError("item is not a board game")
+
         kwargs = {"id": game_id,
                   "thumbnail": xml_subelement_text(root, "thumbnail"),
                   "image": xml_subelement_text(root, "image"),
+                  "expansion": game_type == "boardgameexpansion",       # is this game an expansion?
                   "families": xml_subelement_attr_list(root, ".//link[@type='boardgamefamily']"),
                   "categories": xml_subelement_attr_list(root, ".//link[@type='boardgamecategory']"),
-                  "expansions": xml_subelement_attr_list(root, ".//link[@type='boardgameexpansion']"),
                   "implementations": xml_subelement_attr_list(root, ".//link[@type='boardgameimplementation']"),
                   "mechanics": xml_subelement_attr_list(root, ".//link[@type='boardgamemechanic']"),
                   "designers": xml_subelement_attr_list(root, ".//link[@type='boardgamedesigner']"),
                   "artists": xml_subelement_attr_list(root, ".//link[@type='boardgameartist']"),
                   "publishers": xml_subelement_attr_list(root, ".//link[@type='boardgamepublisher']")}
+
+        expands = []        # list of items this game expands
+        expansions = []     # list of expansions this game has
+        for e in root.findall(".//link[@type='boardgameexpansion']"):
+            item = {"id": e.attrib["id"],
+                    "name": e.attrib["value"]}
+
+            if e.attrib.get("inbound", "false").lower()[0] == 't':
+                # this is an item expanded by game_id
+                expands.append(item)
+            else:
+                expansions.append(item)
+
+        kwargs["expansions"] = expansions
+        kwargs["expands"] = expands
 
         description = xml_subelement_text(root, "description")
         if description is not None:

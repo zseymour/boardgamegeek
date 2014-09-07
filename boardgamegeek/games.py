@@ -1,23 +1,11 @@
 from __future__ import unicode_literals
+from copy import copy
 
-from .utils import DictObject
-
-
-class BasicGame(DictObject):
-
-    @property
-    def name(self):
-        return self._data.get("name")
-
-    @property
-    def id(self):
-        return self._data.get("id")
-
-    def __repr__(self):
-        return "BasicGame (id: {})".format(self.id)
+from .things import Thing
+from .exceptions import BoardGameGeekError
 
 
-class CollectionBoardGame(BasicGame):
+class CollectionBoardGame(Thing):
     """
     A boardgame retrieved from the collection information, which has
     less information than the one retrieved via the /thing api and which
@@ -85,13 +73,67 @@ class CollectionBoardGame(BasicGame):
 
     @property
     def wishlist_priority(self):
-        return (self._data.get("wishlistpriority"))
+        return self._data.get("wishlistpriority")
 
 
-class BoardGame(BasicGame):
+class BoardGame(Thing):
+    """
+    An object containing the core information about a game.
+    """
+    def __init__(self, data):
+
+        kw = copy(data)
+
+        # if we have any "expansions" for this item..
+        if "expansions" not in kw:
+            kw["expansions"] = []
+
+        self._expansions = []           # list of Thing for the expansions
+        self._expansions_set = set()    # set for making sure things are unique
+        for data in kw["expansions"]:
+            try:
+                if data["id"] not in self._expansions_set:
+                    self._expansions_set.add(data["id"])
+                    self._expansions.append(Thing(data))
+            except KeyError:
+                raise BoardGameGeekError("invalid expansion data")
+
+        # if this item expands something...
+        if "expands" not in kw:
+            kw["expands"] = []
+
+        self._expands = []              # list of Thing which this item expands
+        self._expands_set = set()       # set for keeping things unique
+        for data in kw["expands"]:         # for all the items this game expands, create a Thing
+            try:
+                if data["id"] not in self._expands_set:
+                    self._expands_set.add(data["id"])
+                    self._expands.append(Thing(data))
+            except KeyError:
+                raise BoardGameGeekError("invalid expanded game data")
+
+        super(BoardGame, self).__init__(kw)
 
     def __repr__(self):
         return "BoardGame (id: {})".format(self.id)
+
+    def add_expanded_game(self, data):
+        try:
+            if data["id"] not in self._expands_set:
+                self._data["expands"].append(data)
+                self._expands_set.add(data["id"])
+                self._expands.append(Thing(data))
+        except KeyError:
+            raise BoardGameGeekError("invalid expanded game data")
+
+    def add_expansion(self, data):
+        try:
+            if data["id"] not in self._expansions_set:
+                self._data["expansions"].append(data)
+                self._expansions_set.add(data["id"])
+                self._expansions.append(Thing(data))
+        except KeyError:
+            raise BoardGameGeekError("invalid expansion data")
 
     def _format(self, log):
         log.info("boardgame id      : {}".format(self.id))
@@ -107,10 +149,17 @@ class BoardGame(BasicGame):
         log.info("thumbnail         : {}".format(self.thumbnail))
         log.info("image             : {}".format(self.image))
 
+        log.info("is expansion      : {}".format(self.expansion))
+
         if self.expansions:
             log.info("expansions")
             for i in self.expansions:
-                log.info("- {}".format(i))
+                log.info("- {}".format(i.name))
+
+        if self.expands:
+            log.info("expands")
+            for i in self.expands:
+                log.info("- {}".format(i.name))
 
         if self.categories:
             log.info("categories")
@@ -188,7 +237,18 @@ class BoardGame(BasicGame):
 
     @property
     def expansions(self):
-        return self._data.get("expansions")
+        """
+
+        :return: list of expansions for this item
+        """
+        return self._expansions
+
+    @property
+    def expands(self):
+        """
+        :return: list of games this item expands
+        """
+        return self._expands
 
     @property
     def implementations(self):
@@ -205,6 +265,14 @@ class BoardGame(BasicGame):
     @property
     def publishers(self):
         return self._data.get("publishers")
+
+    @property
+    def expansion(self):
+        """
+
+        :return: True if this item is an expansion to some other item
+        """
+        return self._data.get("expansion", False)
 
     @property
     def year(self):

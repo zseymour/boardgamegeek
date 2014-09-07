@@ -426,6 +426,35 @@ def test_get_plays_of_game(bgg, null_logger):
 
 
 #
+# Hot items testing
+#
+def test_get_hot_items_invalid_type(bgg):
+    with pytest.raises(BoardGameGeekError):
+        bgg.hot_items("invalid type")
+
+
+def test_get_hot_items_boardgames(bgg, null_logger):
+
+    for item in bgg.hot_items("boardgame"):
+        assert type(item.id) == int
+        assert len(item.name) > 0
+        assert type(item.rank) == int
+        assert type(item.year) == int
+        item._format(null_logger)
+
+
+def test_get_hot_items_boardgamepersons(bgg, null_logger):
+
+    for item in bgg.hot_items("boardgameperson"):
+        assert type(item.id) == int
+        assert len(item.name) > 0
+        assert type(item.rank) == int
+        assert item.year is None
+
+        item._format(null_logger)
+
+
+#
 # Utils testing
 #
 def test_get_xml_subelement_attr(xml):
