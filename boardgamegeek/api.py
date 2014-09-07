@@ -486,7 +486,7 @@ class BoardGameGeekNetworkAPI(object):
                                                                     "wishlist",
                                                                     "wishlistpriority"]})
 
-            collection._add_game(game)
+            collection.add_game(game)
 
         return collection
 
