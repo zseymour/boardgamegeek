@@ -11,8 +11,8 @@ Changes
   * Added a property to :class:`boardgamegeek.games.BoardGame`, ``extends`` which returns a list of :class:`boardgamegeek.things.Thing` for each item this game is an extension to
 
 
-0.2.0
------
+0.2.0 (unreleased)
+------------------
 
 Changes
 
