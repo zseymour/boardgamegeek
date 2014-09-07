@@ -26,8 +26,16 @@ class User(Thing):
         kw = copy(data)
         if "buddies" not in kw:
             kw["buddies"] = []
+
+        self._buddies = []
+        for i in kw["buddies"]:
+            self._buddies.append(Thing(i))
+
         if "guilds" not in kw:
             kw["guilds"] = []
+        self._guilds = []
+        for i in kw["guilds"]:
+            self._guilds.append(Thing(i))
 
         if "hot" not in kw:
             kw["hot"] = []
@@ -50,9 +58,11 @@ class User(Thing):
         return "User: {} (id: {})".format(self.name, self.id)
 
     def add_buddy(self, data):
+        self._buddies.append(Thing(data))
         self._data["buddies"].append(data)
 
     def add_guild(self, data):
+        self._guilds.append(Thing(data))
         self._data["guilds"].append(data)
 
     def add_top_item(self, data):
@@ -130,7 +140,7 @@ class User(Thing):
 
         :return: list of :class:`Thing` with all the buddies (name and id) this user has
         """
-        return [Thing(x) for x in self._data["buddies"]]
+        return self._buddies
 
     @property
     def guilds(self):
@@ -138,7 +148,7 @@ class User(Thing):
 
         :return: list of :class:`Thing` with all the guilds (name and id) this user is a member of
         """
-        return [Thing(x) for x in self._data["guilds"]]
+        return self._guilds
 
     @property
     def firstname(self):
