@@ -91,7 +91,12 @@ class BoardGame(Thing):
         self._expansions = []           # list of Thing for the expansions
         self._expansions_set = set()    # set for making sure things are unique
         for data in kw["expansions"]:
-            self._add_expansion(data)
+            try:
+                if data["id"] not in self._expansions_set:
+                    self._expansions_set.add(data["id"])
+                    self._expansions.append(Thing(data))
+            except KeyError:
+                raise BoardGameGeekError("invalid expansion data")
 
         # if this item expands something...
         if "expands" not in kw:
@@ -100,24 +105,31 @@ class BoardGame(Thing):
         self._expands = []              # list of Thing which this item expands
         self._expands_set = set()       # set for keeping things unique
         for data in kw["expands"]:         # for all the items this game expands, create a Thing
-            self._add_expanded_game(data)
+            try:
+                if data["id"] not in self._expands_set:
+                    self._expands_set.add(data["id"])
+                    self._expands.append(Thing(data))
+            except KeyError:
+                raise BoardGameGeekError("invalid expanded game data")
 
         super(BoardGame, self).__init__(kw)
 
     def __repr__(self):
         return "BoardGame (id: {})".format(self.id)
 
-    def _add_expanded_game(self, data):
+    def add_expanded_game(self, data):
         try:
             if data["id"] not in self._expands_set:
+                self._data["expands"].append(data)
                 self._expands_set.add(data["id"])
                 self._expands.append(Thing(data))
         except KeyError:
             raise BoardGameGeekError("invalid expanded game data")
 
-    def _add_expansion(self, data):
+    def add_expansion(self, data):
         try:
             if data["id"] not in self._expansions_set:
+                self._data["expansions"].append(data)
                 self._expansions_set.add(data["id"])
                 self._expansions.append(Thing(data))
         except KeyError:
