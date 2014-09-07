@@ -28,13 +28,19 @@ class User(Thing):
             kw["buddies"] = []
         if "guilds" not in kw:
             kw["guilds"] = []
+
         if "hot" not in kw:
             kw["hot"] = []
+        self._hot = []
+        for i in kw["hot"]:
+            self._hot.append(Thing(i))
+
         if "top" not in kw:
             kw["top"] = []
-
         self._top = []
-        self._hot = []
+        for i in kw["top"]:
+            self._top.append(Thing(i))
+
         super(User, self).__init__(kw)
 
     def __str__(self):
@@ -43,17 +49,17 @@ class User(Thing):
     def __repr__(self):
         return "User: {} (id: {})".format(self.name, self.id)
 
-    def _add_buddy(self, data):
+    def add_buddy(self, data):
         self._data["buddies"].append(data)
 
-    def _add_guild(self, data):
+    def add_guild(self, data):
         self._data["guilds"].append(data)
 
-    def _add_top_item(self, data):
+    def add_top_item(self, data):
         self._data["top"].append(data)
         self._top.append(Thing(data))
 
-    def _add_hot_item(self, data):
+    def add_hot_item(self, data):
         self._data["hot"].append(data)
         self._hot.append(Thing(data))
 

@@ -220,12 +220,12 @@ class BoardGameGeekNetworkAPI(object):
 
         # add top items
         for top_item in root.findall(".//top/item"):
-            user._add_top_item({"id": int(top_item.attrib["id"]),
+            user.add_top_item({"id": int(top_item.attrib["id"]),
                                 "name": top_item.attrib["name"]})
 
         # add hot items
         for hot_item in root.findall(".//hot/item"):
-            user._add_hot_item({"id": int(hot_item.attrib["id"]),
+            user.add_hot_item({"id": int(hot_item.attrib["id"]),
                                 "name": hot_item.attrib["name"]})
 
         total_buddies = 0
@@ -237,7 +237,7 @@ class BoardGameGeekNetworkAPI(object):
             if total_buddies > 0:
                 # add the buddies from the first page
                 for buddy in buddies.findall(".//buddy"):
-                    user._add_buddy({"name": buddy.attrib["name"],
+                    user.add_buddy({"name": buddy.attrib["name"],
                                     "id": buddy.attrib["id"]})
 
         guilds = root.find("guilds")
@@ -246,7 +246,7 @@ class BoardGameGeekNetworkAPI(object):
             if total_guilds > 0:
                 # add the guilds from the first page
                 for guild in guilds.findall(".//guild"):
-                    user._add_guild({"name": guild.attrib["name"],
+                    user.add_guild({"name": guild.attrib["name"],
                                     "id": guild.attrib["id"]})
 
         # It seems that the BGG API can return more results than what's specified in the documentation (they say
@@ -273,12 +273,12 @@ class BoardGameGeekNetworkAPI(object):
                                            timeout=self._timeout)
 
             for buddy in root.findall(".//buddy"):
-                user._add_buddy({"name": buddy.attrib["name"],
+                user.add_buddy({"name": buddy.attrib["name"],
                                 "id": buddy.attrib["id"]})
                 added_buddy = True
 
             for guild in root.findall(".//guild"):
-                user._add_guild({"name": guild.attrib["name"],
+                user.add_guild({"name": guild.attrib["name"],
                                 "id": guild.attrib["id"]})
                 added_guild = True
 
