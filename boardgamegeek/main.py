@@ -16,6 +16,7 @@ def main():
     p.add_argument("-p", "--plays", help="Query user's play list")
     p.add_argument("-P", "--plays-by-game", help="Query a game's plays")
     p.add_argument("-H", "--hot-items", help="List all hot items by type", choices=HOT_ITEM_CHOICES)
+    p.add_argument("-S", "--search", help="search and return results")
     p.add_argument("--debug", action="store_true")
 
     args = p.parse_args()
@@ -72,6 +73,13 @@ def main():
         hot_items = bgg.hot_items(args.hot_items)
         for item in hot_items:
             item._format(log)
+
+    if args.search:
+        # TODO: add search type..
+        results = bgg.search(args.search)
+        if results:
+            for r in results:
+                r._format(log)
 
 if __name__ == "__main__":
     main()

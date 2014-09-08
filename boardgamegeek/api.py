@@ -37,6 +37,7 @@ from .hotitems import HotItems
 from .plays import Plays
 from .exceptions import BoardGameGeekAPIError, BoardGameGeekError, BoardGameGeekAPIRetryError, BoardGameGeekAPINonXMLError
 from .utils import xml_subelement_attr, xml_subelement_text, xml_subelement_attr_list, get_parsed_xml_response
+from .search import SearchResult
 from .utils import get_cache_session_from_uri
 
 
@@ -52,6 +53,11 @@ class BoardGameGeekNetworkAPI(object):
     COLLECTION_FETCH_DELAY = 5
     GUILD_MEMBERS_PER_PAGE = 25         # how many guild members are per page when listing guild members
     USER_GUILD_BUDDIES_PER_PAGE = 100   # how many buddies/guilds are per page when retrieving user info
+
+    SEARCH_RPG_ITEM = 1
+    SEARCH_VIDEO_GAME = 2
+    SEARCH_BOARD_GAME = 4
+    SEARCH_BOARD_GAME_EXPANSION = 8
 
     def __init__(self, api_endpoint, cache=None, timeout=5):
 
@@ -489,6 +495,53 @@ class BoardGameGeekNetworkAPI(object):
             collection.add_game(game)
 
         return collection
+
+    def search(self, query, search_type=None):
+        """
+
+        :param query:
+        :param search_type:
+        :return:
+        """
+        if not query:
+            raise BoardGameGeekError("invalid query string")
+
+        s_type = []
+        if search_type:
+            if search_type & BoardGameGeekNetworkAPI.SEARCH_BOARD_GAME:
+                s_type.append("boardgame")
+            if search_type & BoardGameGeekNetworkAPI.SEARCH_BOARD_GAME_EXPANSION:
+                s_type.append("boardgameexpansion")
+            if search_type & BoardGameGeekNetworkAPI.SEARCH_RPG_ITEM:
+                s_type.append("rpgitem")
+            if search_type & BoardGameGeekNetworkAPI.SEARCH_VIDEO_GAME:
+                s_type.append("videogame")
+
+        # replace spaces in the query with '+'
+        params = {"query": "+".join(filter(lambda s: len(s), query.split(" ")))}
+
+        if s_type:
+            params["type"] = ",".join(s_type)
+
+        try:
+            root = get_parsed_xml_response(self.requests_session,
+                                           self._search_api_url,
+                                           params=params,
+                                           timeout=self._timeout)
+        except BoardGameGeekAPINonXMLError:
+            # if the api doesn't return XML, assume there was some error
+            return None
+
+        results = []
+        for item in root.findall("item"):
+            kwargs = {"id": item.attrib["id"],
+                      "name": xml_subelement_attr(item, "name"),
+                      "yearpublished": xml_subelement_attr(item, "yearpublished", convert=int),
+                      "type": item.attrib["type"]}
+
+            results.append(SearchResult(kwargs))
+
+        return results
 
 
 class BoardGameGeek(BoardGameGeekNetworkAPI):
