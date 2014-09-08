@@ -25,8 +25,8 @@ TEST_INVALID_GAME_NAME = "blablablathisgamewonteverexist"
 TEST_GAME_NAME = "Agricola"
 TEST_GAME_ID = 31260
 
-TEST_GAME_NAME_2 = "Inrah"
-TEST_GAME_ID_2 = 86084  # a game with very few plays
+TEST_GAME_NAME_2 = "Merchant of Venus (second edition)"
+TEST_GAME_ID_2 = 131646
 
 
 TEST_GUILD_ID = 1229
