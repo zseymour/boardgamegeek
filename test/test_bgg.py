@@ -9,6 +9,7 @@ import xml.etree.ElementTree as ET
 from boardgamegeek import BoardGameGeek, BoardGameGeekError
 from boardgamegeek.collection import Collection
 from boardgamegeek.games import CollectionBoardGame
+from boardgamegeek.hotitems import HotItems, HotItem
 import boardgamegeek.utils as bggutil
 import datetime
 
@@ -475,6 +476,22 @@ def test_get_hot_items_boardgamepersons(bgg, null_logger):
         assert item.year is None
 
         item._format(null_logger)
+
+
+def test_hot_items_initial_data():
+
+    # test that exception is raised if invalid initial data is given when trying to create a HotItems object
+    with pytest.raises(BoardGameGeekError):
+        HotItems({"items": [{"id": 100, "name": "hotitem"}]})
+
+    h = HotItems({"items": [{"id": 100, "name": "hotitem", "rank": 10}]})
+    with pytest.raises(BoardGameGeekError):
+        h.add_hot_item({"id": 100, "name": "hotitem"})
+
+    assert type(h[0]) == HotItem
+    assert h[0].id == 100
+    assert h[0].name == "hotitem"
+    assert h[0].rank == 10
 
 
 #
