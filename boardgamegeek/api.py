@@ -417,16 +417,16 @@ class BoardGameGeekNetworkAPI(object):
 
         return hot_items
 
-    def collection(self, name):
+    def collection(self, user_name):
         """
         Returns the user's game collection
 
-        :param name: user name to retrieve the collection for
+        :param user_name: user name to retrieve the collection for
         :return: :class:`Collection` or ``None`` if user not found
         :raises: :class:`BoardGameGeekAPIError` if there was a problem getting the collection
         :raises: :class:`BoardGameGeekError` in case of invalid parameters
         """
-        if not name:
+        if not user_name:
             raise BoardGameGeekError("no user name specified")
 
         retry = BoardGameGeekNetworkAPI.COLLECTION_FETCH_RETRIES
@@ -437,7 +437,7 @@ class BoardGameGeekNetworkAPI(object):
             try:
                 root = get_parsed_xml_response(self.requests_session,
                                                self._collection_api_url,
-                                               params={"username": name, "stats": 1},
+                                               params={"username": user_name, "stats": 1},
                                                timeout=self._timeout)
                 found = True
                 break
@@ -448,16 +448,16 @@ class BoardGameGeekNetworkAPI(object):
                 continue
 
         if not found:
-            raise BoardGameGeekAPIError("failed to get {}'s collection after multiple retries".format(name))
+            raise BoardGameGeekAPIError("failed to get {}'s collection after multiple retries".format(user_name))
 
         # check if there's an error (e.g. invalid username)
         error = root.find(".//error")
         if error is not None:
             message = xml_subelement_text(error, "message")
-            log.error("error fetching collection for {}: {}".format(name, message))
+            log.error("error fetching collection for {}: {}".format(user_name, message))
             return None
 
-        collection = Collection({"owner": name, "items": []})
+        collection = Collection({"owner": user_name, "items": []})
 
         # search for all boardgames in the collection, add them to the list
         for xml_el in root.findall(".//item[@subtype='boardgame']"):
