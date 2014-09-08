@@ -7,6 +7,8 @@ import tempfile
 import pytest
 import xml.etree.ElementTree as ET
 from boardgamegeek import BoardGameGeek, BoardGameGeekError
+from boardgamegeek.collection import Collection
+from boardgamegeek.games import CollectionBoardGame
 import boardgamegeek.utils as bggutil
 import datetime
 
@@ -199,6 +201,27 @@ def test_get_valid_users_collection(bgg, null_logger):
     # for coverage's sake
     collection._format(null_logger)
     assert type(collection.data()) == dict
+
+
+def test_creating_collection_out_of_raw_data():
+    # test raise exception if invalid items given
+    with pytest.raises(BoardGameGeekError):
+        Collection({"items": [{"id": 102}]})
+
+    # test that items are added to the collection from the constructor
+    c = Collection({"owner": "me", "items": [
+        {"id": 100, "name": "foobar"}
+    ]})
+
+    assert len(c) == 1
+    assert c.owner == "me"
+    assert type(c[0]) == CollectionBoardGame
+    assert c[0].id == 100
+    assert c[0].name == "foobar"
+
+    with pytest.raises(BoardGameGeekError):
+        # raises exception on invalid game data
+        c.add_game({"bla": "bla"})
 
 
 #

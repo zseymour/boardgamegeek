@@ -47,6 +47,9 @@ class Collection(DictObject):
         except KeyError:
             raise BoardGameGeekError("invalid game data")
 
+    def __getitem__(self, item):
+        return self._items.__getitem__(item)
+
     def __str__(self):
         return "{}'s collection, {} items".format(self.owner, len(self))
 
