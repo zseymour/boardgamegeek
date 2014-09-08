@@ -442,14 +442,13 @@ def test_get_plays_of_game(bgg, null_logger):
     for p in plays.plays:
         assert type(p.id) == int
         assert type(p.user_id) == int
-        assert type(p.date) == datetime.datetime
+        assert type(p.date) in [datetime.datetime, type(None)]
         assert p.quantity >= 0
         assert p.duration >= 0
         assert type(p.incomplete) == int
         assert type(p.nowinstats) == int
         assert p.game_id == TEST_GAME_ID_2
         assert p.game_name == TEST_GAME_NAME_2
-        assert type(p.comment) in [type(None), str]
 
     plays._format(null_logger)
 
@@ -467,6 +466,12 @@ def test_create_plays_with_initial_data():
     assert p[0].user_id == 102
     assert type(p[0].date) == datetime.datetime
     assert p[0].date.strftime("%Y-%m-%d") == "2014-01-02"
+
+    # it also accepts datetime objects
+    now = datetime.datetime.utcnow()
+    p = Plays({"plays": [{"id": 10, "user_id": 102, "date": now}]})
+
+    assert p[0].date == now
 
 #
 # Hot items testing
