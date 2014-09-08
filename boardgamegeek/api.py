@@ -345,7 +345,7 @@ class BoardGameGeekNetworkAPI(object):
 
                 # TODO: add the game subtype too
                 kwargs = {"id": int(play.attrib["id"]),
-                          "date": datetime.datetime.strptime(play.attrib["date"], "%Y-%m-%d"),
+                          "date": play.attrib["date"],
                           "quantity": int(play.attrib["quantity"]),
                           "duration": int(play.attrib["length"]),
                           "incomplete": int(play.attrib["incomplete"]),
