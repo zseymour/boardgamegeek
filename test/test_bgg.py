@@ -6,10 +6,15 @@ import os
 import tempfile
 import pytest
 import xml.etree.ElementTree as ET
+
+
 from boardgamegeek import BoardGameGeek, BoardGameGeekError
 from boardgamegeek.collection import Collection
 from boardgamegeek.games import CollectionBoardGame
 from boardgamegeek.hotitems import HotItems, HotItem
+from boardgamegeek.plays import PlaySession, Plays
+from boardgamegeek.things import Thing
+
 import boardgamegeek.utils as bggutil
 import datetime
 
@@ -449,6 +454,20 @@ def test_get_plays_of_game(bgg, null_logger):
     plays._format(null_logger)
 
 
+def test_create_plays_with_initial_data():
+
+    with pytest.raises(BoardGameGeekError):
+        Plays({"plays": [{"user_id": 10}]})
+
+    p = Plays({"plays": [{"id": 10, "user_id": 102, "date": "2014-01-02"}]})
+
+    assert len(p) == 1
+    assert type(p[0]) == PlaySession
+    assert p[0].id == 10
+    assert p[0].user_id == 102
+    assert type(p[0].date) == datetime.datetime
+    assert p[0].date.strftime("%Y-%m-%d") == "2014-01-02"
+
 #
 # Hot items testing
 #
@@ -489,9 +508,29 @@ def test_hot_items_initial_data():
         h.add_hot_item({"id": 100, "name": "hotitem"})
 
     assert type(h[0]) == HotItem
+    assert len(h) == 1
     assert h[0].id == 100
     assert h[0].name == "hotitem"
     assert h[0].rank == 10
+
+
+#
+# Thing testing
+#
+def test_thing_creation():
+    with pytest.raises(BoardGameGeekError):
+        Thing({"id": 100})  # missing name
+
+    with pytest.raises(BoardGameGeekError):
+        Thing({"name": "foobar"})  # missing id
+
+    with pytest.raises(BoardGameGeekError):
+        Thing({"id": "asd", "name": "fubăr"})  # id not string
+
+    t = Thing({"id": "10", "name": "fubăr"})
+
+    assert t.id == 10
+    assert t.name == "fubăr"
 
 
 #
