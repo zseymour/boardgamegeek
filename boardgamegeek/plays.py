@@ -12,6 +12,9 @@
 """
 from __future__ import unicode_literals
 from copy import copy
+import datetime
+
+from .exceptions import BoardGameGeekError
 from .utils import DictObject
 
 
@@ -20,10 +23,24 @@ class PlaySession(DictObject):
     Container for a play session information.
     """
 
+    def __init__(self, data):
+        if "id" not in data:
+            raise BoardGameGeekError("missing id of PlaySession")
+
+        if "date" in data:
+            if type(data["date"]) != datetime.datetime:
+                try:
+                    data["date"] = datetime.datetime.strptime(data["date"], "%Y-%m-%d")
+                except:
+                    data["date"] = None
+
+        super(PlaySession, self).__init__(data)
+
     def _format(self, log):
         log.info("play id         : {}".format(self.id))
         log.info("play user id    : {}".format(self.user_id))
-        log.info("play date       : {}".format(self.date.strftime("%Y-%m-%d")))
+        if self.date:
+            log.info("play date       : {}".format(self.date.strftime("%Y-%m-%d")))
         log.info("play quantity   : {}".format(self.quantity))
         log.info("play duration   : {}".format(self.duration))
         log.info("play incomplete : {}".format(self.incomplete))
@@ -128,6 +145,9 @@ class Plays(DictObject):
         for p in self.plays:
             p._format(log)
             log.info("-------------")
+
+    def __getitem__(self, item):
+        return self._plays.__getitem__(item)
 
     def __len__(self):
         return len(self._plays)

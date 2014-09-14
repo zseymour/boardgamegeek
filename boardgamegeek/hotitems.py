@@ -14,16 +14,23 @@ from __future__ import unicode_literals
 
 from copy import copy
 
-
+from .exceptions import BoardGameGeekError
 from .things import Thing
 from .utils import DictObject
 
 
 class HotItem(Thing):
     """
-    A hot item from a list. Can refer to either an item (``boardgame``, ``videogame``, etc.), a person (``rpgperson``, ``boardgameperson``)
-    or even a company (``boardgamecompany``, ``videogamecompany``), depending on the type of hot list retrieved.
+    A hot item from a list. Can refer to either an item (``boardgame``, ``videogame``, etc.), a person (``rpgperson``,
+    ``boardgameperson``) or even a company (``boardgamecompany``, ``videogamecompany``), depending on the type of hot
+    list retrieved.
     """
+
+    def __init__(self, data):
+        if "rank" not in data:
+            raise BoardGameGeekError("missing rank of HotItem")
+
+        super(HotItem, self).__init__(data)
 
     def __repr__(self):
         return "HotItem (id: {})".format(self.id)
@@ -99,3 +106,6 @@ class HotItems(DictObject):
     def __iter__(self):
         for item in self._data["items"]:
             yield HotItem(item)
+
+    def __getitem__(self, item):
+        return self._items.__getitem__(item)

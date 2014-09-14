@@ -6,7 +6,15 @@ import os
 import tempfile
 import pytest
 import xml.etree.ElementTree as ET
+
+
 from boardgamegeek import BoardGameGeek, BoardGameGeekError
+from boardgamegeek.collection import Collection
+from boardgamegeek.games import CollectionBoardGame
+from boardgamegeek.hotitems import HotItems, HotItem
+from boardgamegeek.plays import PlaySession, Plays
+from boardgamegeek.things import Thing
+
 import boardgamegeek.utils as bggutil
 import datetime
 
@@ -22,8 +30,8 @@ TEST_INVALID_GAME_NAME = "blablablathisgamewonteverexist"
 TEST_GAME_NAME = "Agricola"
 TEST_GAME_ID = 31260
 
-TEST_GAME_NAME_2 = "Inrah"
-TEST_GAME_ID_2 = 86084  # a game with very few plays
+TEST_GAME_NAME_2 = "Merchant of Venus (second edition)"
+TEST_GAME_ID_2 = 131646
 
 
 TEST_GUILD_ID = 1229
@@ -199,6 +207,27 @@ def test_get_valid_users_collection(bgg, null_logger):
     # for coverage's sake
     collection._format(null_logger)
     assert type(collection.data()) == dict
+
+
+def test_creating_collection_out_of_raw_data():
+    # test raise exception if invalid items given
+    with pytest.raises(BoardGameGeekError):
+        Collection({"items": [{"id": 102}]})
+
+    # test that items are added to the collection from the constructor
+    c = Collection({"owner": "me", "items": [
+        {"id": 100, "name": "foobar"}
+    ]})
+
+    assert len(c) == 1
+    assert c.owner == "me"
+    assert type(c[0]) == CollectionBoardGame
+    assert c[0].id == 100
+    assert c[0].name == "foobar"
+
+    with pytest.raises(BoardGameGeekError):
+        # raises exception on invalid game data
+        c.add_game({"bla": "bla"})
 
 
 #
@@ -413,17 +442,36 @@ def test_get_plays_of_game(bgg, null_logger):
     for p in plays.plays:
         assert type(p.id) == int
         assert type(p.user_id) == int
-        assert type(p.date) == datetime.datetime
+        assert type(p.date) in [datetime.datetime, type(None)]
         assert p.quantity >= 0
         assert p.duration >= 0
         assert type(p.incomplete) == int
         assert type(p.nowinstats) == int
         assert p.game_id == TEST_GAME_ID_2
         assert p.game_name == TEST_GAME_NAME_2
-        assert type(p.comment) in [type(None), str]
 
     plays._format(null_logger)
 
+
+def test_create_plays_with_initial_data():
+
+    with pytest.raises(BoardGameGeekError):
+        Plays({"plays": [{"user_id": 10}]})
+
+    p = Plays({"plays": [{"id": 10, "user_id": 102, "date": "2014-01-02"}]})
+
+    assert len(p) == 1
+    assert type(p[0]) == PlaySession
+    assert p[0].id == 10
+    assert p[0].user_id == 102
+    assert type(p[0].date) == datetime.datetime
+    assert p[0].date.strftime("%Y-%m-%d") == "2014-01-02"
+
+    # it also accepts datetime objects
+    now = datetime.datetime.utcnow()
+    p = Plays({"plays": [{"id": 10, "user_id": 102, "date": now}]})
+
+    assert p[0].date == now
 
 #
 # Hot items testing
@@ -452,6 +500,42 @@ def test_get_hot_items_boardgamepersons(bgg, null_logger):
         assert item.year is None
 
         item._format(null_logger)
+
+
+def test_hot_items_initial_data():
+
+    # test that exception is raised if invalid initial data is given when trying to create a HotItems object
+    with pytest.raises(BoardGameGeekError):
+        HotItems({"items": [{"id": 100, "name": "hotitem"}]})
+
+    h = HotItems({"items": [{"id": 100, "name": "hotitem", "rank": 10}]})
+    with pytest.raises(BoardGameGeekError):
+        h.add_hot_item({"id": 100, "name": "hotitem"})
+
+    assert type(h[0]) == HotItem
+    assert len(h) == 1
+    assert h[0].id == 100
+    assert h[0].name == "hotitem"
+    assert h[0].rank == 10
+
+
+#
+# Thing testing
+#
+def test_thing_creation():
+    with pytest.raises(BoardGameGeekError):
+        Thing({"id": 100})  # missing name
+
+    with pytest.raises(BoardGameGeekError):
+        Thing({"name": "foobar"})  # missing id
+
+    with pytest.raises(BoardGameGeekError):
+        Thing({"id": "asd", "name": "fubăr"})  # id not string
+
+    t = Thing({"id": "10", "name": "fubăr"})
+
+    assert t.id == 10
+    assert t.name == "fubăr"
 
 
 #

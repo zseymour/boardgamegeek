@@ -37,6 +37,7 @@ from .hotitems import HotItems
 from .plays import Plays
 from .exceptions import BoardGameGeekAPIError, BoardGameGeekError, BoardGameGeekAPIRetryError, BoardGameGeekAPINonXMLError
 from .utils import xml_subelement_attr, xml_subelement_text, xml_subelement_attr_list, get_parsed_xml_response
+from .search import SearchResult
 from .utils import get_cache_session_from_uri
 
 
@@ -48,12 +49,16 @@ HOT_ITEM_CHOICES = ["boardgame", "rpg", "videogame", "boardgameperson", "rpgpers
 
 
 class BoardGameGeekNetworkAPI(object):
-    COLLECTION_FETCH_RETRIES = 5
-    COLLECTION_FETCH_DELAY = 5
+
     GUILD_MEMBERS_PER_PAGE = 25         # how many guild members are per page when listing guild members
     USER_GUILD_BUDDIES_PER_PAGE = 100   # how many buddies/guilds are per page when retrieving user info
 
-    def __init__(self, api_endpoint, cache=None, timeout=5):
+    SEARCH_RPG_ITEM = 1
+    SEARCH_VIDEO_GAME = 2
+    SEARCH_BOARD_GAME = 4
+    SEARCH_BOARD_GAME_EXPANSION = 8
+
+    def __init__(self, api_endpoint, cache, timeout, retries, retry_delay):
 
         self._search_api_url = api_endpoint + "/search"
         self._thing_api_url = api_endpoint + "/thing"
@@ -63,6 +68,8 @@ class BoardGameGeekNetworkAPI(object):
         self._hot_api_url = api_endpoint + "/hot"
         self._collection_api_url = api_endpoint + "/collection"
         self._timeout = timeout
+        self._retries = retries
+        self._retry_delay = retry_delay
 
         if cache:
             self.requests_session = get_cache_session_from_uri(cache)
@@ -76,10 +83,15 @@ class BoardGameGeekNetworkAPI(object):
 
         log.debug("getting game id for '{}'".format(name))
 
-        root = get_parsed_xml_response(self.requests_session,
-                                       self._search_api_url,
-                                       params={"query": name, "exact": 1},
-                                       timeout=self._timeout)
+        try:
+            root = get_parsed_xml_response(self.requests_session,
+                                           self._search_api_url,
+                                           params={"query": name, "exact": 1},
+                                           timeout=self._timeout,
+                                           retries=self._retries,
+                                           retry_delay=self._retry_delay)
+        except BoardGameGeekAPINonXMLError:
+            return None
 
         # game_type can be rpgitem, videogame, boardgame, or boardgameexpansion
         game = root.find(".//item[@type='{}']".format(game_type))
@@ -106,10 +118,15 @@ class BoardGameGeekNetworkAPI(object):
         except:
             raise BoardGameGeekError("invalid guild id")
 
-        root = get_parsed_xml_response(self.requests_session,
-                                       self._guild_api_url,
-                                       params={"id": guild_id, "members": 1},
-                                       timeout=self._timeout)
+        try:
+            root = get_parsed_xml_response(self.requests_session,
+                                           self._guild_api_url,
+                                           params={"id": guild_id, "members": 1},
+                                           timeout=self._timeout,
+                                           retries=self._retries,
+                                           retry_delay=self._retry_delay)
+        except BoardGameGeekAPINonXMLError:
+            return None
 
         if "name" not in root.attrib:
             log.warn("unable to get guild information (name not found)".format(guild_id))
@@ -161,7 +178,9 @@ class BoardGameGeekNetworkAPI(object):
             root = get_parsed_xml_response(self.requests_session,
                                            self._guild_api_url,
                                            params={"id": guild_id, "members": 1, "page": page},
-                                           timeout=self._timeout)
+                                           timeout=self._timeout,
+                                           retries=self._retries,
+                                           retry_delay=self._retry_delay)
 
             for el in root.findall(".//member"):
                 kwargs["members"].append(el.attrib["name"])
@@ -193,7 +212,9 @@ class BoardGameGeekNetworkAPI(object):
             root = get_parsed_xml_response(self.requests_session,
                                            self._user_api_url,
                                            params=params,
-                                           timeout=self._timeout)
+                                           timeout=self._timeout,
+                                           retries=self._retries,
+                                           retry_delay=self._retry_delay)
         except BoardGameGeekAPINonXMLError:
             # if the api doesn't return XML, assume the user wasn't found
             return None
@@ -319,8 +340,10 @@ class BoardGameGeekNetworkAPI(object):
             root = get_parsed_xml_response(self.requests_session,
                                            self._plays_api_url,
                                            params=params,
-                                           timeout=self._timeout)
-        except Exception as e:
+                                           timeout=self._timeout,
+                                           retries=self._retries,
+                                           retry_delay=self._retry_delay)
+        except BoardGameGeekAPINonXMLError as e:
             # The API seems to return HTML in case of an invalid username.
             # just return None for the time being.
             log.error("error trying to fetch plays: {}".format(e))
@@ -345,7 +368,7 @@ class BoardGameGeekNetworkAPI(object):
 
                 # TODO: add the game subtype too
                 kwargs = {"id": int(play.attrib["id"]),
-                          "date": datetime.datetime.strptime(play.attrib["date"], "%Y-%m-%d"),
+                          "date": play.attrib["date"],
                           "quantity": int(play.attrib["quantity"]),
                           "duration": int(play.attrib["length"]),
                           "incomplete": int(play.attrib["incomplete"]),
@@ -375,7 +398,9 @@ class BoardGameGeekNetworkAPI(object):
             root = get_parsed_xml_response(self.requests_session,
                                            self._plays_api_url,
                                            params=params,
-                                           timeout=self._timeout)
+                                           timeout=self._timeout,
+                                           retries=self._retries,
+                                           retry_delay=self._retry_delay)
 
             if not _add_plays(plays, root):
                 break
@@ -400,7 +425,9 @@ class BoardGameGeekNetworkAPI(object):
             root = get_parsed_xml_response(self.requests_session,
                                            self._hot_api_url,
                                            params=params,
-                                           timeout=self._timeout)
+                                           timeout=self._timeout,
+                                           retries=self._retries,
+                                           retry_delay=self._retry_delay)
         except BoardGameGeekAPINonXMLError:
             # if the api doesn't return XML, assume there was some error
             return None
@@ -417,47 +444,36 @@ class BoardGameGeekNetworkAPI(object):
 
         return hot_items
 
-    def collection(self, name):
+    def collection(self, user_name):
         """
         Returns the user's game collection
 
-        :param name: user name to retrieve the collection for
+        :param user_name: user name to retrieve the collection for
         :return: :class:`Collection` or ``None`` if user not found
         :raises: :class:`BoardGameGeekAPIError` if there was a problem getting the collection
         :raises: :class:`BoardGameGeekError` in case of invalid parameters
         """
-        if not name:
+        if not user_name:
             raise BoardGameGeekError("no user name specified")
 
-        retry = BoardGameGeekNetworkAPI.COLLECTION_FETCH_RETRIES
-        root = None
-        found = False
-
-        while retry > 0:
-            try:
-                root = get_parsed_xml_response(self.requests_session,
-                                               self._collection_api_url,
-                                               params={"username": name, "stats": 1},
-                                               timeout=self._timeout)
-                found = True
-                break
-            except BoardGameGeekAPIRetryError:
-                retry -= 1
-                sleep(BoardGameGeekNetworkAPI.COLLECTION_FETCH_DELAY)
-                log.debug("retrying collection fetch")
-                continue
-
-        if not found:
-            raise BoardGameGeekAPIError("failed to get {}'s collection after multiple retries".format(name))
+        try:
+            root = get_parsed_xml_response(self.requests_session,
+                                           self._collection_api_url,
+                                           params={"username": user_name, "stats": 1},
+                                           timeout=self._timeout,
+                                           retries=self._retries,
+                                           retry_delay=self._retry_delay)
+        except BoardGameGeekAPINonXMLError:
+            return None
 
         # check if there's an error (e.g. invalid username)
         error = root.find(".//error")
         if error is not None:
             message = xml_subelement_text(error, "message")
-            log.error("error fetching collection for {}: {}".format(name, message))
+            log.error("error fetching collection for {}: {}".format(user_name, message))
             return None
 
-        collection = Collection({"owner": name, "items": []})
+        collection = Collection({"owner": user_name, "items": []})
 
         # search for all boardgames in the collection, add them to the list
         for xml_el in root.findall(".//item[@subtype='boardgame']"):
@@ -490,10 +506,59 @@ class BoardGameGeekNetworkAPI(object):
 
         return collection
 
+    def search(self, query, search_type=None):
+        """
+
+        :param query:
+        :param search_type:
+        :return:
+        """
+        if not query:
+            raise BoardGameGeekError("invalid query string")
+
+        s_type = []
+        if search_type:
+            if search_type & BoardGameGeekNetworkAPI.SEARCH_BOARD_GAME:
+                s_type.append("boardgame")
+            if search_type & BoardGameGeekNetworkAPI.SEARCH_BOARD_GAME_EXPANSION:
+                s_type.append("boardgameexpansion")
+            if search_type & BoardGameGeekNetworkAPI.SEARCH_RPG_ITEM:
+                s_type.append("rpgitem")
+            if search_type & BoardGameGeekNetworkAPI.SEARCH_VIDEO_GAME:
+                s_type.append("videogame")
+
+        # replace spaces in the query with '+'
+        params = {"query": "+".join(filter(lambda s: len(s), query.split(" ")))}
+
+        if s_type:
+            params["type"] = ",".join(s_type)
+
+        try:
+            root = get_parsed_xml_response(self.requests_session,
+                                           self._search_api_url,
+                                           params=params,
+                                           timeout=self._timeout,
+                                           retries=self._retries,
+                                           retry_delay=self._retry_delay)
+        except BoardGameGeekAPINonXMLError:
+            # if the api doesn't return XML, assume there was some error
+            return None
+
+        results = []
+        for item in root.findall("item"):
+            kwargs = {"id": item.attrib["id"],
+                      "name": xml_subelement_attr(item, "name"),
+                      "yearpublished": xml_subelement_attr(item, "yearpublished", convert=int),
+                      "type": item.attrib["type"]}
+
+            results.append(SearchResult(kwargs))
+
+        return results
+
 
 class BoardGameGeek(BoardGameGeekNetworkAPI):
     """
-        Pyhton interface for www.boardgamegeek.com's XML API.
+        Python interface for www.boardgamegeek.com's XML API.
 
         Caching for the requests can be used by specifying an URI for the ``cache`` parameter. By default, an in-memory
         cache is used, with "sqlite" being the other currently supported option.
@@ -508,8 +573,20 @@ class BoardGameGeek(BoardGameGeekNetworkAPI):
             >>> bgg_sqlite_cache = BoardGameGeek(cache="sqlite:///path/to/cache.db?ttl=3600")
 
     """
-    def __init__(self, cache="memory:///?ttl=3600"):
-        super(BoardGameGeek, self).__init__(api_endpoint="http://www.boardgamegeek.com/xmlapi2", cache=cache)
+    def __init__(self, cache="memory:///?ttl=3600", timeout=10, retries=2, retry_delay=5):
+        """
+
+        :param cache: Cache to use for requests, None if disabled
+        :param timeout: Timeout for network operations
+        :param retries: Number of retries to perform in case the API returns HTTP 202 (retry) or in case of timeouts
+        :param retry_delay: Time to sleep between retries when the API returns HTTP 202 (retry)
+        :return:
+        """
+        super(BoardGameGeek, self).__init__(api_endpoint="http://www.boardgamegeek.com/xmlapi2",
+                                            cache=cache,
+                                            timeout=timeout,
+                                            retries=retries,
+                                            retry_delay=retry_delay)
 
     def get_game_id(self, name):
         return self._get_game_id(name, "boardgame")
@@ -527,10 +604,15 @@ class BoardGameGeek(BoardGameGeekNetworkAPI):
 
         log.debug("retrieving game id {}{}".format(game_id, " ({})".format(name) if name is not None else ""))
 
-        root = get_parsed_xml_response(self.requests_session,
-                                       self._thing_api_url,
-                                       params={"id": game_id, "stats": 1},
-                                       timeout=self._timeout)
+        try:
+            root = get_parsed_xml_response(self.requests_session,
+                                           self._thing_api_url,
+                                           params={"id": game_id, "stats": 1},
+                                           timeout=self._timeout,
+                                           retries=self._retries,
+                                           retry_delay=self._retry_delay)
+        except BoardGameGeekAPINonXMLError:
+            return None
 
         # xml is structured like <item ...> blablabla><item>..
         root = root.find("item")

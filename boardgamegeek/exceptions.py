@@ -3,6 +3,10 @@ class BoardGameGeekError(Exception):
     pass
 
 
+class BoardGameGeekTimeoutError(BoardGameGeekError):
+    pass
+
+
 class BoardGameGeekAPIError(BoardGameGeekError):
     pass
 
