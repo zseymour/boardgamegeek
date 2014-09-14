@@ -1,6 +1,18 @@
 Changelog
 =========
 
+0.4.0
+-----
+
+Changes
+
+  * The calls to the BGG API will be automatically retried two times, with a timeout of 10 seconds. This behaviour can
+    be controlled via the retries=, timeout= and retry_delay= parameters.
+
+Features
+
+  * Added patch from philsstein to automatically increase timeout and retry request on timeout
+
 0.3.0
 -----
 

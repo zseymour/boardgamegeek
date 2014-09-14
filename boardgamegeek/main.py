@@ -18,6 +18,10 @@ def main():
     p.add_argument("-H", "--hot-items", help="List all hot items by type", choices=HOT_ITEM_CHOICES)
     p.add_argument("-S", "--search", help="search and return results")
     p.add_argument("--debug", action="store_true")
+    p.add_argument("--retries", help="number of retries to perform in case of timeout or API HTTP 202 code",
+                   type=int,
+                   default=5)
+    p.add_argument("--timeout", help="Timeout for API operations", type=int, default=10)
 
     args = p.parse_args()
 
@@ -32,7 +36,7 @@ def main():
     def progress_cb(items, total):
         log.debug("fetching items: {}% complete".format(items*100/total))
 
-    bgg = BoardGameGeek()
+    bgg = BoardGameGeek(timeout=args.timeout, retries=args.retries)
 
     if args.user:
         user = bgg.user(args.user, progress=progress_cb)

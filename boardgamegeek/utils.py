@@ -16,13 +16,19 @@ import xml.etree.ElementTree as ET
 from xml.etree.ElementTree import ParseError as ETParseError
 import requests_cache
 import requests
+import logging
+import time
+
 
 try:
     import urllib.parse as urlparse
 except:
     import urlparse
 
-from .exceptions import BoardGameGeekAPIError, BoardGameGeekAPIRetryError, BoardGameGeekError, BoardGameGeekAPINonXMLError
+from .exceptions import BoardGameGeekAPIError, BoardGameGeekAPIRetryError, BoardGameGeekError
+from .exceptions import BoardGameGeekAPINonXMLError, BoardGameGeekTimeoutError
+
+log = logging.getLogger("boardgamegeek.utils")
 
 
 class DictObject(object):
@@ -146,48 +152,78 @@ def xml_subelement_text(xml_elem, subelement, convert=None):
     return text
 
 
-def get_parsed_xml_response(requests_session, url, params=None, timeout=5):
+def get_parsed_xml_response(requests_session, url, params=None, timeout=10, retries=2, retry_delay=5):
     """
     Downloads an XML from the specified url, parses it and returns the xml ElementTree.
 
     :param requests_session: A Session of the ``requests`` library, used to fetch the url
     :param url: the address where to get the XML from
     :param params: dictionary containing the parameters which should be sent with the request
+    :param timeout: number of seconds after which the request times out
+    :param retries: number of retries to perform in case of timeout
+    :param retry_delay: the amount of seconds to sleep when retrying an API call that returned 202
     :return: :func:`xml.etree.ElementTree` corresponding to the XML
     :raises: :class:`BoardGameGeekAPIRetryError` if this request should be retried after a short delay
     :raises: :class:`BoardGameGeekAPIError` if the response couldn't be parsed
     """
-    try:
-        r = requests_session.get(url, params=params, timeout=timeout)
 
-        if r.status_code == 202:
-            # BoardGameGeek API says that on status code 202 we need to retry the operation after a delay
-            raise BoardGameGeekAPIRetryError()
+    retr = retries - 1
 
-        if not r.headers.get("content-type").startswith("text/xml"):
-            raise BoardGameGeekAPINonXMLError("non-XML reply")
+    # retry loop
+    while retr >= 0:
 
-        xml = r.text
+        try:
+            r = requests_session.get(url, params=params, timeout=timeout)
 
-        if sys.version_info >= (3,):
-            root_elem = ET.fromstring(xml)
-        else:
-            utf8_xml = xml.encode("utf-8")
-            root_elem = ET.fromstring(utf8_xml)
+            if r.status_code == 202:
+                if retries == 0:
+                    # no retries have been requested, therefore raise exception to signal the application that it
+                    # needs to retry
+                    # (BoardGameGeek API says that on status code 202 the call should be retried after a delay)
+                    raise BoardGameGeekAPIRetryError()
+                elif retr == 0:
+                    # retries were requested, but we reached 0. Signal the application that it needs to retry itself.
+                    raise BoardGameGeekAPIRetryError("failed to retrieve data after {} retries".format(retries))
+                else:
+                    # sleep for the specified delay and retry
+                    log.debug("API call will be retried in {} seconds ({} more retries)".format(retry_delay, retr))
+                    retr -= 1
+                    time.sleep(retry_delay)
+                    continue
 
-    except requests.exceptions.Timeout:
-        raise BoardGameGeekError("API request timeout")
+            if not r.headers.get("content-type").startswith("text/xml"):
+                raise BoardGameGeekAPINonXMLError("non-XML reply")
 
-    except ETParseError as e:
-        raise BoardGameGeekAPIError("error decoding BGG API response: {}".format(e))
+            xml = r.text
 
-    except (BoardGameGeekAPIRetryError, BoardGameGeekAPINonXMLError):
-        raise
+            if sys.version_info >= (3,):
+                root_elem = ET.fromstring(xml)
+            else:
+                utf8_xml = xml.encode("utf-8")
+                root_elem = ET.fromstring(utf8_xml)
 
-    except Exception as e:
-        raise BoardGameGeekAPIError("error fetching BGG API response: {}".format(e))
+            return root_elem
 
-    return root_elem
+        except requests.exceptions.Timeout:
+            if retries == 0:
+                raise BoardGameGeekTimeoutError()
+            elif retr == 0:
+                # ... reached 0 retries
+                raise BoardGameGeekTimeoutError("failed to retrieve data after {} retries".format(retries))
+            else:
+                log.debug("API request timeout, retrying {} more times w/timeout {}".format(retr, timeout))
+                timeout *= 1.5
+                retr -= 1
+                continue
+
+        except ETParseError as e:
+            raise BoardGameGeekAPIError("error decoding BGG API response: {}".format(e))
+
+        except (BoardGameGeekAPIRetryError, BoardGameGeekAPINonXMLError, BoardGameGeekTimeoutError):
+            raise
+
+        except Exception as e:
+            raise BoardGameGeekAPIError("error fetching BGG API response: {}".format(e))
 
 
 def get_cache_session_from_uri(uri):
