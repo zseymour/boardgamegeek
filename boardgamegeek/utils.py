@@ -152,7 +152,7 @@ def xml_subelement_text(xml_elem, subelement, convert=None):
     return text
 
 
-def get_parsed_xml_response(requests_session, url, params=None, timeout=10, retries=2, retry_delay=5):
+def get_parsed_xml_response(requests_session, url, params=None, timeout=15, retries=3, retry_delay=5):
     """
     Downloads an XML from the specified url, parses it and returns the xml ElementTree.
 
@@ -212,7 +212,7 @@ def get_parsed_xml_response(requests_session, url, params=None, timeout=10, retr
                 raise BoardGameGeekTimeoutError("failed to retrieve data after {} retries".format(retries))
             else:
                 log.debug("API request timeout, retrying {} more times w/timeout {}".format(retr, timeout))
-                timeout *= 1.5
+                timeout *= 2.5
                 retr -= 1
                 continue
 

@@ -573,7 +573,7 @@ class BoardGameGeek(BoardGameGeekNetworkAPI):
             >>> bgg_sqlite_cache = BoardGameGeek(cache="sqlite:///path/to/cache.db?ttl=3600")
 
     """
-    def __init__(self, cache="memory:///?ttl=3600", timeout=10, retries=2, retry_delay=5):
+    def __init__(self, cache="memory:///?ttl=3600", timeout=15, retries=3, retry_delay=5):
         """
 
         :param cache: Cache to use for requests, None if disabled
