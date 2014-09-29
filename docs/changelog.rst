@@ -1,6 +1,13 @@
 Changelog
 =========
 
+0.4.2
+-----
+
+Changes
+
+  * Increased default number of retries and timeout 
+
 0.4.0
 -----
 
