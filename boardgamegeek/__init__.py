@@ -7,7 +7,7 @@
 .. moduleauthor:: Cosmin Luță <q4break@gmail.com>
 """
 from .api import BoardGameGeek
-from .exceptions import BoardGameGeekError, BoardGameGeekAPIRetryError, BoardGameGeekAPIError
+from .exceptions import BoardGameGeekError, BoardGameGeekAPIRetryError, BoardGameGeekAPIError, BoardGameGeekTimeoutError
 from .version import __version__
 
-__all__ = [BoardGameGeek, BoardGameGeekAPIRetryError, BoardGameGeekError, BoardGameGeekAPIError]
+__all__ = [BoardGameGeek, BoardGameGeekAPIRetryError, BoardGameGeekError, BoardGameGeekAPIError, BoardGameGeekTimeoutError]
