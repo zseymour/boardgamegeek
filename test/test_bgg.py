@@ -473,6 +473,7 @@ def test_create_plays_with_initial_data():
 
     assert p[0].date == now
 
+
 #
 # Hot items testing
 #
@@ -487,7 +488,7 @@ def test_get_hot_items_boardgames(bgg, null_logger):
         assert type(item.id) == int
         assert len(item.name) > 0
         assert type(item.rank) == int
-        assert type(item.year) == int
+        assert type(item.year) in [int, type(None)]
         item._format(null_logger)
 
 
