@@ -1,6 +1,13 @@
 Changelog
 =========
 
+0.4.3
+-----
+
+Changes
+
+  * When calling :py:func:`boardgamegeek.api.BoardGameGeek.game()` with a name, return the most recently published result instead of the first one, in case of multiple results.
+
 0.4.2
 -----
 
