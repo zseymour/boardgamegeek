@@ -383,6 +383,18 @@ def test_get_game_id_by_name(bgg):
     assert game_id == TEST_GAME_ID
 
 
+def test_get_games_by_name(bgg, null_logger):
+
+    games = bgg.games("coup")
+
+    for g in games:
+        assert g is not None
+        assert type(g.id) == int
+        assert g.name == "Coup"
+        g._format(null_logger)
+
+    assert len(games) > 1
+
 #
 # Plays testing
 #

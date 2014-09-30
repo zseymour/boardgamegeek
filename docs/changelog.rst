@@ -1,6 +1,14 @@
 Changelog
 =========
 
+0.5.0
+-----
+  
+Features
+
+  * Added a new function :py:func:`boardgamegeek.api.BoardGameGeek.games()` which takes a name as argument and returns a list of :py:class:`boardgamegeek.games.BoardGame` with 
+    all the games with that name.
+
 0.4.3
 -----
 
