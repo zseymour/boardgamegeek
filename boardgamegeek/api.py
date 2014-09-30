@@ -476,7 +476,7 @@ class BoardGameGeekNetworkAPI(object):
         Returns the user's game collection
 
         :param user_name: user name to retrieve the collection for
-        :return: :py:class:`boardgamegeek.collection.Collection` or ``None`` if user not found
+        :return: :py:class:`boardgamegeek.collection.Collection` or `None` if user not found
         :raises: :py:class:`boardgamegeek.exceptions.BoardGameGeekAPIError` if there was a problem getting the collection
         :raises: :py:class:`boardgamegeek.exceptions.BoardGameGeekError` in case of invalid parameters
         :raises: :py:class:`boardgamegeek.exceptions.BoardGameGeekAPIRetryError` if this request should be retried after a short delay
@@ -536,13 +536,14 @@ class BoardGameGeekNetworkAPI(object):
 
         return collection
 
-    def search(self, query, search_type=None):
+    def search(self, query, search_type=None, exact=False):
         """
 
         :param query: The string to search for
         :param search_type: Integer indicating what to search for. One or more of :py:const:`BoardGameGeekNetworkAPI.SEARCH_RPG_ITEM`,
                             :py:const:`BoardGameGeekNetworkAPI.SEARCH_VIDEO_GAME`, :py:const:`BoardGameGeekNetworkAPI.SEARCH_BOARD_GAME` or
                             :py:const:`BoardGameGeekNetworkAPI.SEARCH_BOARD_GAME_EXPANSION`, OR'd together
+        :param exact: If True, try to match the name exactly
         :return: List of :py:class:`boardgamegeek.search.SearchResult` objects
         :raises: :py:class:`boardgamegeek.exceptions.BoardGameGeekError` in case of invalid query
         :raises: :py:class:`boardgamegeek.exceptions.BoardGameGeekAPIRetryError` if this request should be retried after a short delay
@@ -568,6 +569,9 @@ class BoardGameGeekNetworkAPI(object):
 
         if s_type:
             params["type"] = ",".join(s_type)
+
+        if exact:
+            params["exact"] = 1
 
         try:
             root = get_parsed_xml_response(self.requests_session,
@@ -628,6 +632,18 @@ class BoardGameGeek(BoardGameGeekNetworkAPI):
         return self._get_game_id(name, "boardgame")
 
     def game(self, name=None, game_id=None):
+        """
+        Get information about a game
+
+        :param name: If not None, get information about a game with this name
+        :param game_id:  If not None, get information about a game with this id
+        :return: :py:class:`boardgamegeek.games.BoardGame`
+        :return: `None` if the game wasn't found
+        :raises: :py:class:`boardgamegeek.exceptions.BoardGameGeekError` in case of invalid name and id
+        :raises: :py:class:`boardgamegeek.exceptions.BoardGameGeekAPIRetryError` if this request should be retried after a short delay
+        :raises: :py:class:`boardgamegeek.exceptions.BoardGameGeekAPIError` if the response couldn't be parsed
+        :raises: :py:class:`boardgamegeek.exceptions.BoardGameGeekTimeoutError` if there was a timeout
+        """
 
         if not name and game_id is None:
             raise BoardGameGeekError("game name or id not specified")
@@ -734,3 +750,18 @@ class BoardGameGeek(BoardGameGeekNetworkAPI):
                                     "value": rank_value})
 
         return BoardGame(kwargs)
+
+    def games(self, name):
+        """
+        Return a list containing all games with the given name
+
+        :param name: The name of the game to search for
+        :return: list of :py:class:`boardgamegeek.games.BoardGame`
+        :raises: :py:class:`boardgamegeek.exceptions.BoardGameGeekAPIRetryError` if this request should be retried after a short delay
+        :raises: :py:class:`boardgamegeek.exceptions.BoardGameGeekAPIError` if the response couldn't be parsed
+        :raises: :py:class:`boardgamegeek.exceptions.BoardGameGeekTimeoutError` if there was a timeout
+        """
+        return [self.game(game_id=s.id)
+                for s in self.search(name,
+                                     search_type=BoardGameGeekNetworkAPI.SEARCH_BOARD_GAME | BoardGameGeekNetworkAPI.SEARCH_BOARD_GAME_EXPANSION,
+                                     exact=True)]
