@@ -72,7 +72,14 @@ class BoardGameGeekNetworkAPI(object):
         else:
             self.requests_session = requests.Session()
 
-    def _get_game_id(self, name, game_type):
+    def _get_game_id(self, name, game_type, first=False):
+        """
+
+        :param name:
+        :param game_type:
+        :param first: if true, return the first result, otherwise return the most recent (by year published)
+        :return:
+        """
 
         if game_type not in ["rpgitem", "videogame", "boardgame", "boardgameexpansion"]:
             raise BoardGameGeekError("invalid game type: {}".format(game_type))
@@ -89,15 +96,27 @@ class BoardGameGeekNetworkAPI(object):
         except BoardGameGeekAPINonXMLError:
             return None
 
+        # in case there are multiple results, try to find the most recent one
+        _year = None
+        game_id = None
+
         # game_type can be rpgitem, videogame, boardgame, or boardgameexpansion
-        game = root.find(".//item[@type='{}']".format(game_type))
-        if game is None:
+        for game in root.findall(".//item[@type='{}']".format(game_type)):
+            year = xml_subelement_attr(game, "yearpublished", convert=int)
+            if _year is None:
+                _year = year
+                game_id = int(game.attrib.get("id"))
+                if first:
+                    # if we want the first result, break
+                    break
+            elif year > _year:
+                _year = year
+                game_id = int(game.attrib.get("id"))
+
+        if _year is None:
             log.warn("game not found: {}".format(name))
             return None
 
-        game_id = int(game.attrib.get("id"))
-        if not game_id:
-            raise BoardGameGeekAPIError("response didn't contain the game id")
         return game_id
 
     def guild(self, guild_id, progress=None):
