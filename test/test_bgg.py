@@ -571,6 +571,13 @@ def test_get_xml_subelement_attr(xml):
     node = bggutil.xml_subelement_attr(xml, "node1", attribute="int_attr", convert=int)
     assert node == 1
 
+    # test that default works
+    node = bggutil.xml_subelement_attr(xml, "node_thats_missing", default="hello")
+    assert node == "hello"
+
+    node = bggutil.xml_subelement_attr(xml, "node1", attribute="attribute_thats_missing", default=1234)
+    assert node == 1234
+
 
 def test_get_xml_subelement_attr_list(xml):
 
@@ -607,3 +614,7 @@ def test_get_xml_subelement_text(xml):
 
     node = bggutil.xml_subelement_text(xml, "node1")
     assert node == "text"
+
+    # test that default is working
+    node = bggutil.xml_subelement_text(xml, "node_thats_missing", default="default text")
+    assert node == "default text"

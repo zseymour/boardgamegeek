@@ -53,7 +53,7 @@ class DictObject(object):
         return self._data
 
 
-def xml_subelement_attr(xml_elem, subelement, convert=None, attribute="value"):
+def xml_subelement_attr(xml_elem, subelement, convert=None, attribute="value", default=None):
     """
     Search for a sub-element and return the value of its attribute.
 
@@ -72,17 +72,21 @@ def xml_subelement_attr(xml_elem, subelement, convert=None, attribute="value"):
     :param subelement: Name of the sub-element to search for
     :param convert: if not None, a callable to perform the conversion of this attribute to a certain object type
     :param attribute: name of the attribute to get
+    :param default: default value if the subelement or attribute is not found
     :return: value of the attribute or ``None`` in error cases
 
     """
     if xml_elem is None or not subelement:
         return None
 
-    value = None
     subel = xml_elem.find(subelement)
-    if subel is not None:
+    if subel is None:
+        value = default
+    else:
         value = subel.attrib.get(attribute)
-        if convert and value is not None:
+        if value is None:
+            value = default
+        elif convert:
             value = convert(value)
     return value
 
@@ -121,7 +125,7 @@ def xml_subelement_attr_list(xml_elem, subelement, convert=None, attribute="valu
     return res
 
 
-def xml_subelement_text(xml_elem, subelement, convert=None):
+def xml_subelement_text(xml_elem, subelement, convert=None, default=None):
     """
     Return the text of the specified subelement
 
@@ -138,16 +142,20 @@ def xml_subelement_text(xml_elem, subelement, convert=None):
     :param xml_elem: search the children nodes of this element
     :param subelement: name of the subelement whose text will be retrieved
     :param convert: if not None, a callable used to perform the conversion of the text to a certain object type
+    :param default: default value if subelement is not found
     :return: The text associated with the sub-element or ``None`` in case of error
     """
     if xml_elem is None or not subelement:
         return None
 
-    text = None
     subel = xml_elem.find(subelement)
-    if subel is not None:
+    if subel is None:
+        text = default
+    else:
         text = subel.text
-        if convert and text is not None:
+        if text is None:
+            text = default
+        elif convert:
             text = convert(text)
     return text
 
