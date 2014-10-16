@@ -1,6 +1,17 @@
 Changelog
 =========
 
+0.6.0
+-----
+
+Changes
+
+  * Improved code in an attempt to prevent exceptions when trying to deal with invalid data coming from the remote XML data
+ 
+Fixes
+  
+  * Fixed issue #12 (an edge case which lead to comparing None to int)
+
 0.5.0
 -----
   
