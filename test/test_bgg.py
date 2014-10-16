@@ -112,9 +112,7 @@ def test_sqlite_caching():
     os.unlink(name)
 
 
-#
-# Users testing
-#
+#region user() testing
 def test_get_user_with_invalid_parameters(bgg):
     # test how the module reacts to unexpected parameters
     for invalid in [None, ""]:
@@ -170,11 +168,9 @@ def test_get_valid_user_info(bgg, null_logger):
     # for coverage's sake
     user._format(null_logger)
     assert type(user.data()) == dict
+#endregion
 
-
-#
-# Collections testing
-#
+#region collection() testing
 def test_get_collection_with_invalid_parameters(bgg):
     for invalid in [None, ""]:
         with pytest.raises(BoardGameGeekError):
@@ -228,11 +224,9 @@ def test_creating_collection_out_of_raw_data():
     with pytest.raises(BoardGameGeekError):
         # raises exception on invalid game data
         c.add_game({"bla": "bla"})
+#endregion
 
-
-#
-# Guild testing
-#
+#region guild() testing
 def test_get_guild_with_invalid_parameters(bgg):
     # test how the module reacts to unexpected parameters
     for invalid in [None, [], {}]:
@@ -283,11 +277,10 @@ def test_get_invalid_guild_info(bgg):
 
     assert guild is None
     assert not progress_called
+#endregion
 
 
-#
-# Game testing
-#
+#region game() testing
 def test_get_unknown_game_info(bgg):
     game = bgg.game(TEST_INVALID_GAME_NAME)
     assert game is None
@@ -394,10 +387,10 @@ def test_get_games_by_name(bgg, null_logger):
         g._format(null_logger)
 
     assert len(games) > 1
+#endregion
 
-#
-# Plays testing
-#
+
+#region plays() testing
 def test_get_plays_with_invalid_parameters(bgg):
     with pytest.raises(BoardGameGeekError):
         bgg.plays(name=None, game_id=None)
@@ -484,11 +477,9 @@ def test_create_plays_with_initial_data():
     p = Plays({"plays": [{"id": 10, "user_id": 102, "date": now}]})
 
     assert p[0].date == now
+#endregion
 
-
-#
-# Hot items testing
-#
+#region hot_items() testing
 def test_get_hot_items_invalid_type(bgg):
     with pytest.raises(BoardGameGeekError):
         bgg.hot_items("invalid type")
@@ -530,11 +521,9 @@ def test_hot_items_initial_data():
     assert h[0].id == 100
     assert h[0].name == "hotitem"
     assert h[0].rank == 10
+#endregion
 
-
-#
-# Thing testing
-#
+#region Thing testing
 def test_thing_creation():
     with pytest.raises(BoardGameGeekError):
         Thing({"id": 100})  # missing name
@@ -549,11 +538,9 @@ def test_thing_creation():
 
     assert t.id == 10
     assert t.name == "fubăr"
+#endregion
 
-
-#
-# Utils testing
-#
+#region Utils testing
 def test_get_xml_subelement_attr(xml):
 
     node = bggutil.xml_subelement_attr(None, "hello")
@@ -571,27 +558,59 @@ def test_get_xml_subelement_attr(xml):
     node = bggutil.xml_subelement_attr(xml, "node1", attribute="int_attr", convert=int)
     assert node == 1
 
+    # test that default works
+    node = bggutil.xml_subelement_attr(xml, "node_thats_missing", default="hello")
+    assert node == "hello"
+
+    node = bggutil.xml_subelement_attr(xml, "node1", attribute="attribute_thats_missing", default=1234)
+    assert node == 1234
+
+    # test quiet
+    with pytest.raises(Exception):
+        # attr can't be converted to int
+        node = bggutil.xml_subelement_attr(xml, "node1", attribute="attr", convert=int)
+
+    node = bggutil.xml_subelement_attr(xml, "node1", attribute="attr", convert=int, quiet=True)
+    assert node == None
+
+    node = bggutil.xml_subelement_attr(xml, "node1", attribute="attr", convert=int, default=999, quiet=True)
+    assert node == 999
+
 
 def test_get_xml_subelement_attr_list(xml):
 
-    node = bggutil.xml_subelement_attr_list(None, "list")
-    assert node is None
+    nodes = bggutil.xml_subelement_attr_list(None, "list")
+    assert nodes is None
 
-    node = bggutil.xml_subelement_attr_list(xml, None)
-    assert node is None
+    nodes = bggutil.xml_subelement_attr_list(xml, None)
+    assert nodes is None
 
-    node = bggutil.xml_subelement_attr_list(xml, "")
-    assert node is None
+    nodes = bggutil.xml_subelement_attr_list(xml, "")
+    assert nodes is None
 
     list_root = xml.find("list")
-    node = bggutil.xml_subelement_attr_list(list_root, "li", attribute="attr")
-    assert node == ["elem1", "elem2", "elem3", "elem4"]
+    nodes = bggutil.xml_subelement_attr_list(list_root, "li", attribute="attr")
+    assert nodes == ["elem1", "elem2", "elem3", "elem4"]
 
-    node = bggutil.xml_subelement_attr_list(list_root, "li", attribute="int_attr", convert=int)
-    assert node == [1, 2, 3, 4]
+    nodes = bggutil.xml_subelement_attr_list(list_root, "li", attribute="int_attr", convert=int)
+    assert nodes == [1, 2, 3, 4]
 
-    node = bggutil.xml_subelement_attr_list(xml, "node1", attribute="attr")
-    assert node == ["hello1"]
+    nodes = bggutil.xml_subelement_attr_list(xml, "node1", attribute="attr")
+    assert nodes == ["hello1"]
+
+    # test default
+    nodes = bggutil.xml_subelement_attr_list(list_root, "li", attribute="missing_attr", default="n/a")
+    assert nodes == ["n/a", "n/a", "n/a", "n/a"]
+
+    # test quiet
+    with pytest.raises(Exception):
+        nodes = bggutil.xml_subelement_attr_list(list_root, "li", attribute="attr", convert=int)
+
+    nodes = bggutil.xml_subelement_attr_list(list_root, "li", attribute="attr", convert=int, quiet=True)
+    assert nodes == [None, None, None, None]
+
+    nodes = bggutil.xml_subelement_attr_list(list_root, "li", attribute="attr", convert=int, quiet=True, default=1)
+    assert nodes == [1, 1, 1, 1]
 
 
 def test_get_xml_subelement_text(xml):
@@ -607,3 +626,17 @@ def test_get_xml_subelement_text(xml):
 
     node = bggutil.xml_subelement_text(xml, "node1")
     assert node == "text"
+
+    # test that default is working
+    node = bggutil.xml_subelement_text(xml, "node_thats_missing", default="default text")
+    assert node == "default text"
+
+    # test that quiet is working
+    with pytest.raises(Exception):
+        node = bggutil.xml_subelement_text(xml, "node1", convert=int)
+
+    node = bggutil.xml_subelement_text(xml, "node1", convert=int, quiet=True)
+    assert node == None
+
+    node = bggutil.xml_subelement_text(xml, "node1", convert=int, quiet=True, default="asd")
+    assert node == "asd"

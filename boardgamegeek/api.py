@@ -102,7 +102,7 @@ class BoardGameGeekNetworkAPI(object):
 
         # game_type can be rpgitem, videogame, boardgame, or boardgameexpansion
         for game in root.findall(".//item[@type='{}']".format(game_type)):
-            year = xml_subelement_attr(game, "yearpublished", convert=int)
+            year = xml_subelement_attr(game, "yearpublished", convert=int, default=0, quiet=True)
             if _year is None:
                 _year = year
                 game_id = int(game.attrib.get("id"))
@@ -156,11 +156,7 @@ class BoardGameGeekNetworkAPI(object):
         for tag in ["category", "website", "manager"]:
             kwargs[tag] = xml_subelement_text(root, tag)
 
-        description = xml_subelement_text(root, "description")
-        if description is not None:
-            kwargs["description"] = html_parser.unescape(description)
-        else:
-            kwargs["description"] = None
+        kwargs["description"] = xml_subelement_text(root, "description", convert=html_parser.unescape, quiet=True)
 
         # Grab location info
         location = root.find("location")
@@ -252,9 +248,10 @@ class BoardGameGeekNetworkAPI(object):
 
         kwargs["lastlogin"] = xml_subelement_attr(root,
                                                   "lastlogin",
-                                                  convert=lambda x: datetime.datetime.strptime(x, "%Y-%m-%d"))
+                                                  convert=lambda x: datetime.datetime.strptime(x, "%Y-%m-%d"),
+                                                  quiet=True)
 
-        kwargs["yearregistered"] = xml_subelement_attr(root, "yearregistered", convert=int)
+        kwargs["yearregistered"] = xml_subelement_attr(root, "yearregistered", convert=int, quiet=True)
 
         user = User(kwargs)
 
@@ -465,7 +462,7 @@ class BoardGameGeekNetworkAPI(object):
             kwargs = {"name": xml_subelement_attr(item, "name"),
                       "id": int(item.attrib["id"]),
                       "rank": int(item.attrib["rank"]),
-                      "yearpublished": xml_subelement_attr(item, "yearpublished", convert=int),
+                      "yearpublished": xml_subelement_attr(item, "yearpublished", convert=int, quiet=True),
                       "thumbnail": xml_subelement_attr(item, "thumbnail")}
             hot_items.add_hot_item(kwargs)
 
@@ -509,11 +506,7 @@ class BoardGameGeekNetworkAPI(object):
         for xml_el in root.findall(".//item[@subtype='boardgame']"):
             # get the user's rating for this game in his collection
             stats = xml_el.find("stats")
-            rating = xml_subelement_attr(stats, "rating")
-            try:
-                rating = float(rating)
-            except:
-                rating = None
+            rating = xml_subelement_attr(stats, "rating", convert=float, quiet=True)
 
             # name and id of the game in collection
             game = {"name": xml_subelement_text(xml_el, "name"),
@@ -588,7 +581,7 @@ class BoardGameGeekNetworkAPI(object):
         for item in root.findall("item"):
             kwargs = {"id": item.attrib["id"],
                       "name": xml_subelement_attr(item, "name"),
-                      "yearpublished": xml_subelement_attr(item, "yearpublished", convert=int),
+                      "yearpublished": xml_subelement_attr(item, "yearpublished", convert=int, quiet=True),
                       "type": item.attrib["type"]}
 
             results.append(SearchResult(kwargs))
@@ -704,16 +697,11 @@ class BoardGameGeek(BoardGameGeekNetworkAPI):
 
         kwargs["expansions"] = expansions
         kwargs["expands"] = expands
-
-        description = xml_subelement_text(root, "description")
-        if description is not None:
-            kwargs["description"] = html_parser.unescape(description)
-        else:
-            kwargs["description"] = None
+        kwargs["description"] = xml_subelement_text(root, "description", convert=html_parser.unescape, quiet=True)
 
         # These XML elements have a numberic value, attempt to convert them to integers
         for i in ["yearpublished", "minplayers", "maxplayers", "playingtime", "minage"]:
-            kwargs[i] = xml_subelement_attr(root, i, convert=int)
+            kwargs[i] = xml_subelement_attr(root, i, convert=int, quiet=True)
 
         # What's the name of the game :P
         kwargs["name"] = xml_subelement_attr(root, ".//name[@type='primary']")
@@ -724,18 +712,18 @@ class BoardGameGeek(BoardGameGeekNetworkAPI):
         # look for statistics info
         stats = root.find(".//ratings")
         kwargs.update({
-            "usersrated": xml_subelement_attr(stats, "usersrated", convert=int),
-            "average": xml_subelement_attr(stats, "average", convert=float),
-            "bayesaverage": xml_subelement_attr(stats, "bayesaverage", convert=float),
-            "stddev": xml_subelement_attr(stats, "stddev", convert=float),
-            "median": xml_subelement_attr(stats, "median", convert=float),
-            "owned": xml_subelement_attr(stats, "owned", convert=int),
-            "trading": xml_subelement_attr(stats, "trading", convert=int),
-            "wanting": xml_subelement_attr(stats, "wanting", convert=int),
-            "wishing": xml_subelement_attr(stats, "wishing", convert=int),
-            "numcomments": xml_subelement_attr(stats, "numcomments", convert=int),
-            "numweights": xml_subelement_attr(stats, "numweights", convert=int),
-            "averageweight": xml_subelement_attr(stats, "averageweight", convert=float)
+            "usersrated": xml_subelement_attr(stats, "usersrated", convert=int, quiet=True),
+            "average": xml_subelement_attr(stats, "average", convert=float, quiet=True),
+            "bayesaverage": xml_subelement_attr(stats, "bayesaverage", convert=float, quiet=True),
+            "stddev": xml_subelement_attr(stats, "stddev", convert=float, quiet=True),
+            "median": xml_subelement_attr(stats, "median", convert=float, quiet=True),
+            "owned": xml_subelement_attr(stats, "owned", convert=int, quiet=True),
+            "trading": xml_subelement_attr(stats, "trading", convert=int, quiet=True),
+            "wanting": xml_subelement_attr(stats, "wanting", convert=int, quiet=True),
+            "wishing": xml_subelement_attr(stats, "wishing", convert=int, quiet=True),
+            "numcomments": xml_subelement_attr(stats, "numcomments", convert=int, quiet=True),
+            "numweights": xml_subelement_attr(stats, "numweights", convert=int, quiet=True),
+            "averageweight": xml_subelement_attr(stats, "averageweight", convert=float, quiet=True)
         })
 
         kwargs["ranks"] = []
