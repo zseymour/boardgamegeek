@@ -53,7 +53,7 @@ class DictObject(object):
         return self._data
 
 
-def xml_subelement_attr(xml_elem, subelement, convert=None, attribute="value", default=None):
+def xml_subelement_attr(xml_elem, subelement, convert=None, attribute="value", default=None, quiet=False):
     """
     Search for a sub-element and return the value of its attribute.
 
@@ -73,6 +73,7 @@ def xml_subelement_attr(xml_elem, subelement, convert=None, attribute="value", d
     :param convert: if not None, a callable to perform the conversion of this attribute to a certain object type
     :param attribute: name of the attribute to get
     :param default: default value if the subelement or attribute is not found
+    :param quiet: if True, don't raise exception from conversions, return default instead
     :return: value of the attribute or ``None`` in error cases
 
     """
@@ -87,11 +88,17 @@ def xml_subelement_attr(xml_elem, subelement, convert=None, attribute="value", d
         if value is None:
             value = default
         elif convert:
-            value = convert(value)
+            try:
+                value = convert(value)
+            except:
+                if quiet:
+                    value = default
+                else:
+                    raise
     return value
 
 
-def xml_subelement_attr_list(xml_elem, subelement, convert=None, attribute="value"):
+def xml_subelement_attr_list(xml_elem, subelement, convert=None, attribute="value", default=None, quiet=False):
     """
     Search for sub-elements and return a list of the specified attribute.
 
@@ -109,6 +116,8 @@ def xml_subelement_attr_list(xml_elem, subelement, convert=None, attribute="valu
     :param subelement: name of the sub-element to search for
     :param convert: if not None, a callable used to perform the conversion of this attribute to a certain object type
     :param attribute: name of the attribute to get
+    :param default: default value to use if an attribute is missing
+    :param quiet: if True, don't raise exceptions from conversions, instead use the default value
     :return: list containing the values of the attributes or ``None`` in error cases
     """
     if xml_elem is None or not subelement:
@@ -118,14 +127,22 @@ def xml_subelement_attr_list(xml_elem, subelement, convert=None, attribute="valu
     res = []
     for e in subel:
         value = e.attrib.get(attribute)
-        if convert and value is not None:
-            value = convert(value)
+        if value is None:
+            value = default
+        elif convert:
+            try:
+                value = convert(value)
+            except:
+                if quiet:
+                    value = default
+                else:
+                    raise
         res.append(value)
 
     return res
 
 
-def xml_subelement_text(xml_elem, subelement, convert=None, default=None):
+def xml_subelement_text(xml_elem, subelement, convert=None, default=None, quiet=False):
     """
     Return the text of the specified subelement
 
@@ -143,6 +160,7 @@ def xml_subelement_text(xml_elem, subelement, convert=None, default=None):
     :param subelement: name of the subelement whose text will be retrieved
     :param convert: if not None, a callable used to perform the conversion of the text to a certain object type
     :param default: default value if subelement is not found
+    :param quiet: if True, don't raise exceptions from conversions, instead use the default value
     :return: The text associated with the sub-element or ``None`` in case of error
     """
     if xml_elem is None or not subelement:
@@ -156,7 +174,13 @@ def xml_subelement_text(xml_elem, subelement, convert=None, default=None):
         if text is None:
             text = default
         elif convert:
-            text = convert(text)
+            try:
+                text = convert(text)
+            except:
+                if quiet:
+                    text = default
+                else:
+                    raise
     return text
 
 
