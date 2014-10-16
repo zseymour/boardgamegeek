@@ -102,7 +102,7 @@ class BoardGameGeekNetworkAPI(object):
 
         # game_type can be rpgitem, videogame, boardgame, or boardgameexpansion
         for game in root.findall(".//item[@type='{}']".format(game_type)):
-            year = xml_subelement_attr(game, "yearpublished", convert=int)
+            year = xml_subelement_attr(game, "yearpublished", convert=int, default=0)
             if _year is None:
                 _year = year
                 game_id = int(game.attrib.get("id"))
