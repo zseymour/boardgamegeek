@@ -432,6 +432,18 @@ def test_get_plays_of_user(bgg, null_logger):
         assert type(p.game_name) == str
         assert type(p.comment) in [type(None), str]
 
+        assert type(p.players) == list
+        if p.players:
+            for player in p.players:
+                assert hasattr(player, "startposition")
+                assert hasattr(player, "username")
+                assert hasattr(player, "user_id")
+                assert hasattr(player, "name")
+                assert type(player.score) == float
+                assert hasattr(player, "new")
+                assert hasattr(player, "win")
+                assert hasattr(player, "rating")
+
     plays._format(null_logger)
 
 

@@ -368,6 +368,7 @@ class BoardGameGeekNetworkAPI(object):
             log.error("error trying to fetch plays: {}".format(e))
             return None
 
+        # TODO: seems they changed the response when fetching plays for invalid user, so this raises exception. To fix.
         count = int(root.attrib["total"])   # how many plays
 
         if name:
@@ -385,6 +386,7 @@ class BoardGameGeekNetworkAPI(object):
                 # an user's collection, thus set it from plays.user_id
                 userid = int(play.attrib.get("userid", plays.user_id))
 
+                player_list = []
                 # TODO: add the game subtype too
                 kwargs = {"id": int(play.attrib["id"]),
                           "date": play.attrib["date"],
@@ -395,8 +397,28 @@ class BoardGameGeekNetworkAPI(object):
                           "user_id": userid,
                           "game_id": xml_subelement_attr(play, "item", attribute="objectid", convert=int),
                           "game_name": xml_subelement_attr(play, "item", attribute="name"),
-                          "comment": xml_subelement_text(play, "comments")}
+                          "comment": xml_subelement_text(play, "comments"),
+                          "players": player_list}
+
+                for player in play.findall(".//player"):
+                    player_data = {"username": player.attrib.get("username"),
+                                   "user_id": int(player.attrib.get("userid", -1)),
+                                   "name": player.attrib.get("name"),
+                                   "startposition": player.attrib.get("startposition"),
+                                   "new": player.attrib.get("new"),
+                                   "win": player.attrib.get("win"),
+                                   "rating": player.attrib.get("rating")}
+
+                    score = player.attrib.get("score")
+                    try:
+                        player_data["score"] = float(score)
+                    except:
+                        log.debug("invalid score: {}".format(score))
+                        player_data["score"] = 0.0
+
+                    player_list.append(player_data)
                 plays.add_play(kwargs)
+
             return added_plays
 
         _add_plays(plays, root)
