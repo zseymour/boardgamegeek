@@ -55,6 +55,8 @@ def xml():
     return ET.fromstring(xml_code)
 
 
+
+
 @pytest.fixture
 def bgg():
     return BoardGameGeek()
@@ -76,7 +78,7 @@ def progress_cb(items, total):
 # Test caches
 #
 def test_no_caching():
-    time.sleep(1)
+    time.sleep(2)
 
     # test that we can disable caching
     bgg = BoardGameGeek(cache=None)
@@ -88,7 +90,7 @@ def test_no_caching():
 
 
 def test_sqlite_caching():
-    time.sleep(1)
+    time.sleep(2)
 
     # test that we can use the SQLite cache
     # generate a temporary file
@@ -125,7 +127,7 @@ def test_get_user_with_invalid_parameters(bgg):
 
 
 def test_get_invalid_user_info(bgg):
-    time.sleep(1)
+    time.sleep(2)
 
     global progress_called
 
@@ -137,7 +139,7 @@ def test_get_invalid_user_info(bgg):
 
 
 def test_get_valid_user_info(bgg, null_logger):
-    time.sleep(1)
+    time.sleep(2)
 
     global progress_called
 
@@ -186,13 +188,13 @@ def test_get_collection_with_invalid_parameters(bgg):
 
 
 def test_get_invalid_users_collection(bgg):
-    time.sleep(1)
+    time.sleep(2)
     collection = bgg.collection(TEST_INVALID_USER)
     assert collection is None
 
 
 def test_get_valid_users_collection(bgg, null_logger):
-    time.sleep(1)
+    time.sleep(2)
 
     collection = bgg.collection(TEST_VALID_USER)
 
@@ -244,7 +246,7 @@ def test_get_guild_with_invalid_parameters(bgg):
 
 
 def test_get_valid_guild_info(bgg, null_logger):
-    time.sleep(1)
+    time.sleep(2)
 
     global progress_called
 
@@ -281,7 +283,7 @@ def test_get_valid_guild_info(bgg, null_logger):
 
 
 def test_get_invalid_guild_info(bgg):
-    time.sleep(1)
+    time.sleep(2)
 
     global progress_called
 
@@ -295,7 +297,7 @@ def test_get_invalid_guild_info(bgg):
 
 #region game() testing
 def test_get_unknown_game_info(bgg):
-    time.sleep(1)
+    time.sleep(2)
 
     game = bgg.game(TEST_INVALID_GAME_NAME)
     assert game is None
@@ -315,7 +317,7 @@ def test_get_game_with_invalid_parameters(bgg):
 
 
 def check_game(game):
-    time.sleep(1)
+    time.sleep(2)
 
     assert game is not None
     assert game.name == TEST_GAME_NAME
@@ -372,7 +374,7 @@ def check_game(game):
 
 
 def test_get_known_game_info(bgg, null_logger):
-    time.sleep(1)
+    time.sleep(2)
 
     # use an older game that's not so likely to change
     game = bgg.game(TEST_GAME_NAME)
@@ -386,21 +388,21 @@ def test_get_known_game_info(bgg, null_logger):
 
 
 def test_get_known_game_info_by_id(bgg):
-    time.sleep(1)
+    time.sleep(2)
 
     game = bgg.game(None, game_id=TEST_GAME_ID)
     check_game(game)
 
 
 def test_get_game_id_by_name(bgg):
-    time.sleep(1)
+    time.sleep(2)
 
     game_id = bgg.get_game_id(TEST_GAME_NAME)
     assert game_id == TEST_GAME_ID
 
 
 def test_get_games_by_name(bgg, null_logger):
-    time.sleep(1)
+    time.sleep(2)
 
     games = bgg.games("coup")
 
@@ -427,7 +429,7 @@ def test_get_plays_with_invalid_parameters(bgg):
 
 
 def test_get_plays_with_unknown_username_and_id(bgg):
-    time.sleep(1)
+    time.sleep(2)
 
     plays = bgg.plays(name=TEST_INVALID_USER)
     assert plays is None
@@ -438,7 +440,7 @@ def test_get_plays_with_unknown_username_and_id(bgg):
 
 
 def test_get_plays_of_user(bgg, null_logger):
-    time.sleep(1)
+    time.sleep(2)
 
     global progress_called
 
@@ -476,7 +478,7 @@ def test_get_plays_of_user(bgg, null_logger):
 
 
 def test_get_plays_of_game(bgg, null_logger):
-    time.sleep(1)
+    time.sleep(2)
 
     global progress_called
 
@@ -528,7 +530,7 @@ def test_get_hot_items_invalid_type(bgg):
 
 
 def test_get_hot_items_boardgames(bgg, null_logger):
-    time.sleep(1)
+    time.sleep(2)
     for item in bgg.hot_items("boardgame"):
         assert type(item.id) == int
         assert len(item.name) > 0
@@ -538,7 +540,7 @@ def test_get_hot_items_boardgames(bgg, null_logger):
 
 
 def test_get_hot_items_boardgamepersons(bgg, null_logger):
-    time.sleep(1)
+    time.sleep(2)
     for item in bgg.hot_items("boardgameperson"):
         assert type(item.id) == int
         assert len(item.name) > 0
