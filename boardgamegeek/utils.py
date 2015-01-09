@@ -223,7 +223,16 @@ def get_parsed_xml_response(requests_session, url, params=None, timeout=15, retr
                     log.debug("API call will be retried in {} seconds ({} more retries)".format(retry_delay, retr))
                     retr -= 1
                     time.sleep(retry_delay)
+                    retry_delay *= 1.5
                     continue
+            elif r.status_code == 503:
+                # it seems they added some sort of protection which triggers when too many requests are made, in which
+                # case we get back a 503. Try to delay and retry
+                log.warning("API returned 503, retrying")
+                retr -= 1
+                time.sleep(retry_delay)
+                retry_delay *= 1.5
+                continue
 
             if not r.headers.get("content-type").startswith("text/xml"):
                 raise BoardGameGeekAPINonXMLError("non-XML reply")
