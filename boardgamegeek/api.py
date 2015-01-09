@@ -368,8 +368,11 @@ class BoardGameGeekNetworkAPI(object):
             log.error("error trying to fetch plays: {}".format(e))
             return None
 
-        # TODO: seems they changed the response when fetching plays for invalid user, so this raises exception. To fix.
-        count = int(root.attrib["total"])   # how many plays
+        try:
+            # in case of error, the root node doesn't have a 'total' attribute
+            count = int(root.attrib["total"])   # how many plays
+        except:
+            return None
 
         if name:
             plays = Plays({"username": root.attrib["username"],
