@@ -1,6 +1,19 @@
 Changelog
 =========
 
+0.7.0
+-----
+
+Changes
+
+  * The XML API2 seems to throttle requests by returning HTTP 503 ; added a delay and retry in the code to try
+    to deal with this
+
+Features
+
+  * When retrieving the plays, players are also returned, along with their data.
+
+
 0.6.0
 -----
 
