@@ -18,6 +18,45 @@ from .exceptions import BoardGameGeekError
 from .utils import DictObject
 
 
+class PlaysessionPlayer(DictObject):
+
+    def __init__(self, data):
+        self._data = data
+
+
+    @property
+    def username(self):
+        return self._data.get("username")
+
+    @property
+    def user_id(self):
+        return self._data.get("user_id")
+
+    @property
+    def name(self):
+        return self._data.get("name")
+
+    @property
+    def startposition(self):
+        return self._data.get("startposition")
+
+    @property
+    def new(self):
+        return self._data.get("new")
+
+    @property
+    def win(self):
+        return self._data.get("win")
+
+    @property
+    def rating(self):
+        return self._data.get("rating")
+
+    @property
+    def score(self):
+        return self._data.get("score")
+
+
 class PlaySession(DictObject):
     """
     Container for a play session information.
@@ -34,6 +73,9 @@ class PlaySession(DictObject):
                 except:
                     data["date"] = None
 
+        # create "nice" dictionaries out of plain ones, so you can .dot access stuff.
+        data["players"] = [PlaysessionPlayer(player) for player in data.get("players", [])]
+
         super(PlaySession, self).__init__(data)
 
     def _format(self, log):
@@ -47,6 +89,14 @@ class PlaySession(DictObject):
         log.info("play nowinstats : {}".format(self.nowinstats))
         log.info("play game       : {} ({})".format(self.game_name, self.game_id))
         log.info("play comment    : {}".format(self.comment))
+
+        if self.players:
+            log.info("players")
+            for player in self.players:
+                log.info("\t{} ({}): name: {}, score: {}".format(player.username,
+                                                                 player.user_id,
+                                                                 player.name,
+                                                                 player.score))
 
     @property
     def id(self):
