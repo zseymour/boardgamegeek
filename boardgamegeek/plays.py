@@ -74,7 +74,7 @@ class PlaySession(DictObject):
                     data["date"] = None
 
         # create "nice" dictionaries out of plain ones, so you can .dot access stuff.
-        data["players"] = [PlaysessionPlayer(player) for player in data["players"]]
+        data["players"] = [PlaysessionPlayer(player) for player in data.get("players", [])]
 
         super(PlaySession, self).__init__(data)
 
