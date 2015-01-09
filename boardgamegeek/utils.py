@@ -268,6 +268,8 @@ def get_parsed_xml_response(requests_session, url, params=None, timeout=15, retr
         except Exception as e:
             raise BoardGameGeekAPIError("error fetching BGG API response: {}".format(e))
 
+    raise BoardGameGeekAPIError("couldn't fetch data within the configured number of retries")
+
 
 def get_cache_session_from_uri(uri):
     """
