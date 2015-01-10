@@ -410,14 +410,8 @@ class BoardGameGeekNetworkAPI(object):
                                    "startposition": player.attrib.get("startposition"),
                                    "new": player.attrib.get("new"),
                                    "win": player.attrib.get("win"),
-                                   "rating": player.attrib.get("rating")}
-
-                    score = player.attrib.get("score")
-                    try:
-                        player_data["score"] = float(score)
-                    except:
-                        log.debug("invalid score: {}".format(score))
-                        player_data["score"] = 0.0
+                                   "rating": player.attrib.get("rating"),
+                                   "score": player.attrib.get("score")}
 
                     player_list.append(player_data)
                 plays.add_play(kwargs)

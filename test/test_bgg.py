@@ -469,7 +469,7 @@ def test_get_plays_of_user(bgg, null_logger):
                 assert hasattr(player, "username")
                 assert hasattr(player, "user_id")
                 assert hasattr(player, "name")
-                assert type(player.score) == float
+                assert hasattr(player, "score")
                 assert hasattr(player, "new")
                 assert hasattr(player, "win")
                 assert hasattr(player, "rating")
