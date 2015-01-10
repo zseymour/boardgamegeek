@@ -1,6 +1,13 @@
 Changelog
 =========
 
+0.7.1
+-----
+
+Fixes
+  
+  * Not expecting the score of a player to be a number anymore (using the string as returned by the BGG API)
+
 0.7.0
 -----
 
