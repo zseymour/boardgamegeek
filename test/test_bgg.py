@@ -34,9 +34,16 @@ TEST_GAME_ID = 31260
 TEST_GAME_NAME_2 = "Merchant of Venus (second edition)"
 TEST_GAME_ID_2 = 131646
 
-
 TEST_GUILD_ID = 1229
 TEST_GUILD_ID_2 = 930
+
+
+if os.getenv("TRAVIS"):
+    TEST_SLEEP_DELAY = 30   # when running on travis I still get tests failing despite the delay. Attempting to compensate. 
+else:
+    TEST_SLEEP_DELAY = 10
+
+
 
 @pytest.fixture
 def xml():
@@ -90,7 +97,7 @@ def test_no_caching():
 
 
 def test_sqlite_caching():
-    time.sleep(10)
+    time.sleep(TEST_SLEEP_DELAY)
 
     # test that we can use the SQLite cache
     # generate a temporary file
@@ -127,7 +134,7 @@ def test_get_user_with_invalid_parameters(bgg):
 
 
 def test_get_invalid_user_info(bgg):
-    time.sleep(10)
+    time.sleep(TEST_SLEEP_DELAY)
 
     global progress_called
 
@@ -139,7 +146,7 @@ def test_get_invalid_user_info(bgg):
 
 
 def test_get_valid_user_info(bgg, null_logger):
-    time.sleep(10)
+    time.sleep(TEST_SLEEP_DELAY)
 
     global progress_called
 
@@ -188,13 +195,13 @@ def test_get_collection_with_invalid_parameters(bgg):
 
 
 def test_get_invalid_users_collection(bgg):
-    time.sleep(10)
+    time.sleep(TEST_SLEEP_DELAY)
     collection = bgg.collection(TEST_INVALID_USER)
     assert collection is None
 
 
 def test_get_valid_users_collection(bgg, null_logger):
-    time.sleep(10)
+    time.sleep(TEST_SLEEP_DELAY)
 
     collection = bgg.collection(TEST_VALID_USER)
 
@@ -246,7 +253,7 @@ def test_get_guild_with_invalid_parameters(bgg):
 
 
 def test_get_valid_guild_info(bgg, null_logger):
-    time.sleep(10)
+    time.sleep(TEST_SLEEP_DELAY)
 
     global progress_called
 
@@ -283,7 +290,7 @@ def test_get_valid_guild_info(bgg, null_logger):
 
 
 def test_get_invalid_guild_info(bgg):
-    time.sleep(10)
+    time.sleep(TEST_SLEEP_DELAY)
 
     global progress_called
 
@@ -297,7 +304,7 @@ def test_get_invalid_guild_info(bgg):
 
 #region game() testing
 def test_get_unknown_game_info(bgg):
-    time.sleep(10)
+    time.sleep(TEST_SLEEP_DELAY)
 
     game = bgg.game(TEST_INVALID_GAME_NAME)
     assert game is None
@@ -317,7 +324,7 @@ def test_get_game_with_invalid_parameters(bgg):
 
 
 def check_game(game):
-    time.sleep(10)
+    time.sleep(TEST_SLEEP_DELAY)
 
     assert game is not None
     assert game.name == TEST_GAME_NAME
@@ -374,7 +381,7 @@ def check_game(game):
 
 
 def test_get_known_game_info(bgg, null_logger):
-    time.sleep(10)
+    time.sleep(TEST_SLEEP_DELAY)
 
     # use an older game that's not so likely to change
     game = bgg.game(TEST_GAME_NAME)
@@ -388,21 +395,21 @@ def test_get_known_game_info(bgg, null_logger):
 
 
 def test_get_known_game_info_by_id(bgg):
-    time.sleep(10)
+    time.sleep(TEST_SLEEP_DELAY)
 
     game = bgg.game(None, game_id=TEST_GAME_ID)
     check_game(game)
 
 
 def test_get_game_id_by_name(bgg):
-    time.sleep(10)
+    time.sleep(TEST_SLEEP_DELAY)
 
     game_id = bgg.get_game_id(TEST_GAME_NAME)
     assert game_id == TEST_GAME_ID
 
 
 def test_get_games_by_name(bgg, null_logger):
-    time.sleep(10)
+    time.sleep(TEST_SLEEP_DELAY)
 
     games = bgg.games("coup")
 
@@ -429,7 +436,7 @@ def test_get_plays_with_invalid_parameters(bgg):
 
 
 def test_get_plays_with_unknown_username_and_id(bgg):
-    time.sleep(10)
+    time.sleep(TEST_SLEEP_DELAY)
 
     plays = bgg.plays(name=TEST_INVALID_USER)
     assert plays is None
@@ -440,7 +447,7 @@ def test_get_plays_with_unknown_username_and_id(bgg):
 
 
 def test_get_plays_with_invalid_dates(bgg):
-    time.sleep(10)
+    time.sleep(TEST_SLEEP_DELAY)
 
     # A string is invalid so should raise an error
     with pytest.raises(BoardGameGeekError):
@@ -451,7 +458,7 @@ def test_get_plays_with_invalid_dates(bgg):
 
 
 def test_get_plays_with_valid_dates(bgg):
-    time.sleep(10)
+    time.sleep(TEST_SLEEP_DELAY)
 
     mindate = datetime.date(2014, 1, 1)
     maxdate = datetime.date(2014, 12, 31)
@@ -460,7 +467,7 @@ def test_get_plays_with_valid_dates(bgg):
 
 
 def test_get_plays_of_user(bgg, null_logger):
-    time.sleep(10)
+    time.sleep(TEST_SLEEP_DELAY)
 
     global progress_called
 
@@ -498,7 +505,7 @@ def test_get_plays_of_user(bgg, null_logger):
 
 
 def test_get_plays_of_game(bgg, null_logger):
-    time.sleep(10)
+    time.sleep(TEST_SLEEP_DELAY)
 
     global progress_called
 
@@ -550,7 +557,8 @@ def test_get_hot_items_invalid_type(bgg):
 
 
 def test_get_hot_items_boardgames(bgg, null_logger):
-    time.sleep(10)
+    time.sleep(TEST_SLEEP_DELAY)
+
     for item in bgg.hot_items("boardgame"):
         assert type(item.id) == int
         assert len(item.name) > 0
@@ -560,7 +568,8 @@ def test_get_hot_items_boardgames(bgg, null_logger):
 
 
 def test_get_hot_items_boardgamepersons(bgg, null_logger):
-    time.sleep(10)
+    time.sleep(TEST_SLEEP_DELAY)
+
     for item in bgg.hot_items("boardgameperson"):
         assert type(item.id) == int
         assert len(item.name) > 0
