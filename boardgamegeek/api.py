@@ -328,12 +328,16 @@ class BoardGameGeekNetworkAPI(object):
 
         return user
 
-    def plays(self, name=None, game_id=None, progress=None):
+    def plays(self, name=None, game_id=None, progress=None, mindate=None, maxdate=None):
         """
         Retrieves the user's play list
 
         :param name: user name to retrieve the plays for
         :param game_id: game id to retrieve the plays for
+        :param mindate: return only plays of the specified date or later.
+        :param maxdate: return only plays of the specified date or earlier.
+        :type mindate: datetime.date
+        :type maxdate: datetime.date
         :return: :py:class:`boardgamegeek.plays.Plays` object containing all the plays
         :raises: :py:class:`boardgamegeek.exceptions.BoardGameGeekError` on errors
         :raises: :py:class:`boardgamegeek.exceptions.BoardGameGeekAPIRetryError` if this request should be retried after a short delay
@@ -354,6 +358,18 @@ class BoardGameGeekNetworkAPI(object):
                 params = {"id": int(game_id)}
             except:
                 raise BoardGameGeekError("invalid game id")
+
+        if mindate:
+            try:
+                params["mindate"] = mindate.isoformat()
+            except AttributeError:
+                raise BoardGameGeekError("mindate must be a datetime.date object")
+
+        if maxdate:
+            try:
+                params["maxdate"] = maxdate.isoformat()
+            except AttributeError:
+                raise BoardGameGeekError("maxdate must be a datetime.date object")
 
         try:
             root = get_parsed_xml_response(self.requests_session,

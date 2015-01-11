@@ -439,6 +439,26 @@ def test_get_plays_with_unknown_username_and_id(bgg):
     assert len(plays) == 0
 
 
+def test_get_plays_with_invalid_dates(bgg):
+    time.sleep(10)
+
+    # A string is invalid so should raise an error
+    with pytest.raises(BoardGameGeekError):
+        bgg.plays(name=TEST_VALID_USER, mindate="2014-01-01")
+
+    with pytest.raises(BoardGameGeekError):
+        bgg.plays(name=TEST_VALID_USER, maxdate="2014-12-31")
+
+
+def test_get_plays_with_valid_dates(bgg):
+    time.sleep(10)
+
+    mindate = datetime.date(2014, 1, 1)
+    maxdate = datetime.date(2014, 12, 31)
+    plays = bgg.plays(TEST_VALID_USER, mindate=mindate, maxdate=maxdate)
+    assert len(plays) > 0
+
+
 def test_get_plays_of_user(bgg, null_logger):
     time.sleep(10)
 
