@@ -45,6 +45,12 @@ class DictObject(object):
             return self._data[item]
         raise AttributeError
 
+    def __getstate__(self):
+        return self._data
+
+    def __setstate__(self, state):
+        self._data = state
+
     def data(self):
         """
         Access to the internal data dictionary, for easy dumping
