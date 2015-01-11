@@ -1,6 +1,13 @@
 Changelog
 =========
 
+0.8.0
+-----
+
+Features
+
+  * Fetching plays has support for min_date, max_date (thanks tomusher!) 
+
 0.7.1
 -----
 

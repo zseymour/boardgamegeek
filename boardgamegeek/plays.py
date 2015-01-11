@@ -82,7 +82,11 @@ class PlaySession(DictObject):
         log.info("play id         : {}".format(self.id))
         log.info("play user id    : {}".format(self.user_id))
         if self.date:
-            log.info("play date       : {}".format(self.date.strftime("%Y-%m-%d")))
+            try:
+                log.info("play date       : {}".format(self.date.strftime("%Y-%m-%d")))
+            except:
+                # strftime doesn't like dates before 1900 (and is seems that someone logged plays before 1900 :D)
+                pass
         log.info("play quantity   : {}".format(self.quantity))
         log.info("play duration   : {}".format(self.duration))
         log.info("play incomplete : {}".format(self.incomplete))
