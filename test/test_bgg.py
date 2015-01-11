@@ -31,17 +31,22 @@ TEST_INVALID_GAME_NAME = "blablablathisgamewonteverexist"
 TEST_GAME_NAME = "Agricola"
 TEST_GAME_ID = 31260
 
-TEST_GAME_NAME_2 = "Merchant of Venus (second edition)"
-TEST_GAME_ID_2 = 131646
+#TEST_GAME_NAME_2 = "Merchant of Venus (second edition)"
+#TEST_GAME_ID_2 = 131646
+
+TEST_GAME_NAME_2 = "Advanced Third Reich"
+TEST_GAME_ID_2 = 283
 
 TEST_GUILD_ID = 1229
 TEST_GUILD_ID_2 = 930
 
 
 if os.getenv("TRAVIS"):
-    TEST_SLEEP_DELAY = 30   # when running on travis I still get tests failing despite the delay. Attempting to compensate. 
+    TEST_SLEEP_DELAY = 15   # when running on travis I still get tests failing despite the delay. Attempting to compensate.
+    logging.basicConfig(level=logging.DEBUG)
 else:
     TEST_SLEEP_DELAY = 10
+    logging.basicConfig(level=logging.INFO)
 
 
 
@@ -78,6 +83,7 @@ def null_logger():
 
 def progress_cb(items, total):
     global progress_called
+    logging.debug("progress_cb: fetched {} items out of {}".format(items, total))
     progress_called = True
 
 
