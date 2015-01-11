@@ -85,7 +85,14 @@ To Do
 * Improve documentation :)
 
 
-Contributions/suggestions are welcome.
+Contributions/suggestions are welcome!
+
+Contributions
+=============
+
+* Phil S. Stein (philsstein) (libBGG inspired this fork)
+* Tom Usher (tomusher)
+
 
 Indices and tables
 ==================
