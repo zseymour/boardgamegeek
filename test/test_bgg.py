@@ -7,7 +7,7 @@ import time
 import tempfile
 import pytest
 import xml.etree.ElementTree as ET
-
+import pickle
 
 from boardgamegeek import BoardGameGeek, BoardGameGeekError
 from boardgamegeek.collection import Collection
@@ -15,6 +15,8 @@ from boardgamegeek.games import CollectionBoardGame
 from boardgamegeek.hotitems import HotItems, HotItem
 from boardgamegeek.plays import PlaySession, Plays
 from boardgamegeek.things import Thing
+from boardgamegeek.utils import DictObject
+
 
 import boardgamegeek.utils as bggutil
 import datetime
@@ -719,3 +721,14 @@ def test_get_xml_subelement_text(xml):
 
     node = bggutil.xml_subelement_text(xml, "node1", convert=int, quiet=True, default="asd")
     assert node == "asd"
+
+
+@pytest.mark.serialize
+def test_serialization():
+    dummy_plays = Thing({"id": "10", "name": "fubar"})
+
+    s = pickle.dumps(dummy_plays)
+    assert s is not None
+
+    dummy_unserialized = pickle.loads(s)
+    assert type(dummy_unserialized) == Thing

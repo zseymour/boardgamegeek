@@ -1,6 +1,13 @@
 Changelog
 =========
 
+0.8.1
+-----
+
+Fixes
+
+  * Infinite recursion when unpickling objects
+
 0.8.0
 -----
 
