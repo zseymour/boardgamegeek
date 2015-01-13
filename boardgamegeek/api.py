@@ -641,16 +641,18 @@ class BoardGameGeek(BoardGameGeekNetworkAPI):
             >>> bgg_sqlite_cache = BoardGameGeek(cache="sqlite:///path/to/cache.db?ttl=3600")
 
     """
-    def __init__(self, cache="memory:///?ttl=3600", timeout=15, retries=3, retry_delay=5):
+    def __init__(self, cache="memory:///?ttl=3600", timeout=15, retries=3, retry_delay=5, disable_ssl=False):
         """
 
         :param cache: Cache to use for requests, None if disabled
         :param timeout: Timeout for network operations
         :param retries: Number of retries to perform in case the API returns HTTP 202 (retry) or in case of timeouts
         :param retry_delay: Time to sleep between retries when the API returns HTTP 202 (retry)
+        :param disable_ssl: If true, use HTTP instead of HTTPS for calling the BGG API
         :return:
         """
-        super(BoardGameGeek, self).__init__(api_endpoint="http://www.boardgamegeek.com/xmlapi2",
+        api_endpoint = "http{}://www.boardgamegeek.com/xmlapi2".format("" if disable_ssl else "s")
+        super(BoardGameGeek, self).__init__(api_endpoint=api_endpoint,
                                             cache=cache,
                                             timeout=timeout,
                                             retries=retries,

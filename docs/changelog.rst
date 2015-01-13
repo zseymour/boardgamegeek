@@ -1,6 +1,16 @@
 Changelog
 =========
 
+0.9.0
+-----
+
+Changes
+ 
+ * Since the BoardGameGeek API and site support HTTPS along with HTTP (and will be fully transitioned to HTTPS
+   in the future), this library now uses HTTPS by default. To disable this behaviour, pass disable_ssl=True 
+   when creating a :py:class:`boardgamegeek.api.BoardGameGeek`
+
+
 0.8.1
 -----
 
