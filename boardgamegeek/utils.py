@@ -232,7 +232,7 @@ def get_parsed_xml_response(requests_session, url, params=None, timeout=15, retr
                 log.warning("API returned 503, retrying")
                 retr -= 1
                 time.sleep(retry_delay)
-                retry_delay *= 1.5
+                retry_delay *= 3
                 continue
 
             if not r.headers.get("content-type").startswith("text/xml"):
