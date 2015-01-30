@@ -18,6 +18,8 @@ import requests_cache
 import requests
 import logging
 import time
+import threading
+from requests.adapters import HTTPAdapter
 
 
 try:
@@ -29,6 +31,59 @@ from .exceptions import BoardGameGeekAPIError, BoardGameGeekAPIRetryError, Board
 from .exceptions import BoardGameGeekAPINonXMLError, BoardGameGeekTimeoutError
 
 log = logging.getLogger("boardgamegeek.utils")
+
+DEFAULT_REQUESTS_PER_MINUTE = 60
+
+
+class RateLimitingAdapter(HTTPAdapter):
+    """
+    Adapter for the Requests library which makes sure there's a delay between consecutive requests to the BGG site
+    so that we don't get throttled
+    """
+
+    __last_request_timestamp = None     # time when the last request was made
+    __time_between_requests = 0         # interval to wait between requests in order to match the expected number of
+                                        # requests per second
+
+    __rate_limit_lock = threading.Lock()
+
+    def __init__(self, rpm=DEFAULT_REQUESTS_PER_MINUTE, **kw):
+        """
+
+        :param rpm: how many requests per minute to allow
+        :param kw:
+        :return:
+        """
+        if rpm <= 0:
+            log.warn("invalid requests per minute value ({}), falling back to default".format(rpm))
+            rpm = DEFAULT_REQUESTS_PER_MINUTE
+
+        RateLimitingAdapter.__time_between_requests = 60.0 / float(rpm)
+
+        super(RateLimitingAdapter, self).__init__(**kw)
+
+    def send(self, request, **kw):
+        log.debug("acquiring rate limiting lock")
+        with RateLimitingAdapter.__rate_limit_lock:
+
+            log.debug("time between requests:{}, last request timestamp: {}".format(RateLimitingAdapter.__time_between_requests,
+                                                                                    RateLimitingAdapter.__last_request_timestamp))
+
+            # determine if we need to sleep in order to enforce the maximum requested amount of requests per minute
+            if RateLimitingAdapter.__last_request_timestamp is not None:
+                time_delta = time.time() - RateLimitingAdapter.__last_request_timestamp
+                need_to_wait = RateLimitingAdapter.__time_between_requests - time_delta
+
+                log.debug("time since last request: {}, need to wait: {}".format(time_delta, need_to_wait))
+
+                if need_to_wait > 0:
+                    time.sleep(need_to_wait)
+
+            RateLimitingAdapter.__last_request_timestamp = time.time()
+            log.debug("releasing rate limiting lock")
+
+        log.debug("sending request: {}".format(request))
+        return super(RateLimitingAdapter, self).send(request, **kw)
 
 
 class DictObject(object):
