@@ -10,6 +10,11 @@ Features
    (HTTP error 503). It does this by serializing all the requests and making sure there's enough waiting time between
    them so that the configured `requests_per_minute` is respected.
 
+Fixes
+ 
+ * Fixed the retry mechanism, allowing retries=0 (meaning no retries at all). Before, the code would fail if the user
+   specified retires=0
+
 0.9.0
 -----
 
