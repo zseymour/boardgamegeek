@@ -123,6 +123,9 @@ def test_sqlite_caching():
         # invalid value for the ttl parameter
         BoardGameGeek(cache="sqlite://{}?ttl=blabla&fast_save=0".format(name))
 
+    with pytest.raises(BoardGameGeekError):
+        BoardGameGeek(cache="invalid://cache")
+
     bgg = BoardGameGeek(cache="sqlite://{}?ttl=1000".format(name))
 
     user = bgg.user(TEST_VALID_USER)
@@ -133,6 +136,7 @@ def test_sqlite_caching():
 
     # clean up..
     os.unlink(name)
+
 
 
 #region user() testing
