@@ -32,7 +32,7 @@ from .exceptions import BoardGameGeekAPINonXMLError, BoardGameGeekTimeoutError
 
 log = logging.getLogger("boardgamegeek.utils")
 
-DEFAULT_REQUESTS_PER_MINUTE = 60
+DEFAULT_REQUESTS_PER_MINUTE = 30
 
 
 class RateLimitingAdapter(HTTPAdapter):

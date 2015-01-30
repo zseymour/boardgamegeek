@@ -1,6 +1,14 @@
 Changelog
 =========
 
+
+0.10.1
+------
+
+Changes
+
+ * Reduced default requests_per_minute to 30, for safety
+
 0.10.0
 ------
 
