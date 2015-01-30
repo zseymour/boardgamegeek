@@ -37,7 +37,7 @@ from .plays import Plays
 from .exceptions import BoardGameGeekAPIError, BoardGameGeekError, BoardGameGeekAPIRetryError, BoardGameGeekAPINonXMLError
 from .utils import xml_subelement_attr, xml_subelement_text, xml_subelement_attr_list, get_parsed_xml_response
 from .search import SearchResult
-from .utils import get_cache_session_from_uri
+from .utils import get_cache_session_from_uri, RateLimitingAdapter, DEFAULT_REQUESTS_PER_MINUTE
 
 
 log = logging.getLogger("boardgamegeek.api")
@@ -54,7 +54,16 @@ class BoardGameGeekNetworkAPI(object):
     SEARCH_BOARD_GAME = 4
     SEARCH_BOARD_GAME_EXPANSION = 8
 
-    def __init__(self, api_endpoint, cache, timeout, retries, retry_delay):
+    def __init__(self, api_endpoint, cache, timeout, retries, retry_delay, requests_per_minute):
+        """
+
+        :param api_endpoint: URL of the API
+        :param cache: if non-empty, use the cache described by this URI
+        :param timeout: timeout for a request
+        :param retries: how many retries to perform in special cases
+        :param retry_delay: delay between retries (seconds)
+        :return:
+        """
 
         self._search_api_url = api_endpoint + "/search"
         self._thing_api_url = api_endpoint + "/thing"
@@ -71,6 +80,9 @@ class BoardGameGeekNetworkAPI(object):
             self.requests_session = get_cache_session_from_uri(cache)
         else:
             self.requests_session = requests.Session()
+
+        # add the rate limiting adapter
+        self.requests_session.mount(api_endpoint, RateLimitingAdapter(rpm=requests_per_minute))
 
     def _get_game_id(self, name, game_type, first=False):
         """
@@ -641,7 +653,7 @@ class BoardGameGeek(BoardGameGeekNetworkAPI):
             >>> bgg_sqlite_cache = BoardGameGeek(cache="sqlite:///path/to/cache.db?ttl=3600")
 
     """
-    def __init__(self, cache="memory:///?ttl=3600", timeout=15, retries=3, retry_delay=5, disable_ssl=False):
+    def __init__(self, cache="memory:///?ttl=3600", timeout=15, retries=3, retry_delay=5, disable_ssl=False, requests_per_minute=DEFAULT_REQUESTS_PER_MINUTE):
         """
 
         :param cache: Cache to use for requests, None if disabled
@@ -649,6 +661,8 @@ class BoardGameGeek(BoardGameGeekNetworkAPI):
         :param retries: Number of retries to perform in case the API returns HTTP 202 (retry) or in case of timeouts
         :param retry_delay: Time to sleep between retries when the API returns HTTP 202 (retry)
         :param disable_ssl: If true, use HTTP instead of HTTPS for calling the BGG API
+        :param requests_per_minute: how many requests per minute to allow to go out to BGG (throttle prevention)
+
         :return:
         """
         api_endpoint = "http{}://www.boardgamegeek.com/xmlapi2".format("" if disable_ssl else "s")
@@ -656,7 +670,8 @@ class BoardGameGeek(BoardGameGeekNetworkAPI):
                                             cache=cache,
                                             timeout=timeout,
                                             retries=retries,
-                                            retry_delay=retry_delay)
+                                            retry_delay=retry_delay,
+                                            requests_per_minute=requests_per_minute)
 
     def get_game_id(self, name):
         return self._get_game_id(name, "boardgame")

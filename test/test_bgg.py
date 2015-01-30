@@ -3,11 +3,13 @@ from __future__ import unicode_literals
 
 import logging
 import os
-import time
+import threading
 import tempfile
 import pytest
 import xml.etree.ElementTree as ET
 import pickle
+import time
+
 
 from boardgamegeek import BoardGameGeek, BoardGameGeekError
 from boardgamegeek.collection import Collection
@@ -22,6 +24,7 @@ import boardgamegeek.utils as bggutil
 import datetime
 
 progress_called = False
+
 
 # Kinda hard to test without having a "test" user
 TEST_VALID_USER = "fagentu007"
@@ -51,7 +54,6 @@ else:
     logging.basicConfig(level=logging.INFO)
 
 
-
 @pytest.fixture
 def xml():
     xml_code = """
@@ -73,7 +75,7 @@ def xml():
 
 @pytest.fixture
 def bgg():
-    return BoardGameGeek()
+    return BoardGameGeek(cache=None, retries=0, retry_delay=0)  # disable retrying for testing
 
 @pytest.fixture
 def null_logger():
@@ -93,7 +95,7 @@ def progress_cb(items, total):
 # Test caches
 #
 def test_no_caching():
-    time.sleep(10)
+    #time.sleep(10)
 
     # test that we can disable caching
     bgg = BoardGameGeek(cache=None)
@@ -105,7 +107,7 @@ def test_no_caching():
 
 
 def test_sqlite_caching():
-    time.sleep(TEST_SLEEP_DELAY)
+    #time.sleep(TEST_SLEEP_DELAY)
 
     # test that we can use the SQLite cache
     # generate a temporary file
@@ -121,6 +123,9 @@ def test_sqlite_caching():
         # invalid value for the ttl parameter
         BoardGameGeek(cache="sqlite://{}?ttl=blabla&fast_save=0".format(name))
 
+    with pytest.raises(BoardGameGeekError):
+        BoardGameGeek(cache="invalid://cache")
+
     bgg = BoardGameGeek(cache="sqlite://{}?ttl=1000".format(name))
 
     user = bgg.user(TEST_VALID_USER)
@@ -133,6 +138,7 @@ def test_sqlite_caching():
     os.unlink(name)
 
 
+
 #region user() testing
 def test_get_user_with_invalid_parameters(bgg):
     # test how the module reacts to unexpected parameters
@@ -142,7 +148,7 @@ def test_get_user_with_invalid_parameters(bgg):
 
 
 def test_get_invalid_user_info(bgg):
-    time.sleep(TEST_SLEEP_DELAY)
+    #time.sleep(TEST_SLEEP_DELAY)
 
     global progress_called
 
@@ -154,7 +160,7 @@ def test_get_invalid_user_info(bgg):
 
 
 def test_get_valid_user_info(bgg, null_logger):
-    time.sleep(TEST_SLEEP_DELAY)
+    #time.sleep(TEST_SLEEP_DELAY)
 
     global progress_called
 
@@ -203,13 +209,13 @@ def test_get_collection_with_invalid_parameters(bgg):
 
 
 def test_get_invalid_users_collection(bgg):
-    time.sleep(TEST_SLEEP_DELAY)
+    #time.sleep(TEST_SLEEP_DELAY)
     collection = bgg.collection(TEST_INVALID_USER)
     assert collection is None
 
 
 def test_get_valid_users_collection(bgg, null_logger):
-    time.sleep(TEST_SLEEP_DELAY)
+    #time.sleep(TEST_SLEEP_DELAY)
 
     collection = bgg.collection(TEST_VALID_USER)
 
@@ -261,7 +267,7 @@ def test_get_guild_with_invalid_parameters(bgg):
 
 
 def test_get_valid_guild_info(bgg, null_logger):
-    time.sleep(TEST_SLEEP_DELAY)
+    #time.sleep(TEST_SLEEP_DELAY)
 
     global progress_called
 
@@ -298,7 +304,7 @@ def test_get_valid_guild_info(bgg, null_logger):
 
 
 def test_get_invalid_guild_info(bgg):
-    time.sleep(TEST_SLEEP_DELAY)
+    #time.sleep(TEST_SLEEP_DELAY)
 
     global progress_called
 
@@ -312,7 +318,7 @@ def test_get_invalid_guild_info(bgg):
 
 #region game() testing
 def test_get_unknown_game_info(bgg):
-    time.sleep(TEST_SLEEP_DELAY)
+    #time.sleep(TEST_SLEEP_DELAY)
 
     game = bgg.game(TEST_INVALID_GAME_NAME)
     assert game is None
@@ -332,7 +338,7 @@ def test_get_game_with_invalid_parameters(bgg):
 
 
 def check_game(game):
-    time.sleep(TEST_SLEEP_DELAY)
+    #time.sleep(TEST_SLEEP_DELAY)
 
     assert game is not None
     assert game.name == TEST_GAME_NAME
@@ -389,7 +395,7 @@ def check_game(game):
 
 
 def test_get_known_game_info(bgg, null_logger):
-    time.sleep(TEST_SLEEP_DELAY)
+    #time.sleep(TEST_SLEEP_DELAY)
 
     # use an older game that's not so likely to change
     game = bgg.game(TEST_GAME_NAME)
@@ -403,21 +409,21 @@ def test_get_known_game_info(bgg, null_logger):
 
 
 def test_get_known_game_info_by_id(bgg):
-    time.sleep(TEST_SLEEP_DELAY)
+    #time.sleep(TEST_SLEEP_DELAY)
 
     game = bgg.game(None, game_id=TEST_GAME_ID)
     check_game(game)
 
 
 def test_get_game_id_by_name(bgg):
-    time.sleep(TEST_SLEEP_DELAY)
+    #time.sleep(TEST_SLEEP_DELAY)
 
     game_id = bgg.get_game_id(TEST_GAME_NAME)
     assert game_id == TEST_GAME_ID
 
 
 def test_get_games_by_name(bgg, null_logger):
-    time.sleep(TEST_SLEEP_DELAY)
+    #time.sleep(TEST_SLEEP_DELAY)
 
     games = bgg.games("coup")
 
@@ -444,7 +450,7 @@ def test_get_plays_with_invalid_parameters(bgg):
 
 
 def test_get_plays_with_unknown_username_and_id(bgg):
-    time.sleep(TEST_SLEEP_DELAY)
+    #time.sleep(TEST_SLEEP_DELAY)
 
     plays = bgg.plays(name=TEST_INVALID_USER)
     assert plays is None
@@ -455,7 +461,7 @@ def test_get_plays_with_unknown_username_and_id(bgg):
 
 
 def test_get_plays_with_invalid_dates(bgg):
-    time.sleep(TEST_SLEEP_DELAY)
+    #time.sleep(TEST_SLEEP_DELAY)
 
     # A string is invalid so should raise an error
     with pytest.raises(BoardGameGeekError):
@@ -466,7 +472,7 @@ def test_get_plays_with_invalid_dates(bgg):
 
 
 def test_get_plays_with_valid_dates(bgg):
-    time.sleep(TEST_SLEEP_DELAY)
+    #time.sleep(TEST_SLEEP_DELAY)
 
     min_date = datetime.date(2014, 1, 1)
     max_date = datetime.date(2014, 12, 31)
@@ -475,7 +481,7 @@ def test_get_plays_with_valid_dates(bgg):
 
 
 def test_get_plays_of_user(bgg, null_logger):
-    time.sleep(TEST_SLEEP_DELAY)
+    #time.sleep(TEST_SLEEP_DELAY)
 
     global progress_called
 
@@ -513,7 +519,7 @@ def test_get_plays_of_user(bgg, null_logger):
 
 
 def test_get_plays_of_game(bgg, null_logger):
-    time.sleep(TEST_SLEEP_DELAY)
+    #time.sleep(TEST_SLEEP_DELAY)
 
     global progress_called
 
@@ -565,7 +571,7 @@ def test_get_hot_items_invalid_type(bgg):
 
 
 def test_get_hot_items_boardgames(bgg, null_logger):
-    time.sleep(TEST_SLEEP_DELAY)
+    #time.sleep(TEST_SLEEP_DELAY)
 
     for item in bgg.hot_items("boardgame"):
         assert type(item.id) == int
@@ -576,7 +582,7 @@ def test_get_hot_items_boardgames(bgg, null_logger):
 
 
 def test_get_hot_items_boardgamepersons(bgg, null_logger):
-    time.sleep(TEST_SLEEP_DELAY)
+    #time.sleep(TEST_SLEEP_DELAY)
 
     for item in bgg.hot_items("boardgameperson"):
         assert type(item.id) == int
@@ -732,3 +738,59 @@ def test_serialization():
 
     dummy_unserialized = pickle.loads(s)
     assert type(dummy_unserialized) == Thing
+
+
+def test_rate_limiting_for_requests():
+    # create two threads, give each a list of games to fetch, disable cache and time the amount needed to
+    # fetch the data. requests should be serialized, even if made from two different threads
+
+    test_set_1 = [5,    # acquire
+                  31260, # agricola
+                  72125] # "eclipse"
+
+    test_set_2 = [18602, #caylus
+                28720, #  brass
+                53953] # thunderstone]
+
+    def _worker_thread(games):
+        bgg = BoardGameGeek(cache=None, requests_per_minute=20)
+        for g in games:
+            bgg.game(game_id=g)
+
+    t1 = threading.Thread(target=_worker_thread, args=(test_set_1, ))
+    t2 = threading.Thread(target=_worker_thread, args=(test_set_2, ))
+
+    start_time = time.time()
+    t1.start()
+    t2.start()
+
+    t1.join(timeout=10000)
+    t2.join(timeout=10000)
+    end_time = time.time()
+
+    # 20 requests per minute => a request every 3 seconds x 6 games => should take around 18 seconds
+    assert 15 < end_time - start_time < 21      # +/- a few seconds...
+
+
+    # second test, use caching and confirm it's working when combined with the rate limiting algorithm
+    # do cached requests for the test set, then do them again. should take only half of the time
+
+    bgg = BoardGameGeek(requests_per_minute=20)
+
+    start_time = time.time()
+    for g in test_set_1:
+        bgg.game(game_id=g)
+    end_time = time.time()
+
+    assert 7 < end_time - start_time < 11       # 3 games should take ~9 seconds
+
+    # repeat requests, should be served from cache
+    for g in test_set_1:
+        bgg.game(game_id=g)
+
+    assert 0 < time.time() - end_time < 2
+
+
+if __name__ == "__main__":
+    logging.basicConfig(level=logging.DEBUG)
+    test_rate_limiting_for_requests()

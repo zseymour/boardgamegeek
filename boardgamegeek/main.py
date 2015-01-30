@@ -1,16 +1,47 @@
 from __future__ import unicode_literals
-
+import sys
 import argparse
 import logging
 
 from boardgamegeek.api import BoardGameGeek, HOT_ITEM_CHOICES
 
 
+def brief_game_stats(game):
+
+    try:
+        desc = '''"{}",{},{}-{},{},{},{},{},"{}","{}"'''.format(game.name, game.year,
+               game.min_players, game.max_players,
+               game.playing_time,
+               game.rating_average, game.rating_average_weight, game.users_rated,
+               " / ".join(game.categories).lower(),
+               " / ".join(game.mechanics).lower())
+
+        print >>sys.stderr, "{}".format(desc)
+        sys.stdout.flush()
+    except Exception as e:
+        pass
+
+    return
+
+    log.info("Name        : {}".format(game.name))
+    log.info("Categories  : {}".format(game.categories))
+    log.info("Mechanics   : {}".format(game.mechanics))
+    log.info("Players     : {}-{}".format(game.min_players, game.max_players))
+    log.info("Age         : {}".format(game.min_age))
+    log.info("Play time   : {}".format(game.playing_time))
+    log.info("Game weight : {}".format(game.rating_average_weight))
+    log.info("Score       : {}".format(game.rating_average))
+    log.info("Votes       : {}".format(game.users_rated))
+    log.info("MY SCORE    : {}".format(my_score))
+
+
 def main():
+    global log
     p = argparse.ArgumentParser(prog="boardgamegeek")
 
     p.add_argument("-u", "--user", help="Query by username")
     p.add_argument("-g", "--game", help="Query by game name")
+    p.add_argument("--game-stats", help="Return brief statistics about the game")
     p.add_argument("-G", "--guild", help="Query by guild id")
     p.add_argument("-c", "--collection", help="Query user's collection")
     p.add_argument("-p", "--plays", help="Query user's play list")
@@ -47,6 +78,11 @@ def main():
         game = bgg.game(args.game)
         if game:
             game._format(log)
+
+    if args.game_stats:
+        game = bgg.game(args.game_stats)
+        if game:
+            brief_game_stats(game)
 
     if args.guild:
         guild = bgg.guild(args.guild, progress=progress_cb)
