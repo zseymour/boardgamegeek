@@ -35,7 +35,7 @@ class Collection(DictObject):
 
         for i in self:
             i._format(log)
-            log.info("---------------------")
+            log.info("")
 
     def add_game(self, game):
         try:

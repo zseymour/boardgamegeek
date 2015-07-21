@@ -198,7 +198,7 @@ class Plays(DictObject):
         log.info("count           : {}".format(len(self)))
         for p in self.plays:
             p._format(log)
-            log.info("-------------")
+            log.info("")
 
     def __getitem__(self, item):
         return self._plays.__getitem__(item)

@@ -39,7 +39,7 @@ def main():
     global log
     p = argparse.ArgumentParser(prog="boardgamegeek")
 
-    p.add_argument("-u", "--user", help="Query by username")
+    p.add_argument("-u", "--user", help="Query by user name")
     p.add_argument("-g", "--game", help="Query by game name")
     p.add_argument("-i", "--id", help="Query by game id", type=int)
     p.add_argument("--game-stats", help="Return brief statistics about the game")
@@ -120,12 +120,14 @@ def main():
         hot_items = bgg.hot_items(args.hot_items)
         for item in hot_items:
             item._format(log)
+            log.info("")
 
     if args.search:
         results = bgg.search(args.search)
         if results:
             for r in results:
                 r._format(log)
+                log.info("")
 
 if __name__ == "__main__":
     main()
