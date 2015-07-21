@@ -38,11 +38,13 @@ def brief_game_stats(game):
 
 
 def main():
-    global log
     p = argparse.ArgumentParser(prog="boardgamegeek")
 
     p.add_argument("-u", "--user", help="Query by user name")
     p.add_argument("-g", "--game", help="Query by game name")
+    p.add_argument("--most-recent", help="get the most recent game when querying by name (default)", action="store_true")
+    p.add_argument("--most-popular", help="get the most popular (top ranked) game when querying by name", action="store_true")
+
     p.add_argument("-i", "--id", help="Query by game id", type=int)
     p.add_argument("--game-stats", help="Return brief statistics about the game")
     p.add_argument("-G", "--guild", help="Query by guild id")
@@ -91,10 +93,33 @@ def main():
         if game:
             game._format(log)
 
+    # query by game name
     if args.game:
-        game = bgg.game(args.game)
-        if game:
-            game._format(log)
+        # fetch the most popular
+        if args.most_popular:
+            # if the user wants to return the most popular game, we need to call
+            # the search function and then grab game info and order by ranking
+            res = bgg.search(args.game, exact=True)
+
+            game = None
+            for r in res:
+                # get info about all the found games, return data for the one
+                # with the highest BGG rank
+                g = bgg.game(game_id=r.id)
+
+                if game is None:
+                    game = g
+                elif g.boardgame_rank < game.boardgame_rank:
+                    game = g
+
+            if game:
+                game._format(log)
+
+        else:
+            # fetch the most recent one
+            game = bgg.game(args.game)
+            if game:
+                game._format(log)
 
     if args.game_stats:
         game = bgg.game(args.game_stats)
