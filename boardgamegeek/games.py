@@ -117,7 +117,7 @@ class BoardGame(Thing):
             except KeyError:
                 raise BoardGameGeekError("invalid expanded game data")
 
-        self.boardgame_rank = -1
+        self.boardgame_rank = None
 
         if "ranks" in kw:
             # try to search for the boardgame rank of this game
@@ -125,7 +125,7 @@ class BoardGame(Thing):
                 if rank.get("name") == "boardgame":
                     value = rank.get("value")
                     if value is None:
-                        self.boardgame_rank = -1
+                        self.boardgame_rank = None
                     else:
                         self.boardgame_rank = int(value)
                     break
