@@ -86,11 +86,13 @@ class BoardGameGeekNetworkAPI(object):
 
     def _get_game_id(self, name, game_type, first=False):
         """
+        Returns the BGG ID of a game, searching by name
 
-        :param name:
-        :param game_type:
+        :param name: The name of the game to search for
+        :param game_type: the game type: "rpgitem", "videogame", "boardgame", "boardgameexpansion"
         :param first: if true, return the first result, otherwise return the most recent (by year published)
-        :return:
+        :return: `None` if game wasn't found
+        :return: integer value of the game's id
         """
 
         if game_type not in ["rpgitem", "videogame", "boardgame", "boardgameexpansion"]:
@@ -674,11 +676,24 @@ class BoardGameGeek(BoardGameGeekNetworkAPI):
                                             requests_per_minute=requests_per_minute)
 
     def get_game_id(self, name):
+        """
+        Returns the BGG ID of a game, searching by name
+
+        :param name: The name of the game to search for
+        :param game_type: the game type: "rpgitem", "videogame", "boardgame", "boardgameexpansion"
+        :param first: if true, return the first result, otherwise return the most recent (by year published)
+        :return: `None` if game wasn't found
+        :return: integer value of the game's id
+        """
         return self._get_game_id(name, "boardgame")
 
     def game(self, name=None, game_id=None):
         """
-        Get information about a game
+        Get information about a game.
+
+        WARNING: it can happen that there are multiple games with the same name, and this function might not always
+        pick up the one you're interested in. As a workaround, call the `boardgamegeek.api.BoardGame.search` function
+        to get the exact id, then use it here.
 
         :param name: If not None, get information about a game with this name
         :param game_id:  If not None, get information about a game with this id
