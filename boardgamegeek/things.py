@@ -1,9 +1,9 @@
 # coding: utf-8
 """
-:mod:`boardgamegeek.user` - Generic objects
-===========================================
+:mod:`boardgamegeek.things` - Generic objects
+=============================================
 
-.. module:: boardgamegeek.user
+.. module:: boardgamegeek.things
    :platform: Unix, Windows
    :synopsis: Generic objects
 
@@ -18,7 +18,7 @@ from .utils import DictObject
 
 class Thing(DictObject):
     """
-    A thing, an object with a name and an id
+    A thing, an object with a name and an id. Base class for various objects in the library.
     """
     def __init__(self, data):
         for i in ["id", "name"]:
