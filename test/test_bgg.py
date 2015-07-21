@@ -338,8 +338,6 @@ def test_get_game_with_invalid_parameters(bgg):
 
 
 def check_game(game):
-    #time.sleep(TEST_SLEEP_DELAY)
-
     assert game is not None
     assert game.name == TEST_GAME_NAME
     assert game.id == TEST_GAME_ID
@@ -347,11 +345,13 @@ def check_game(game):
     assert game.mechanics == ["Area Enclosure", "Card Drafting", "Hand Management", "Worker Placement"]
     assert game.min_players == 1
     assert game.max_players == 5
-    assert "cf.geekdo-images.com/images/pic259085_t.jpg" in game.thumbnail
-    assert "cf.geekdo-images.com/images/pic259085.jpg" in game.image
-    assert game.playing_time == 120
+    assert game.thumbnail == "http://cf.geekdo-images.com/images/pic259085_t.jpg"
+    assert game.image == "http://cf.geekdo-images.com/images/pic259085.jpg"
+    assert game.playing_time > 100
     assert game.min_age == 12
-    assert game.categories == ["Economic", "Farming"]
+
+    assert "Economic" in game.categories
+    assert "Farming" in game.categories
 
     assert game.families == ["Agricola", "Animals: Cattle", "Animals: Sheep", "Harvest Series", "Solitaire Games"]
 
@@ -389,6 +389,8 @@ def check_game(game):
     assert type(game.rating_median) == float
     assert game.rating_num_weights >= 0
     assert type(game.rating_average_weight) == float
+
+    assert type(game.boardgame_rank) == int
 
     # make sure no exception gets thrown
     repr(game)
@@ -578,6 +580,9 @@ def test_get_hot_items_boardgames(bgg, null_logger):
         assert len(item.name) > 0
         assert type(item.rank) == int
         assert type(item.year) in [int, type(None)]
+        # test that all thumbnails have been fixed (http:// added)
+        # note: I guess this could fail if a boardgame has no thumbnail...
+        assert item.thumbnail.startswith("http://")
         item._format(null_logger)
 
 
