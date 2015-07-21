@@ -117,6 +117,15 @@ class BoardGame(Thing):
             except KeyError:
                 raise BoardGameGeekError("invalid expanded game data")
 
+        self.boardgame_rank = -1
+
+        if "ranks" in kw:
+            # try to search for the boardgame rank of this game
+            for rank in kw["ranks"]:
+                if rank.get("name") == "boardgame":
+                    self.boardgame_rank = int(rank.get("value", -1))
+                    break
+
         super(BoardGame, self).__init__(kw)
 
     def __repr__(self):
@@ -143,6 +152,7 @@ class BoardGame(Thing):
     def _format(self, log):
         log.info("boardgame id      : {}".format(self.id))
         log.info("boardgame name    : {}".format(self.name))
+        log.info("boardgame rank    : {}".format(self.boardgame_rank))
         if self.alternative_names:
             for i in self.alternative_names:
                 log.info("alternative name  : {}".format(i))
