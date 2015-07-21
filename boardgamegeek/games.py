@@ -123,7 +123,11 @@ class BoardGame(Thing):
             # try to search for the boardgame rank of this game
             for rank in kw["ranks"]:
                 if rank.get("name") == "boardgame":
-                    self.boardgame_rank = int(rank.get("value", -1))
+                    value = rank.get("value")
+                    if value is None:
+                        self.boardgame_rank = -1
+                    else:
+                        self.boardgame_rank = int(value)
                     break
 
         super(BoardGame, self).__init__(kw)
