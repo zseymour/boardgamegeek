@@ -357,29 +357,12 @@ def check_game(game):
 
     assert game.designers == ["Uwe Rosenberg"]
 
-    assert game.publishers == ["Lookout Games",
-                               "999 Games",
-                               "Brain Games",
-                               "Compaya.hu - Gamer Café Kft.",
-                               "Filosofia Édition",
-                               "Hobby Japan",
-                               "Hobby World",
-                               "HomoLudicus",
-                               "Korea Boardgames co., Ltd.",
-                               "Lacerta",
-                               "MINDOK",
-                               "Smart Ltd",
-                               "Stratelibri",
-                               "Swan Panasia Co., Ltd.",
-                               "Ystari Games",
-                               "Z-Man Games"]
+    assert "Lookout Games" in game.publishers
+    assert "Compaya.hu - Gamer Café Kft." in game.publishers
 
-    assert game.alternative_names == ["Агрикола",
-                                      "アグリコラ",
-                                      "农场主",
-                                      "農家樂",
-                                      "아그리콜라"]
-
+    assert u"Агрикола" in game.alternative_names
+    assert u"아그리콜라" in game.alternative_names
+    
     # some not so exact assertions
     assert game.users_rated >= 34000
     assert 0.0 <= game.rating_average <= 10.0
