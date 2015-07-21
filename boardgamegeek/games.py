@@ -3,6 +3,7 @@ from copy import copy
 
 from .things import Thing
 from .exceptions import BoardGameGeekError
+from .utils import fix_url
 
 
 class CollectionBoardGame(Thing):
@@ -87,6 +88,10 @@ class BoardGame(Thing):
         # if we have any "expansions" for this item..
         if "expansions" not in kw:
             kw["expansions"] = []
+
+        for to_fix in ["thumbnail", "image"]:
+            if to_fix in kw:
+                kw[to_fix] = fix_url(kw[to_fix])
 
         self._expansions = []           # list of Thing for the expansions
         self._expansions_set = set()    # set for making sure things are unique

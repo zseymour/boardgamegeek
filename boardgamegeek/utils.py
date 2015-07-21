@@ -374,4 +374,14 @@ def get_cache_session_from_uri(uri):
 
     raise BoardGameGeekError("invalid cache URI: {}".format(uri))
 
+def fix_url(url):
+    """
+    The BGG API started returning URLs like //cf.geekdo-images.com/images/pic55406.jpg for thumbnails and images.
+    This function fixes them.
 
+    :param url: the url to fix
+    :return: the fixed url
+    """
+    if url and url.startswith("//"):
+        url = "http:{}".format(url)
+    return url
