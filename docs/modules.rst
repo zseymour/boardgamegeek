@@ -21,7 +21,6 @@ Modules
 .. automodule:: boardgamegeek.games
     :members:
 
-
 .. automodule:: boardgamegeek.guild
     :members:
     :undoc-members:
@@ -34,11 +33,18 @@ Modules
     :members:
     :undoc-members:
 
+.. automodule:: boardgamegeek.search
+    :members:
+    :undoc-members:
+
 .. automodule:: boardgamegeek.things
+    :members:
+    :undoc-members:
+
+.. automodule:: boardgamegeek.user
     :members:
     :undoc-members:
 
 .. automodule:: boardgamegeek.utils
     :members:
     :undoc-members:
-
