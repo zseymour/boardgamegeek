@@ -338,8 +338,6 @@ def test_get_game_with_invalid_parameters(bgg):
 
 
 def check_game(game):
-    #time.sleep(TEST_SLEEP_DELAY)
-
     assert game is not None
     assert game.name == TEST_GAME_NAME
     assert game.id == TEST_GAME_ID
@@ -347,39 +345,24 @@ def check_game(game):
     assert game.mechanics == ["Area Enclosure", "Card Drafting", "Hand Management", "Worker Placement"]
     assert game.min_players == 1
     assert game.max_players == 5
-    assert "cf.geekdo-images.com/images/pic259085_t.jpg" in game.thumbnail
-    assert "cf.geekdo-images.com/images/pic259085.jpg" in game.image
-    assert game.playing_time == 120
+    assert game.thumbnail == "http://cf.geekdo-images.com/images/pic259085_t.jpg"
+    assert game.image == "http://cf.geekdo-images.com/images/pic259085.jpg"
+    assert game.playing_time > 100
     assert game.min_age == 12
-    assert game.categories == ["Economic", "Farming"]
+
+    assert "Economic" in game.categories
+    assert "Farming" in game.categories
 
     assert game.families == ["Agricola", "Animals: Cattle", "Animals: Sheep", "Harvest Series", "Solitaire Games"]
 
     assert game.designers == ["Uwe Rosenberg"]
 
-    assert game.publishers == ["Lookout Games",
-                               "999 Games",
-                               "Brain Games",
-                               "Compaya.hu - Gamer Café Kft.",
-                               "Filosofia Édition",
-                               "Hobby Japan",
-                               "Hobby World",
-                               "HomoLudicus",
-                               "Korea Boardgames co., Ltd.",
-                               "Lacerta",
-                               "MINDOK",
-                               "Smart Ltd",
-                               "Stratelibri",
-                               "Swan Panasia Co., Ltd.",
-                               "Ystari Games",
-                               "Z-Man Games"]
+    assert "Lookout Games" in game.publishers
+    assert "Compaya.hu - Gamer Café Kft." in game.publishers
 
-    assert game.alternative_names == ["Агрикола",
-                                      "アグリコラ",
-                                      "农场主",
-                                      "農家樂",
-                                      "아그리콜라"]
-
+    assert u"Агрикола" in game.alternative_names
+    assert u"아그리콜라" in game.alternative_names
+    
     # some not so exact assertions
     assert game.users_rated >= 34000
     assert 0.0 <= game.rating_average <= 10.0
@@ -389,6 +372,8 @@ def check_game(game):
     assert type(game.rating_median) == float
     assert game.rating_num_weights >= 0
     assert type(game.rating_average_weight) == float
+
+    assert type(game.boardgame_rank) == int
 
     # make sure no exception gets thrown
     repr(game)
@@ -578,6 +563,9 @@ def test_get_hot_items_boardgames(bgg, null_logger):
         assert len(item.name) > 0
         assert type(item.rank) == int
         assert type(item.year) in [int, type(None)]
+        # test that all thumbnails have been fixed (http:// added)
+        # note: I guess this could fail if a boardgame has no thumbnail...
+        assert item.thumbnail.startswith("http://")
         item._format(null_logger)
 
 

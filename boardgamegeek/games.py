@@ -3,6 +3,7 @@ from copy import copy
 
 from .things import Thing
 from .exceptions import BoardGameGeekError
+from .utils import fix_url
 
 
 class CollectionBoardGame(Thing):
@@ -88,6 +89,10 @@ class BoardGame(Thing):
         if "expansions" not in kw:
             kw["expansions"] = []
 
+        for to_fix in ["thumbnail", "image"]:
+            if to_fix in kw:
+                kw[to_fix] = fix_url(kw[to_fix])
+
         self._expansions = []           # list of Thing for the expansions
         self._expansions_set = set()    # set for making sure things are unique
         for data in kw["expansions"]:
@@ -111,6 +116,19 @@ class BoardGame(Thing):
                     self._expands.append(Thing(data))
             except KeyError:
                 raise BoardGameGeekError("invalid expanded game data")
+
+        self.boardgame_rank = None
+
+        if "ranks" in kw:
+            # try to search for the boardgame rank of this game
+            for rank in kw["ranks"]:
+                if rank.get("name") == "boardgame":
+                    value = rank.get("value")
+                    if value is None:
+                        self.boardgame_rank = None
+                    else:
+                        self.boardgame_rank = int(value)
+                    break
 
         super(BoardGame, self).__init__(kw)
 
@@ -138,6 +156,7 @@ class BoardGame(Thing):
     def _format(self, log):
         log.info("boardgame id      : {}".format(self.id))
         log.info("boardgame name    : {}".format(self.name))
+        log.info("boardgame rank    : {}".format(self.boardgame_rank))
         if self.alternative_names:
             for i in self.alternative_names:
                 log.info("alternative name  : {}".format(i))

@@ -86,11 +86,13 @@ class BoardGameGeekNetworkAPI(object):
 
     def _get_game_id(self, name, game_type, first=False):
         """
+        Returns the BGG ID of a game, searching by name
 
-        :param name:
-        :param game_type:
+        :param name: The name of the game to search for
+        :param game_type: the game type: "rpgitem", "videogame", "boardgame", "boardgameexpansion"
         :param first: if true, return the first result, otherwise return the most recent (by year published)
-        :return:
+        :return: ``None`` if game wasn't found
+        :return: integer value of the game's id
         """
 
         if game_type not in ["rpgitem", "videogame", "boardgame", "boardgameexpansion"]:
@@ -520,7 +522,8 @@ class BoardGameGeekNetworkAPI(object):
         Returns the user's game collection
 
         :param user_name: user name to retrieve the collection for
-        :return: :py:class:`boardgamegeek.collection.Collection` or `None` if user not found
+        :return: :py:class:`boardgamegeek.collection.Collection`
+        :return: ``None`` if user not found
         :raises: :py:class:`boardgamegeek.exceptions.BoardGameGeekAPIError` if there was a problem getting the collection
         :raises: :py:class:`boardgamegeek.exceptions.BoardGameGeekError` in case of invalid parameters
         :raises: :py:class:`boardgamegeek.exceptions.BoardGameGeekAPIRetryError` if this request should be retried after a short delay
@@ -578,13 +581,14 @@ class BoardGameGeekNetworkAPI(object):
 
     def search(self, query, search_type=None, exact=False):
         """
+        Search for a game
 
-        :param query: The string to search for
-        :param search_type: Integer indicating what to search for. One or more of :py:const:`BoardGameGeekNetworkAPI.SEARCH_RPG_ITEM`,
+        :param query: the string to search for
+        :param search_type: integer indicating what to search for. One or more of :py:const:`BoardGameGeekNetworkAPI.SEARCH_RPG_ITEM`,
                             :py:const:`BoardGameGeekNetworkAPI.SEARCH_VIDEO_GAME`, :py:const:`BoardGameGeekNetworkAPI.SEARCH_BOARD_GAME` or
                             :py:const:`BoardGameGeekNetworkAPI.SEARCH_BOARD_GAME_EXPANSION`, OR'd together
-        :param exact: If True, try to match the name exactly
-        :return: List of :py:class:`boardgamegeek.search.SearchResult` objects
+        :param exact: if True, try to match the name exactly
+        :return: list of :py:class:`boardgamegeek.search.SearchResult` objects
         :raises: :py:class:`boardgamegeek.exceptions.BoardGameGeekError` in case of invalid query
         :raises: :py:class:`boardgamegeek.exceptions.BoardGameGeekAPIRetryError` if this request should be retried after a short delay
         :raises: :py:class:`boardgamegeek.exceptions.BoardGameGeekAPIError` if the response couldn't be parsed
@@ -656,14 +660,12 @@ class BoardGameGeek(BoardGameGeekNetworkAPI):
     def __init__(self, cache="memory:///?ttl=3600", timeout=15, retries=3, retry_delay=5, disable_ssl=False, requests_per_minute=DEFAULT_REQUESTS_PER_MINUTE):
         """
 
-        :param cache: Cache to use for requests, None if disabled
+        :param cache: Cache to use for requests, ``None`` if disabled
         :param timeout: Timeout for network operations
         :param retries: Number of retries to perform in case the API returns HTTP 202 (retry) or in case of timeouts
         :param retry_delay: Time to sleep between retries when the API returns HTTP 202 (retry)
         :param disable_ssl: If true, use HTTP instead of HTTPS for calling the BGG API
         :param requests_per_minute: how many requests per minute to allow to go out to BGG (throttle prevention)
-
-        :return:
         """
         api_endpoint = "http{}://www.boardgamegeek.com/xmlapi2".format("" if disable_ssl else "s")
         super(BoardGameGeek, self).__init__(api_endpoint=api_endpoint,
@@ -674,16 +676,29 @@ class BoardGameGeek(BoardGameGeekNetworkAPI):
                                             requests_per_minute=requests_per_minute)
 
     def get_game_id(self, name):
+        """
+        Returns the BGG ID of a game, searching by name
+
+        :param name: The name of the game to search for
+        :param game_type: the game type: "rpgitem", "videogame", "boardgame", "boardgameexpansion"
+        :param first: if true, return the first result, otherwise return the most recent (by year published)
+        :return: ``None`` if game wasn't found
+        :return: integer value of the game's id
+        """
         return self._get_game_id(name, "boardgame")
 
     def game(self, name=None, game_id=None):
         """
-        Get information about a game
+        Get information about a game.
+
+        WARNING: it can happen that there are multiple games with the same name, and this function might not always
+        pick up the one you're interested in. As a workaround, call the `boardgamegeek.api.BoardGame.search` function
+        to get the exact id, then use it here.
 
         :param name: If not None, get information about a game with this name
         :param game_id:  If not None, get information about a game with this id
         :return: :py:class:`boardgamegeek.games.BoardGame`
-        :return: `None` if the game wasn't found
+        :return: ``None`` if the game wasn't found
         :raises: :py:class:`boardgamegeek.exceptions.BoardGameGeekError` in case of invalid name and id
         :raises: :py:class:`boardgamegeek.exceptions.BoardGameGeekAPIRetryError` if this request should be retried after a short delay
         :raises: :py:class:`boardgamegeek.exceptions.BoardGameGeekAPIError` if the response couldn't be parsed

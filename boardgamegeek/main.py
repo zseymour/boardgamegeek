@@ -3,8 +3,10 @@ import sys
 import argparse
 import logging
 
-from boardgamegeek.api import BoardGameGeek, HOT_ITEM_CHOICES
+from boardgamegeek.api import BoardGameGeek, BoardGameGeekNetworkAPI, HOT_ITEM_CHOICES
 
+log = logging.getLogger("boardgamegeek")
+log_fmt = "[%(levelname)s] %(message)s"
 
 def brief_game_stats(game):
 
@@ -36,11 +38,14 @@ def brief_game_stats(game):
 
 
 def main():
-    global log
     p = argparse.ArgumentParser(prog="boardgamegeek")
 
-    p.add_argument("-u", "--user", help="Query by username")
+    p.add_argument("-u", "--user", help="Query by user name")
     p.add_argument("-g", "--game", help="Query by game name")
+    p.add_argument("--most-recent", help="get the most recent game when querying by name (default)", action="store_true")
+    p.add_argument("--most-popular", help="get the most popular (top ranked) game when querying by name", action="store_true")
+
+    p.add_argument("-i", "--id", help="Query by game id", type=int)
     p.add_argument("--game-stats", help="Return brief statistics about the game")
     p.add_argument("-G", "--guild", help="Query by guild id")
     p.add_argument("-c", "--collection", help="Query user's collection")
@@ -56,16 +61,28 @@ def main():
 
     args = p.parse_args()
 
-    log = logging.getLogger("boardgamegeek")
+    # configure logging
     if args.debug:
-        logging.basicConfig(level=logging.DEBUG)
+        log_level = logging.DEBUG
     else:
         # make requests shush
         logging.getLogger("requests").setLevel(logging.WARNING)
-        logging.basicConfig(level=logging.INFO)
+        log_level = logging.INFO
+
+    log.setLevel(log_level)
+    stdout = logging.StreamHandler()
+    stdout.setLevel(log_level)
+
+    fmt = logging.Formatter(log_fmt)
+    stdout.setFormatter(fmt)
+    log.addHandler(stdout)
 
     def progress_cb(items, total):
         log.debug("fetching items: {}% complete".format(items*100/total))
+
+    if not any([args.user, args.game, args.id, args.guild, args.collection,
+                args.plays, args.plays_by_game, args.hot_items, args.search]):
+        p.error("no action specified!")
 
     bgg = BoardGameGeek(timeout=args.timeout, retries=args.retries)
 
@@ -74,10 +91,40 @@ def main():
         if user:
             user._format(log)
 
-    if args.game:
-        game = bgg.game(args.game)
+    # query by game id
+    if args.id:
+        game = bgg.game(game_id=args.id)
         if game:
             game._format(log)
+
+    # query by game name
+    if args.game:
+        # fetch the most popular
+        if args.most_popular:
+            # if the user wants to return the most popular game, we need to call
+            # the search function and then grab game info and order by ranking
+            game = None
+
+            for r in bgg.search(args.game,
+                                exact=True,
+                                search_type=BoardGameGeekNetworkAPI.SEARCH_BOARD_GAME | BoardGameGeekNetworkAPI.SEARCH_BOARD_GAME_EXPANSION):
+                # get info about all the found games, return data for the one
+                # with the highest BGG rank
+                g = bgg.game(game_id=r.id)
+
+                if game is None:
+                    game = g
+                elif g.boardgame_rank is not None and g.boardgame_rank < game.boardgame_rank:
+                    game = g
+
+            if game:
+                game._format(log)
+
+        else:
+            # fetch the most recent one
+            game = bgg.game(args.game)
+            if game:
+                game._format(log)
 
     if args.game_stats:
         game = bgg.game(args.game_stats)
@@ -113,13 +160,14 @@ def main():
         hot_items = bgg.hot_items(args.hot_items)
         for item in hot_items:
             item._format(log)
+            log.info("")
 
     if args.search:
-        # TODO: add search type..
         results = bgg.search(args.search)
         if results:
             for r in results:
                 r._format(log)
+                log.info("")
 
 if __name__ == "__main__":
     main()

@@ -1,6 +1,19 @@
 Changelog
 =========
 
+0.11.0
+------
+
+Changes
+
+  * URLs for images and thumbnails are converted to proper URLs (the API returns them as "//cf.geekdo-images.com/images/...")
+
+Features
+
+  * The :py:class:`boardgamegeek.games.BoardGame` has a new integer property (`None` if missing), `boardgame_rank`
+  * The `boardgamegeek` tool: added `-i`, which allows querying by game id
+  * The `boardgamegeek` tool: added `--most-recent` (default) and `--most-popular` which allow the `-g` option to give information on a different game when the "search-by-name" returns multiple results.
+
 
 0.10.1
 ------
@@ -19,7 +32,7 @@ Features
    them so that the configured `requests_per_minute` is respected.
 
 Fixes
- 
+
  * Fixed the retry mechanism, allowing retries=0 (meaning no retries at all). Before, the code would fail if the user
    specified retires=0
 
@@ -27,9 +40,9 @@ Fixes
 -----
 
 Changes
- 
+
  * Since the BoardGameGeek API and site support HTTPS along with HTTP (and will be fully transitioned to HTTPS
-   in the future), this library now uses HTTPS by default. To disable this behaviour, pass disable_ssl=True 
+   in the future), this library now uses HTTPS by default. To disable this behaviour, pass disable_ssl=True
    when creating a :py:class:`boardgamegeek.api.BoardGameGeek`
 
 
@@ -45,13 +58,13 @@ Fixes
 
 Features
 
-  * Fetching plays has support for min_date, max_date (thanks tomusher!) 
+  * Fetching plays has support for min_date, max_date (thanks tomusher!)
 
 0.7.1
 -----
 
 Fixes
-  
+
   * Not expecting the score of a player to be a number anymore (using the string as returned by the BGG API)
 
 0.7.0
@@ -73,17 +86,17 @@ Features
 Changes
 
   * Improved code in an attempt to prevent exceptions when trying to deal with invalid data coming from the remote XML data
- 
+
 Fixes
-  
+
   * Fixed issue #12 (an edge case which lead to comparing None to int)
 
 0.5.0
 -----
-  
+
 Features
 
-  * Added a new function :py:func:`boardgamegeek.api.BoardGameGeek.games()` which takes a name as argument and returns a list of :py:class:`boardgamegeek.games.BoardGame` with 
+  * Added a new function :py:func:`boardgamegeek.api.BoardGameGeek.games()` which takes a name as argument and returns a list of :py:class:`boardgamegeek.games.BoardGame` with
     all the games with that name.
 
 0.4.3
@@ -98,7 +111,7 @@ Changes
 
 Changes
 
-  * Increased default number of retries and timeout 
+  * Increased default number of retries and timeout
 
 0.4.0
 -----
