@@ -41,6 +41,7 @@ def main():
 
     p.add_argument("-u", "--user", help="Query by username")
     p.add_argument("-g", "--game", help="Query by game name")
+    p.add_argument("-i", "--id", help="Query by game id", type=int)
     p.add_argument("--game-stats", help="Return brief statistics about the game")
     p.add_argument("-G", "--guild", help="Query by guild id")
     p.add_argument("-c", "--collection", help="Query user's collection")
@@ -73,6 +74,12 @@ def main():
         user = bgg.user(args.user, progress=progress_cb)
         if user:
             user._format(log)
+
+    # query by game id
+    if args.id:
+        game = bgg.game(game_id=args.id)
+        if game:
+            game._format(log)
 
     if args.game:
         game = bgg.game(args.game)
@@ -115,7 +122,6 @@ def main():
             item._format(log)
 
     if args.search:
-        # TODO: add search type..
         results = bgg.search(args.search)
         if results:
             for r in results:
