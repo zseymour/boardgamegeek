@@ -80,6 +80,10 @@ def main():
     def progress_cb(items, total):
         log.debug("fetching items: {}% complete".format(items*100/total))
 
+    if not any([args.user, args.game, args.id, args.guild, args.collection,
+                args.plays, args.plays_by_game, args.hot_items, args.search]):
+        p.error("no action specified!")
+
     bgg = BoardGameGeek(timeout=args.timeout, retries=args.retries)
 
     if args.user:
@@ -99,10 +103,9 @@ def main():
         if args.most_popular:
             # if the user wants to return the most popular game, we need to call
             # the search function and then grab game info and order by ranking
-            res = bgg.search(args.game, exact=True)
-
             game = None
-            for r in res:
+
+            for r in bgg.search(args.game, exact=True):
                 # get info about all the found games, return data for the one
                 # with the highest BGG rank
                 g = bgg.game(game_id=r.id)
