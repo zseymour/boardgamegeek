@@ -5,6 +5,8 @@ import logging
 
 from boardgamegeek.api import BoardGameGeek, HOT_ITEM_CHOICES
 
+log = logging.getLogger("boardgamegeek")
+log_fmt = "[%(levelname)s] %(message)s"
 
 def brief_game_stats(game):
 
@@ -57,13 +59,21 @@ def main():
 
     args = p.parse_args()
 
-    log = logging.getLogger("boardgamegeek")
+    # configure logging
     if args.debug:
-        logging.basicConfig(level=logging.DEBUG)
+        log_level = logging.DEBUG
     else:
         # make requests shush
         logging.getLogger("requests").setLevel(logging.WARNING)
-        logging.basicConfig(level=logging.INFO)
+        log_level = logging.INFO
+
+    log.setLevel(log_level)
+    stdout = logging.StreamHandler()
+    stdout.setLevel(log_level)
+
+    fmt = logging.Formatter(log_fmt)
+    stdout.setFormatter(fmt)
+    log.addHandler(stdout)
 
     def progress_cb(items, total):
         log.debug("fetching items: {}% complete".format(items*100/total))
