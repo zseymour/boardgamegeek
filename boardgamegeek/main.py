@@ -3,7 +3,7 @@ import sys
 import argparse
 import logging
 
-from boardgamegeek.api import BoardGameGeek, HOT_ITEM_CHOICES
+from boardgamegeek.api import BoardGameGeek, BoardGameGeekNetworkAPI, HOT_ITEM_CHOICES
 
 log = logging.getLogger("boardgamegeek")
 log_fmt = "[%(levelname)s] %(message)s"
@@ -105,14 +105,16 @@ def main():
             # the search function and then grab game info and order by ranking
             game = None
 
-            for r in bgg.search(args.game, exact=True):
+            for r in bgg.search(args.game,
+                                exact=True,
+                                search_type=BoardGameGeekNetworkAPI.SEARCH_BOARD_GAME | BoardGameGeekNetworkAPI.SEARCH_BOARD_GAME_EXPANSION):
                 # get info about all the found games, return data for the one
                 # with the highest BGG rank
                 g = bgg.game(game_id=r.id)
 
                 if game is None:
                     game = g
-                elif g.boardgame_rank < game.boardgame_rank:
+                elif g.boardgame_rank is not None and g.boardgame_rank < game.boardgame_rank:
                     game = g
 
             if game:
