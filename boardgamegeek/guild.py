@@ -1,7 +1,7 @@
 # coding: utf-8
 """
-:mod:`boardgamegeek.guild` - Classes for storing guild information
-==================================================================
+:mod:`boardgamegeek.guild` - Guild information
+==============================================
 
 .. module:: boardgamegeek.guild
    :platform: Unix, Windows

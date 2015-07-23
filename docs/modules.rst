@@ -1,50 +1,50 @@
 Modules
 =======
 
-
-.. automodule:: boardgamegeek
-    :members:
-    :undoc-members:
-
 .. automodule:: boardgamegeek.api
-    :members:
-    :undoc-members:
+
+  .. autoclass:: boardgamegeek.api.BoardGameGeek
+      :members:
+      :inherited-members:
+
 
 .. automodule:: boardgamegeek.collection
-    :members:
-    :undoc-members:
+
+  .. autoclass:: boardgamegeek.collection.Collection
+      :members:
+
 
 .. automodule:: boardgamegeek.exceptions
-    :members:
-    :undoc-members:
+
 
 .. automodule:: boardgamegeek.games
-    :members:
+
+  .. autoclass:: boardgamegeek.games.CollectionBoardGame
+      :members:
+
+  .. autoclass:: boardgamegeek.games.BoardGame
+      :members:
+
 
 .. automodule:: boardgamegeek.guild
-    :members:
-    :undoc-members:
+
+  .. autoclass:: boardgamegeek.guild.Guild
+      :members:
+
 
 .. automodule:: boardgamegeek.hotitems
-    :members:
-    :undoc-members:
+
 
 .. automodule:: boardgamegeek.plays
-    :members:
-    :undoc-members:
+
 
 .. automodule:: boardgamegeek.search
-    :members:
-    :undoc-members:
+
 
 .. automodule:: boardgamegeek.things
-    :members:
-    :undoc-members:
+
 
 .. automodule:: boardgamegeek.user
-    :members:
-    :undoc-members:
+
 
 .. automodule:: boardgamegeek.utils
-    :members:
-    :undoc-members:

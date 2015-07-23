@@ -6,7 +6,7 @@ Changelog
 
 Changes
 
-  * Deprecated numeric values for the `search_type` parameter of :py:function:`boardgamegeek.games.BoardGame.search`. Accepts list of strings as arguments instead, for consistency with the rest of the functions. 
+  * Deprecated numeric values for the `search_type` parameter of :py:meth:`boardgamegeek.games.BoardGame.search`. Accepts list of strings as arguments instead, for consistency with the rest of the functions. 
 
 0.11.2
 ------

@@ -1,3 +1,15 @@
+# coding: utf-8
+"""
+:mod:`boardgamegeek.games` - Games information
+==============================================
+
+.. module:: boardgamegeek.games
+   :platform: Unix, Windows
+   :synopsis: classes for storing games information
+
+.. moduleauthor:: Cosmin Luță <q4break@gmail.com>
+
+"""
 from __future__ import unicode_literals
 from copy import copy
 
@@ -8,9 +20,8 @@ from .utils import fix_url
 
 class CollectionBoardGame(Thing):
     """
-    A boardgame retrieved from the collection information, which has
-    less information than the one retrieved via the /thing api and which
-    also contains some user-specific information
+    A boardgame retrieved from the collection information, which has less information than the one retrieved
+    via the /thing api and which also contains some user-specific information.
     """
     def __repr__(self):
         return "CollectionBoardGame (id: {})".format(self.id)
@@ -37,43 +48,87 @@ class CollectionBoardGame(Thing):
         return self._data.get("lastmodified")
 
     @property
+    def last_modified(self):
+        """
+        :return: last modified date
+        :rtype: str
+        """
+        return self._data.get("lastmodified")
+
+    @property
     def rating(self):
+        """
+        :return: game rating
+        """
         return self._data.get("rating")
 
     @property
     def owned(self):
+        """
+        :return: game owned
+        :rtype: bool
+        """
         return bool(int(self._data.get("own", 0)))
 
     @property
     def preordered(self):
+        """
+        :return: game preordered
+        :rtype: bool
+        """
         return bool(int(self._data.get("preordered", 0)))
 
     @property
     def prev_owned(self):
+        """
+        :return: game previously owned
+        :rtype: bool
+        """
         return bool(int(self._data.get("prevowned", 0)))
 
     @property
     def want(self):
+        """
+        :return: game wanted
+        :rtype: bool
+        """
         return bool(int(self._data.get("want", 0)))
 
     @property
     def want_to_buy(self):
+        """
+        :return: want to buy
+        :rtype: bool
+        """
         return bool(int(self._data.get("wanttobuy", 0)))
 
     @property
     def want_to_play(self):
+        """
+        :return: want to play
+        :rtype: bool
+        """
         return bool(int(self._data.get("wanttoplay", 0)))
 
     @property
     def for_trade(self):
+        """
+        :return: game for trading
+        :rtype: bool
+        """
         return bool(int(self._data.get("fortrade", 0)))
 
     @property
     def wishlist(self):
+        """
+        :return: game on wishlist
+        :rtype: bool
+        """
         return bool(int(self._data.get("wishlist", 0)))
 
     @property
     def wishlist_priority(self):
+        # TODO: convert to int (it's str)
         return self._data.get("wishlistpriority")
 
 

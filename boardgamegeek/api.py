@@ -49,23 +49,21 @@ HOT_ITEM_CHOICES = ["boardgame", "rpg", "videogame", "boardgameperson", "rpgpers
 
 
 class BoardGameGeekNetworkAPI(object):
+    """
+    Base class for the BoardGameGeek websites APIs. All site-specific clients are derived from this.
 
+    :param str api_endpoint: URL of the API
+    :param str cache: URL indicating the cache to use, or ``None`` if caching should be disabled (not recommended)
+    :param integer timeout: timeout for a request
+    :param integer retries: how many retries to perform in special cases
+    :param integer retry_delay: delay between retries (seconds)
+    """
     SEARCH_RPG_ITEM = 1
     SEARCH_VIDEO_GAME = 2
     SEARCH_BOARD_GAME = 4
     SEARCH_BOARD_GAME_EXPANSION = 8
 
     def __init__(self, api_endpoint, cache, timeout, retries, retry_delay, requests_per_minute):
-        """
-
-        :param api_endpoint: URL of the API
-        :param cache: if non-empty, use the cache described by this URI
-        :param timeout: timeout for a request
-        :param retries: how many retries to perform in special cases
-        :param retry_delay: delay between retries (seconds)
-        :return:
-        """
-
         self._search_api_url = api_endpoint + "/search"
         self._thing_api_url = api_endpoint + "/thing"
         self._guild_api_url = api_endpoint + "/guild"
@@ -89,15 +87,15 @@ class BoardGameGeekNetworkAPI(object):
         """
         Returns the BGG ID of a game, searching by name
 
-        :param str name: The name of the game to search for
+        :param str name: the name of the game to search for
         :param str game_type: the game type ("rpgitem", "videogame", "boardgame", "boardgameexpansion")
         :param str choose: method of selecting the game by name, when dealing with multiple results. Valid values are "first", "recent" or "best-rank"
         :return: ``None`` if game wasn't found
         :return: game's id
-        :raises: :py:class:`boardgamegeek.exceptions.BoardGameGeekError` in case of invalid name
-        :raises: :py:class:`boardgamegeek.exceptions.BoardGameGeekAPIRetryError` if this request should be retried after a short delay
-        :raises: :py:class:`boardgamegeek.exceptions.BoardGameGeekAPIError` if the response couldn't be parsed
-        :raises: :py:class:`boardgamegeek.exceptions.BoardGameGeekTimeoutError` if there was a timeout
+        :raises: :py:exc:`boardgamegeek.exceptions.BoardGameGeekError` in case of invalid name
+        :raises: :py:exc:`boardgamegeek.exceptions.BoardGameGeekAPIRetryError` if this request should be retried after a short delay
+        :raises: :py:exc:`boardgamegeek.exceptions.BoardGameGeekAPIError` if the response couldn't be parsed
+        :raises: :py:exc:`boardgamegeek.exceptions.BoardGameGeekTimeoutError` if there was a timeout
         """
 
         if choose not in ["first", "recent", "best-rank"]:
@@ -112,20 +110,26 @@ class BoardGameGeekNetworkAPI(object):
         if choose == "first":
             return res[0].id
         elif choose == "recent":
-            return max(res, key=lambda x: x.year)
+            return max(res, key=lambda x: x.year).id
         else:
             # getting the best rank requires fetching the data of all games returned
             game_data = [self.game(game_id=r.id) for r in res]
             # ...and selecting the one with the best ranking
-            return max(game_data, key=lambda x: x.boardgame_rank if x.boardgame_rank is not None else 10000000000)
+            return max(game_data, key=lambda x: x.boardgame_rank if x.boardgame_rank is not None else 10000000000).id
 
     def guild(self, guild_id, progress=None):
         """
         Retrieves details about a guild
 
-        :param guild_id: The ID of the guild
-        :param progress: Optional progress callback for member fetching
-        :return: :class:`boardgamegeek.guild.Guild` object containing the details
+        :param integer guild_id: the id number of the guild
+        :param callable progress: an optional callable for reporting progress, taking two integers (``current``, ``total``) as arguments
+        :return: ``Guild`` object containing the data
+        :return: ``None`` if the information couldn't be retrieved
+        :rtype: :py:class:`boardgamegeek.guild.Guild`
+        :raises: :py:exc:`boardgamegeek.exceptions.BoardGameGeekError` in case of an invalid guild id
+        :raises: :py:exc:`boardgamegeek.exceptions.BoardGameGeekAPIRetryError` if this request should be retried after a short delay
+        :raises: :py:exc:`boardgamegeek.exceptions.BoardGameGeekAPIError` if the response couldn't be parsed
+        :raises: :py:exc:`boardgamegeek.exceptions.BoardGameGeekTimeoutError` if there was a timeout
         """
 
         try:
@@ -210,12 +214,17 @@ class BoardGameGeekNetworkAPI(object):
         """
         Retrieves details about an user
 
-        :param name: user's login name
-        :return: :py:class:`boardgamegeek.user.User`
-        :raises: :py:class:`boardgamegeek.exceptions.BoardGameGeekError` in case of invalid user name
-        :raises: :py:class:`boardgamegeek.exceptions.BoardGameGeekAPIRetryError` if this request should be retried after a short delay
-        :raises: :py:class:`boardgamegeek.exceptions.BoardGameGeekAPIError` if the response couldn't be parsed
-        :raises: :py:class:`boardgamegeek.exceptions.BoardGameGeekTimeoutError` if there was a timeout
+        :param str name: user's login name
+        :param callable progress: an optional callable for reporting progress when fetching the buddy list/guilds, taking two integers (``current``, ``total``) as arguments
+
+        :return: ``User`` object
+        :rtype: :py:class:`boardgamegeek.user.User`
+        :return: ``None`` if the user couldn't be found
+
+        :raises: :py:exc:`boardgamegeek.exceptions.BoardGameGeekError` in case of invalid user name
+        :raises: :py:exc:`boardgamegeek.exceptions.BoardGameGeekAPIRetryError` if this request should be retried after a short delay
+        :raises: :py:exc:`boardgamegeek.exceptions.BoardGameGeekAPIError` if the response couldn't be parsed
+        :raises: :py:exc:`boardgamegeek.exceptions.BoardGameGeekTimeoutError` if there was a timeout
         """
 
         if not name:
@@ -330,19 +339,21 @@ class BoardGameGeekNetworkAPI(object):
 
     def plays(self, name=None, game_id=None, progress=None, min_date=None, max_date=None):
         """
-        Retrieves the user's play list
+        Retrieves the plays for an user (if using ``name``) or for a game (if using ``game_id``)
 
-        :param name: user name to retrieve the plays for
-        :param game_id: game id to retrieve the plays for
-        :param min_date: return only plays of the specified date or later.
-        :param max_date: return only plays of the specified date or earlier.
-        :type mindate: datetime.date
-        :type max_date: datetime.date
-        :return: :py:class:`boardgamegeek.plays.Plays` object containing all the plays
-        :raises: :py:class:`boardgamegeek.exceptions.BoardGameGeekError` on errors
-        :raises: :py:class:`boardgamegeek.exceptions.BoardGameGeekAPIRetryError` if this request should be retried after a short delay
-        :raises: :py:class:`boardgamegeek.exceptions.BoardGameGeekAPIError` if the response couldn't be parsed
-        :raises: :py:class:`boardgamegeek.exceptions.BoardGameGeekTimeoutError` if there was a timeout
+        :param str name: user name to retrieve the plays for
+        :param integer game_id: game id to retrieve the plays for
+        :param callable progress: an optional callable for reporting progress, taking two integers (``current``, ``total``) as arguments
+        :param datetime.date min_date: return only plays of the specified date or later.
+        :param datetime.date max_date: return only plays of the specified date or earlier.
+
+        :return: object containing all the plays
+        :rtype: :py:class:`boardgamegeek.plays.Plays`
+        :return: ``None`` if the user/game couldn't be found
+        :raises: :py:exc:`boardgamegeek.exceptions.BoardGameGeekError` on errors
+        :raises: :py:exc:`boardgamegeek.exceptions.BoardGameGeekAPIRetryError` if this request should be retried after a short delay
+        :raises: :py:exc:`boardgamegeek.exceptions.BoardGameGeekAPIError` if the response couldn't be parsed
+        :raises: :py:exc:`boardgamegeek.exceptions.BoardGameGeekTimeoutError` if there was a timeout
 
         """
         if not name and not game_id:
@@ -468,12 +479,16 @@ class BoardGameGeekNetworkAPI(object):
         """
         Return the list of "Hot Items"
 
-        :param item_type: hot item type (valid values: "boardgame", "rpg", "videogame", "boardgameperson", "rpgperson", "boardgamecompany", "rpgcompany", "videogamecompany")
-        :return: :py:class:`boardgamegeek.hotitems.HotItems` containing the hot items
-        :raises: :py:class:`boardgamegeek.exceptions.BoardGameGeekError` if the parameter is invalid
-        :raises: :py:class:`boardgamegeek.exceptions.BoardGameGeekAPIRetryError` if this request should be retried after a short delay
-        :raises: :py:class:`boardgamegeek.exceptions.BoardGameGeekAPIError` if the response couldn't be parsed
-        :raises: :py:class:`boardgamegeek.exceptions.BoardGameGeekTimeoutError` if there was a timeout
+        :param str item_type: hot item type. Valid values: "boardgame", "rpg", "videogame", "boardgameperson", "rpgperson", "boardgamecompany", "rpgcompany", "videogamecompany")
+
+        :return: ``HotItems`` object
+        :rtype: :py:class:`boardgamegeek.hotitems.HotItems`
+        :return: ``None`` in case the hot items couldn't be retrieved
+
+        :raises: :py:exc:`boardgamegeek.exceptions.BoardGameGeekError` if the parameter is invalid
+        :raises: :py:exc:`boardgamegeek.exceptions.BoardGameGeekAPIRetryError` if this request should be retried after a short delay
+        :raises: :py:exc:`boardgamegeek.exceptions.BoardGameGeekAPIError` if the response couldn't be parsed
+        :raises: :py:exc:`boardgamegeek.exceptions.BoardGameGeekTimeoutError` if there was a timeout
         """
         if item_type not in HOT_ITEM_CHOICES:
             raise BoardGameGeekError("invalid type specified")
@@ -507,14 +522,15 @@ class BoardGameGeekNetworkAPI(object):
         """
         Returns the user's game collection
 
-        :param user_name: user name to retrieve the collection for
-        :return: :py:class:`boardgamegeek.collection.Collection`
+        :param str user_name: user name to retrieve the collection for
+        :return: ``Collection`` object
+        :rtype: :py:class:`boardgamegeek.collection.Collection`
         :return: ``None`` if user not found
-        :raises: :py:class:`boardgamegeek.exceptions.BoardGameGeekAPIError` if there was a problem getting the collection
-        :raises: :py:class:`boardgamegeek.exceptions.BoardGameGeekError` in case of invalid parameters
-        :raises: :py:class:`boardgamegeek.exceptions.BoardGameGeekAPIRetryError` if this request should be retried after a short delay
-        :raises: :py:class:`boardgamegeek.exceptions.BoardGameGeekAPIError` if the response couldn't be parsed
-        :raises: :py:class:`boardgamegeek.exceptions.BoardGameGeekTimeoutError` if there was a timeout
+
+        :raises: :py:exc:`boardgamegeek.exceptions.BoardGameGeekError` in case of invalid parameters
+        :raises: :py:exc:`boardgamegeek.exceptions.BoardGameGeekAPIRetryError` if this request should be retried after a short delay
+        :raises: :py:exc:`boardgamegeek.exceptions.BoardGameGeekAPIError` if the response couldn't be parsed
+        :raises: :py:exc:`boardgamegeek.exceptions.BoardGameGeekTimeoutError` if there was a timeout
         """
         if not user_name:
             raise BoardGameGeekError("no user name specified")
@@ -572,11 +588,13 @@ class BoardGameGeekNetworkAPI(object):
         :param str query: the string to search for
         :param str search_type: list of strings indicating what to search for. Valid contained values are: "rpgitem", "videogame", "boardgame", "boardgameexpansion"
         :param bool exact: if True, try to match the name exactly
-        :return: list of :py:class:`boardgamegeek.search.SearchResult` objects
-        :raises: :py:class:`boardgamegeek.exceptions.BoardGameGeekError` in case of invalid query
-        :raises: :py:class:`boardgamegeek.exceptions.BoardGameGeekAPIRetryError` if this request should be retried after a short delay
-        :raises: :py:class:`boardgamegeek.exceptions.BoardGameGeekAPIError` if the response couldn't be parsed
-        :raises: :py:class:`boardgamegeek.exceptions.BoardGameGeekTimeoutError` if there was a timeout
+        :return: list of ``SearchResult``
+        :rtype: list of :py:class:`boardgamegeek.search.SearchResult`
+
+        :raises: :py:exc:`boardgamegeek.exceptions.BoardGameGeekError` in case of invalid query
+        :raises: :py:exc:`boardgamegeek.exceptions.BoardGameGeekAPIRetryError` if this request should be retried after a short delay
+        :raises: :py:exc:`boardgamegeek.exceptions.BoardGameGeekAPIError` if the response couldn't be parsed
+        :raises: :py:exc:`boardgamegeek.exceptions.BoardGameGeekTimeoutError` if there was a timeout
         """
         if not query:
             raise BoardGameGeekError("invalid query string")
@@ -637,10 +655,17 @@ class BoardGameGeekNetworkAPI(object):
 
 class BoardGameGeek(BoardGameGeekNetworkAPI):
     """
-        Python interface for www.boardgamegeek.com's XML API.
+        Python interface for www.boardgamegeek.com's XML API 2.
 
         Caching for the requests can be used by specifying an URI for the ``cache`` parameter. By default, an in-memory
-        cache is used, with "sqlite" being the other currently supported option.
+        cache is used, with sqlite being the other currently supported option.
+
+        :param cache: URL indicating the cache to use for HTTP requests, ``None`` if disabled
+        :param timeout: Timeout for network operations
+        :param retries: Number of retries to perform in case the API returns HTTP 202 (retry) or in case of timeouts
+        :param retry_delay: Time to sleep between retries when the API returns HTTP 202 (retry)
+        :param disable_ssl: If true, use HTTP instead of HTTPS for calling the BGG API
+        :param requests_per_minute: how many requests per minute to allow to go out to BGG (throttle prevention)
 
         Example usage::
 
@@ -653,15 +678,7 @@ class BoardGameGeek(BoardGameGeekNetworkAPI):
 
     """
     def __init__(self, cache="memory:///?ttl=3600", timeout=15, retries=3, retry_delay=5, disable_ssl=False, requests_per_minute=DEFAULT_REQUESTS_PER_MINUTE):
-        """
 
-        :param cache: Cache to use for requests, ``None`` if disabled
-        :param timeout: Timeout for network operations
-        :param retries: Number of retries to perform in case the API returns HTTP 202 (retry) or in case of timeouts
-        :param retry_delay: Time to sleep between retries when the API returns HTTP 202 (retry)
-        :param disable_ssl: If true, use HTTP instead of HTTPS for calling the BGG API
-        :param requests_per_minute: how many requests per minute to allow to go out to BGG (throttle prevention)
-        """
         api_endpoint = "http{}://www.boardgamegeek.com/xmlapi2".format("" if disable_ssl else "s")
         super(BoardGameGeek, self).__init__(api_endpoint=api_endpoint,
                                             cache=cache,
@@ -674,14 +691,15 @@ class BoardGameGeek(BoardGameGeekNetworkAPI):
         """
         Returns the BGG ID of a game, searching by name
 
-        :param name: The name of the game to search for
-        :param choose: method of selecting the game by name, when dealing with multiple results. Valid values are "first", "recent" or "best-rank"
-        :return: ``None`` if game wasn't found
+        :param str name: The name of the game to search for
+        :param str choose: method of selecting the game by name, when dealing with multiple results. Valid values are "first", "recent" or "best-rank"
         :return: the game's id
-        :raises: :py:class:`boardgamegeek.exceptions.BoardGameGeekError` in case of invalid name
-        :raises: :py:class:`boardgamegeek.exceptions.BoardGameGeekAPIRetryError` if this request should be retried after a short delay
-        :raises: :py:class:`boardgamegeek.exceptions.BoardGameGeekAPIError` if the response couldn't be parsed
-        :raises: :py:class:`boardgamegeek.exceptions.BoardGameGeekTimeoutError` if there was a timeout
+        :rtype: integer
+        :return: ``None`` if game wasn't found
+        :raises: :py:exc:`boardgamegeek.exceptions.BoardGameGeekError` in case of invalid name
+        :raises: :py:exc:`boardgamegeek.exceptions.BoardGameGeekAPIRetryError` if this request should be retried after a short delay
+        :raises: :py:exc:`boardgamegeek.exceptions.BoardGameGeekAPIError` if the response couldn't be parsed
+        :raises: :py:exc:`boardgamegeek.exceptions.BoardGameGeekTimeoutError` if there was a timeout
         """
         return self._get_game_id(name, game_type="boardgame", choose=choose)
 
@@ -689,19 +707,17 @@ class BoardGameGeek(BoardGameGeekNetworkAPI):
         """
         Get information about a game.
 
-        WARNING: it can happen that there are multiple games with the same name, and this function might not always
-        pick up the one you're interested in. As a workaround, call the `boardgamegeek.api.BoardGame.search` function
-        to get the exact id, then use it here.
-
         :param name: If not None, get information about a game with this name
         :param game_id:  If not None, get information about a game with this id
         :param str choose: method of selecting the game by name, when dealing with multiple results. Valid values are "first", "recent" or "best-rank"
-        :return: :py:class:`boardgamegeek.games.BoardGame`
+        :return: ``BoardGame`` object
+        :rtype: :py:class:`boardgamegeek.games.BoardGame`
         :return: ``None`` if the game wasn't found
-        :raises: :py:class:`boardgamegeek.exceptions.BoardGameGeekError` in case of invalid name and id
-        :raises: :py:class:`boardgamegeek.exceptions.BoardGameGeekAPIRetryError` if this request should be retried after a short delay
-        :raises: :py:class:`boardgamegeek.exceptions.BoardGameGeekAPIError` if the response couldn't be parsed
-        :raises: :py:class:`boardgamegeek.exceptions.BoardGameGeekTimeoutError` if there was a timeout
+
+        :raises: :py:exc:`boardgamegeek.exceptions.BoardGameGeekError` in case of invalid name or game_id
+        :raises: :py:exc:`boardgamegeek.exceptions.BoardGameGeekAPIRetryError` if this request should be retried after a short delay
+        :raises: :py:exc:`boardgamegeek.exceptions.BoardGameGeekAPIError` if the response couldn't be parsed
+        :raises: :py:exc:`boardgamegeek.exceptions.BoardGameGeekTimeoutError` if there was a timeout
         """
 
         if not name and game_id is None:
@@ -809,13 +825,13 @@ class BoardGameGeek(BoardGameGeekNetworkAPI):
         """
         Return a list containing all games with the given name
 
-        :param name: The name of the game to search for
+        :param str name: the name of the game to search for
         :return: list of :py:class:`boardgamegeek.games.BoardGame`
-        :raises: :py:class:`boardgamegeek.exceptions.BoardGameGeekAPIRetryError` if this request should be retried after a short delay
-        :raises: :py:class:`boardgamegeek.exceptions.BoardGameGeekAPIError` if the response couldn't be parsed
-        :raises: :py:class:`boardgamegeek.exceptions.BoardGameGeekTimeoutError` if there was a timeout
+        :raises: :py:exc:`boardgamegeek.exceptions.BoardGameGeekAPIRetryError` if this request should be retried after a short delay
+        :raises: :py:exc:`boardgamegeek.exceptions.BoardGameGeekAPIError` if the response couldn't be parsed
+        :raises: :py:exc:`boardgamegeek.exceptions.BoardGameGeekTimeoutError` if there was a timeout
         """
         return [self.game(game_id=s.id)
                 for s in self.search(name,
-                                     search_type=BoardGameGeekNetworkAPI.SEARCH_BOARD_GAME | BoardGameGeekNetworkAPI.SEARCH_BOARD_GAME_EXPANSION,
+                                     search_type=["boardgame", "boardgameexpansion"],
                                      exact=True)]
