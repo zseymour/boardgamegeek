@@ -85,54 +85,39 @@ class BoardGameGeekNetworkAPI(object):
         # add the rate limiting adapter
         self.requests_session.mount(api_endpoint, RateLimitingAdapter(rpm=requests_per_minute))
 
-    def _get_game_id(self, name, game_type, first=False):
+    def _get_game_id(self, name, game_type, choose):
         """
         Returns the BGG ID of a game, searching by name
 
-        :param name: The name of the game to search for
-        :param game_type: the game type: "rpgitem", "videogame", "boardgame", "boardgameexpansion"
-        :param first: if true, return the first result, otherwise return the most recent (by year published)
+        :param str name: The name of the game to search for
+        :param str game_type: the game type ("rpgitem", "videogame", "boardgame", "boardgameexpansion")
+        :param str choose: method of selecting the game by name, when dealing with multiple results. Valid values are "first", "recent" or "best-rank"
         :return: ``None`` if game wasn't found
-        :return: integer value of the game's id
+        :return: game's id
+        :raises: :py:class:`boardgamegeek.exceptions.BoardGameGeekError` in case of invalid name
+        :raises: :py:class:`boardgamegeek.exceptions.BoardGameGeekAPIRetryError` if this request should be retried after a short delay
+        :raises: :py:class:`boardgamegeek.exceptions.BoardGameGeekAPIError` if the response couldn't be parsed
+        :raises: :py:class:`boardgamegeek.exceptions.BoardGameGeekTimeoutError` if there was a timeout
         """
 
-        if game_type not in ["rpgitem", "videogame", "boardgame", "boardgameexpansion"]:
-            raise BoardGameGeekError("invalid game type: {}".format(game_type))
+        if choose not in ["first", "recent", "best-rank"]:
+            raise BoardGameGeekError("invalid value for parameter 'choose': {}".format(choose))
 
         log.debug("getting game id for '{}'".format(name))
+        res = self.search(name, search_type=[game_type], exact=True)
 
-        try:
-            root = get_parsed_xml_response(self.requests_session,
-                                           self._search_api_url,
-                                           params={"query": name, "exact": 1},
-                                           timeout=self._timeout,
-                                           retries=self._retries,
-                                           retry_delay=self._retry_delay)
-        except BoardGameGeekAPINonXMLError:
+        if not res:
             return None
 
-        # in case there are multiple results, try to find the most recent one
-        _year = None
-        game_id = None
-
-        # game_type can be rpgitem, videogame, boardgame, or boardgameexpansion
-        for game in root.findall(".//item[@type='{}']".format(game_type)):
-            year = xml_subelement_attr(game, "yearpublished", convert=int, default=0, quiet=True)
-            if _year is None:
-                _year = year
-                game_id = int(game.attrib.get("id"))
-                if first:
-                    # if we want the first result, break
-                    break
-            elif year > _year:
-                _year = year
-                game_id = int(game.attrib.get("id"))
-
-        if _year is None:
-            log.warn("game not found: {}".format(name))
-            return None
-
-        return game_id
+        if choose == "first":
+            return res[0].id
+        elif choose == "recent":
+            return max(res, key=lambda x: x.year)
+        else:
+            # getting the best rank requires fetching the data of all games returned
+            game_data = [self.game(game_id=r.id) for r in res]
+            # ...and selecting the one with the best ranking
+            return max(game_data, key=lambda x: x.boardgame_rank if x.boardgame_rank is not None else 10000000000)
 
     def guild(self, guild_id, progress=None):
         """
@@ -584,9 +569,9 @@ class BoardGameGeekNetworkAPI(object):
         """
         Search for a game
 
-        :param query: the string to search for
-        :param search_type: list of strings indicating what to search for. Valid contained values are: "rpgitem", "videogame", "boardgame", "boardgameexpansion"
-        :param exact: if True, try to match the name exactly
+        :param str query: the string to search for
+        :param str search_type: list of strings indicating what to search for. Valid contained values are: "rpgitem", "videogame", "boardgame", "boardgameexpansion"
+        :param bool exact: if True, try to match the name exactly
         :return: list of :py:class:`boardgamegeek.search.SearchResult` objects
         :raises: :py:class:`boardgamegeek.exceptions.BoardGameGeekError` in case of invalid query
         :raises: :py:class:`boardgamegeek.exceptions.BoardGameGeekAPIRetryError` if this request should be retried after a short delay
@@ -642,7 +627,7 @@ class BoardGameGeekNetworkAPI(object):
         for item in root.findall("item"):
             kwargs = {"id": item.attrib["id"],
                       "name": xml_subelement_attr(item, "name"),
-                      "yearpublished": xml_subelement_attr(item, "yearpublished", convert=int, quiet=True),
+                      "yearpublished": xml_subelement_attr(item, "yearpublished", default=0, convert=int, quiet=True),
                       "type": item.attrib["type"]}
 
             results.append(SearchResult(kwargs))
@@ -685,19 +670,22 @@ class BoardGameGeek(BoardGameGeekNetworkAPI):
                                             retry_delay=retry_delay,
                                             requests_per_minute=requests_per_minute)
 
-    def get_game_id(self, name):
+    def get_game_id(self, name, choose="first"):
         """
         Returns the BGG ID of a game, searching by name
 
         :param name: The name of the game to search for
-        :param game_type: the game type: "rpgitem", "videogame", "boardgame", "boardgameexpansion"
-        :param first: if true, return the first result, otherwise return the most recent (by year published)
+        :param choose: method of selecting the game by name, when dealing with multiple results. Valid values are "first", "recent" or "best-rank"
         :return: ``None`` if game wasn't found
-        :return: integer value of the game's id
+        :return: the game's id
+        :raises: :py:class:`boardgamegeek.exceptions.BoardGameGeekError` in case of invalid name
+        :raises: :py:class:`boardgamegeek.exceptions.BoardGameGeekAPIRetryError` if this request should be retried after a short delay
+        :raises: :py:class:`boardgamegeek.exceptions.BoardGameGeekAPIError` if the response couldn't be parsed
+        :raises: :py:class:`boardgamegeek.exceptions.BoardGameGeekTimeoutError` if there was a timeout
         """
-        return self._get_game_id(name, "boardgame")
+        return self._get_game_id(name, game_type="boardgame", choose=choose)
 
-    def game(self, name=None, game_id=None):
+    def game(self, name=None, game_id=None, choose="first"):
         """
         Get information about a game.
 
@@ -707,6 +695,7 @@ class BoardGameGeek(BoardGameGeekNetworkAPI):
 
         :param name: If not None, get information about a game with this name
         :param game_id:  If not None, get information about a game with this id
+        :param str choose: method of selecting the game by name, when dealing with multiple results. Valid values are "first", "recent" or "best-rank"
         :return: :py:class:`boardgamegeek.games.BoardGame`
         :return: ``None`` if the game wasn't found
         :raises: :py:class:`boardgamegeek.exceptions.BoardGameGeekError` in case of invalid name and id
