@@ -608,8 +608,7 @@ class BoardGameGeekNetworkAPI(object):
             if search_type & BoardGameGeekNetworkAPI.SEARCH_VIDEO_GAME:
                 s_type.append("videogame")
 
-        # replace spaces in the query with '+'
-        params = {"query": "+".join(filter(lambda s: len(s), query.split(" ")))}
+        params = {"query": query}
 
         if s_type:
             params["type"] = ",".join(s_type)
