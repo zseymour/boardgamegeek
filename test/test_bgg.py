@@ -37,6 +37,8 @@ TEST_INVALID_GAME_NAME = "blablablathisgamewonteverexist"
 TEST_GAME_NAME = "Agricola"
 TEST_GAME_ID = 31260
 
+
+
 #TEST_GAME_NAME_2 = "Merchant of Venus (second edition)"
 #TEST_GAME_ID_2 = 131646
 
@@ -383,6 +385,29 @@ def test_get_game_id_by_name(bgg):
     game_id = bgg.get_game_id(TEST_GAME_NAME)
     assert game_id == TEST_GAME_ID
 
+    # Use the game "Eclipse" to test the game choosing methods
+    all_eclipse_games = bgg.games("eclipse")
+
+    game_id = bgg.get_game_id("eclipse", choose="first")
+    assert game_id == all_eclipse_games[0].id
+
+    game_id = bgg.get_game_id("eclipse", choose="recent")
+    recent_year = -100000
+    recent_id = None
+    for g in all_eclipse_games:
+        if g.year > recent_year:
+            recent_id = g.id
+            recent_year = g.year
+    assert game_id == recent_id
+
+    game_id = bgg.get_game_id("eclipse", choose="best-rank")
+    best_rank = 1000000000
+    best_id = None
+    for g in all_eclipse_games:
+        if g.boardgame_rank is not None and g.boardgame_rank < best_rank:
+            best_id = g.id
+            best_rank = g.boardgame_rank
+    assert game_id == best_id
 
 def test_get_games_by_name(bgg, null_logger):
     games = bgg.games("coup")
