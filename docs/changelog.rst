@@ -1,6 +1,13 @@
 Changelog
 =========
 
+0.11.2
+------
+
+Fixes
+
+  * Searching for games with spaces in the name didn't work because of manually replacing the spaces with '+'
+
 0.11.1
 ------
 
