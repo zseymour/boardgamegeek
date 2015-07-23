@@ -115,7 +115,7 @@ class BoardGameGeekNetworkAPI(object):
             # getting the best rank requires fetching the data of all games returned
             game_data = [self.game(game_id=r.id) for r in res]
             # ...and selecting the one with the best ranking
-            return max(game_data, key=lambda x: x.boardgame_rank if x.boardgame_rank is not None else 10000000000).id
+            return min(game_data, key=lambda x: x.boardgame_rank if x.boardgame_rank is not None else 10000000000).id
 
     def guild(self, guild_id, progress=None):
         """
