@@ -12,6 +12,7 @@ import time
 
 
 from boardgamegeek import BoardGameGeek, BoardGameGeekError
+from boardgamegeek.api import BoardGameGeekNetworkAPI
 from boardgamegeek.collection import Collection
 from boardgamegeek.games import CollectionBoardGame
 from boardgamegeek.hotitems import HotItems, HotItem
@@ -402,6 +403,17 @@ def test_search(bgg):
 
     res = bgg.search("Twilight Struggle", exact=True)
     assert len(res)
+
+    # test that numeric searching still works
+    res = bgg.search("Agricola", search_type=BoardGameGeekNetworkAPI.SEARCH_BOARD_GAME)
+    assert type(res[0].id) == int
+
+    # test that the new type of search works
+    res = bgg.search("Agricola", search_type=["boardgame"])
+    assert type(res[0].id) == int
+
+    with pytest.raises(BoardGameGeekError):
+        bgg.search("Agricola", search_type=["invalid-search-type"])
 #endregion
 
 #region plays() testing

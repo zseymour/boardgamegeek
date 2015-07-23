@@ -19,6 +19,7 @@ import logging
 import requests
 import datetime
 import sys
+import warnings
 
 # This is required for decoding HTML entities from the description text
 # of games
@@ -584,9 +585,7 @@ class BoardGameGeekNetworkAPI(object):
         Search for a game
 
         :param query: the string to search for
-        :param search_type: integer indicating what to search for. One or more of :py:const:`BoardGameGeekNetworkAPI.SEARCH_RPG_ITEM`,
-                            :py:const:`BoardGameGeekNetworkAPI.SEARCH_VIDEO_GAME`, :py:const:`BoardGameGeekNetworkAPI.SEARCH_BOARD_GAME` or
-                            :py:const:`BoardGameGeekNetworkAPI.SEARCH_BOARD_GAME_EXPANSION`, OR'd together
+        :param search_type: list of strings indicating what to search for. Valid contained values are: "rpgitem", "videogame", "boardgame", "boardgameexpansion"
         :param exact: if True, try to match the name exactly
         :return: list of :py:class:`boardgamegeek.search.SearchResult` objects
         :raises: :py:class:`boardgamegeek.exceptions.BoardGameGeekError` in case of invalid query
@@ -597,21 +596,33 @@ class BoardGameGeekNetworkAPI(object):
         if not query:
             raise BoardGameGeekError("invalid query string")
 
-        s_type = []
-        if search_type:
-            if search_type & BoardGameGeekNetworkAPI.SEARCH_BOARD_GAME:
-                s_type.append("boardgame")
-            if search_type & BoardGameGeekNetworkAPI.SEARCH_BOARD_GAME_EXPANSION:
-                s_type.append("boardgameexpansion")
-            if search_type & BoardGameGeekNetworkAPI.SEARCH_RPG_ITEM:
-                s_type.append("rpgitem")
-            if search_type & BoardGameGeekNetworkAPI.SEARCH_VIDEO_GAME:
-                s_type.append("videogame")
-
         params = {"query": query}
 
-        if s_type:
-            params["type"] = ",".join(s_type)
+        if type(search_type) != list:
+            warnings.warn("numeric values for the `search_type` parameter will no longer be supported in future versions. See the documentation for details",
+                          UserWarning)
+
+            s_type = []
+
+            if search_type:
+                if search_type & BoardGameGeekNetworkAPI.SEARCH_BOARD_GAME:
+                    s_type.append("boardgame")
+                if search_type & BoardGameGeekNetworkAPI.SEARCH_BOARD_GAME_EXPANSION:
+                    s_type.append("boardgameexpansion")
+                if search_type & BoardGameGeekNetworkAPI.SEARCH_RPG_ITEM:
+                    s_type.append("rpgitem")
+                if search_type & BoardGameGeekNetworkAPI.SEARCH_VIDEO_GAME:
+                    s_type.append("videogame")
+
+            if s_type:
+                params["type"] = ",".join(s_type)
+        else:
+            if search_type:
+                for s in search_type:
+                    if s not in ["rpgitem", "videogame", "boardgame", "boardgameexpansion"]:
+                        raise BoardGameGeekError("invalid search type: {}".format(search_type))
+
+                params["type"] = ",".join(search_type)
 
         if exact:
             params["exact"] = 1
