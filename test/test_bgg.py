@@ -47,10 +47,8 @@ TEST_GUILD_ID_2 = 930
 
 
 if os.getenv("TRAVIS"):
-    TEST_SLEEP_DELAY = 15   # when running on travis I still get tests failing despite the delay. Attempting to compensate.
     logging.basicConfig(level=logging.DEBUG)
 else:
-    TEST_SLEEP_DELAY = 10
     logging.basicConfig(level=logging.INFO)
 
 
@@ -95,8 +93,6 @@ def progress_cb(items, total):
 # Test caches
 #
 def test_no_caching():
-    #time.sleep(10)
-
     # test that we can disable caching
     bgg = BoardGameGeek(cache=None)
 
@@ -107,8 +103,6 @@ def test_no_caching():
 
 
 def test_sqlite_caching():
-    #time.sleep(TEST_SLEEP_DELAY)
-
     # test that we can use the SQLite cache
     # generate a temporary file
     fd, name = tempfile.mkstemp(suffix=".cache")
@@ -148,7 +142,6 @@ def test_get_user_with_invalid_parameters(bgg):
 
 
 def test_get_invalid_user_info(bgg):
-    #time.sleep(TEST_SLEEP_DELAY)
 
     global progress_called
 
@@ -160,8 +153,6 @@ def test_get_invalid_user_info(bgg):
 
 
 def test_get_valid_user_info(bgg, null_logger):
-    #time.sleep(TEST_SLEEP_DELAY)
-
     global progress_called
 
     progress_called = False
@@ -209,14 +200,11 @@ def test_get_collection_with_invalid_parameters(bgg):
 
 
 def test_get_invalid_users_collection(bgg):
-    #time.sleep(TEST_SLEEP_DELAY)
     collection = bgg.collection(TEST_INVALID_USER)
     assert collection is None
 
 
 def test_get_valid_users_collection(bgg, null_logger):
-    #time.sleep(TEST_SLEEP_DELAY)
-
     collection = bgg.collection(TEST_VALID_USER)
 
     assert collection is not None
@@ -267,8 +255,6 @@ def test_get_guild_with_invalid_parameters(bgg):
 
 
 def test_get_valid_guild_info(bgg, null_logger):
-    #time.sleep(TEST_SLEEP_DELAY)
-
     global progress_called
 
     progress_called = False
@@ -304,8 +290,6 @@ def test_get_valid_guild_info(bgg, null_logger):
 
 
 def test_get_invalid_guild_info(bgg):
-    #time.sleep(TEST_SLEEP_DELAY)
-
     global progress_called
 
     progress_called = False
@@ -318,8 +302,6 @@ def test_get_invalid_guild_info(bgg):
 
 #region game() testing
 def test_get_unknown_game_info(bgg):
-    #time.sleep(TEST_SLEEP_DELAY)
-
     game = bgg.game(TEST_INVALID_GAME_NAME)
     assert game is None
 
@@ -362,7 +344,7 @@ def check_game(game):
 
     assert u"Агрикола" in game.alternative_names
     assert u"아그리콜라" in game.alternative_names
-    
+
     # some not so exact assertions
     assert game.users_rated >= 34000
     assert 0.0 <= game.rating_average <= 10.0
@@ -380,8 +362,6 @@ def check_game(game):
 
 
 def test_get_known_game_info(bgg, null_logger):
-    #time.sleep(TEST_SLEEP_DELAY)
-
     # use an older game that's not so likely to change
     game = bgg.game(TEST_GAME_NAME)
 
@@ -394,22 +374,16 @@ def test_get_known_game_info(bgg, null_logger):
 
 
 def test_get_known_game_info_by_id(bgg):
-    #time.sleep(TEST_SLEEP_DELAY)
-
     game = bgg.game(None, game_id=TEST_GAME_ID)
     check_game(game)
 
 
 def test_get_game_id_by_name(bgg):
-    #time.sleep(TEST_SLEEP_DELAY)
-
     game_id = bgg.get_game_id(TEST_GAME_NAME)
     assert game_id == TEST_GAME_ID
 
 
 def test_get_games_by_name(bgg, null_logger):
-    #time.sleep(TEST_SLEEP_DELAY)
-
     games = bgg.games("coup")
 
     for g in games:
@@ -421,6 +395,14 @@ def test_get_games_by_name(bgg, null_logger):
     assert len(games) > 1
 #endregion
 
+#region search() testing
+def test_search(bgg):
+    res = bgg.search("some invalid game name", exact=True)
+    assert not len(res)
+
+    res = bgg.search("Twilight Struggle", exact=True)
+    assert len(res)
+#endregion
 
 #region plays() testing
 def test_get_plays_with_invalid_parameters(bgg):
@@ -435,8 +417,6 @@ def test_get_plays_with_invalid_parameters(bgg):
 
 
 def test_get_plays_with_unknown_username_and_id(bgg):
-    #time.sleep(TEST_SLEEP_DELAY)
-
     plays = bgg.plays(name=TEST_INVALID_USER)
     assert plays is None
 
@@ -446,8 +426,6 @@ def test_get_plays_with_unknown_username_and_id(bgg):
 
 
 def test_get_plays_with_invalid_dates(bgg):
-    #time.sleep(TEST_SLEEP_DELAY)
-
     # A string is invalid so should raise an error
     with pytest.raises(BoardGameGeekError):
         bgg.plays(name=TEST_VALID_USER, min_date="2014-01-01")
@@ -457,8 +435,6 @@ def test_get_plays_with_invalid_dates(bgg):
 
 
 def test_get_plays_with_valid_dates(bgg):
-    #time.sleep(TEST_SLEEP_DELAY)
-
     min_date = datetime.date(2014, 1, 1)
     max_date = datetime.date(2014, 12, 31)
     plays = bgg.plays(TEST_VALID_USER, min_date=min_date, max_date=max_date)
@@ -466,8 +442,6 @@ def test_get_plays_with_valid_dates(bgg):
 
 
 def test_get_plays_of_user(bgg, null_logger):
-    #time.sleep(TEST_SLEEP_DELAY)
-
     global progress_called
 
     plays = bgg.plays(name=TEST_VALID_USER, progress=progress_cb)
@@ -504,8 +478,6 @@ def test_get_plays_of_user(bgg, null_logger):
 
 
 def test_get_plays_of_game(bgg, null_logger):
-    #time.sleep(TEST_SLEEP_DELAY)
-
     global progress_called
 
     plays = bgg.plays(game_id=TEST_GAME_ID_2, progress=progress_cb)
@@ -556,8 +528,6 @@ def test_get_hot_items_invalid_type(bgg):
 
 
 def test_get_hot_items_boardgames(bgg, null_logger):
-    #time.sleep(TEST_SLEEP_DELAY)
-
     for item in bgg.hot_items("boardgame"):
         assert type(item.id) == int
         assert len(item.name) > 0
@@ -570,8 +540,6 @@ def test_get_hot_items_boardgames(bgg, null_logger):
 
 
 def test_get_hot_items_boardgamepersons(bgg, null_logger):
-    #time.sleep(TEST_SLEEP_DELAY)
-
     for item in bgg.hot_items("boardgameperson"):
         assert type(item.id) == int
         assert len(item.name) > 0
