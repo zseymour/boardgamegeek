@@ -110,7 +110,7 @@ class BoardGameGeekNetworkAPI(object):
         if choose == "first":
             return res[0].id
         elif choose == "recent":
-            return max(res, key=lambda x: x.year).id
+            return max(res, key=lambda x: x.year if x.year is not None else -300000).id
         else:
             # getting the best rank requires fetching the data of all games returned
             game_data = [self.game(game_id=r.id) for r in res]
