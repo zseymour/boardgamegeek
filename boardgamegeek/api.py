@@ -724,7 +724,7 @@ class BoardGameGeek(BoardGameGeekNetworkAPI):
             raise BoardGameGeekError("game name or id not specified")
 
         if game_id is None:
-            game_id = self.get_game_id(name)
+            game_id = self.get_game_id(name, choose=choose)
             if game_id is None:
                 log.error("couldn't find any game named '{}'".format(name))
                 return None
