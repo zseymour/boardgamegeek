@@ -1,0 +1,249 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>boardgamegeek - A Python API for boardgamegeek.com &mdash; boardgamegeek 0.12.0 documentation</title>
+    
+    <link rel="stylesheet" href="_static/sphinxdoc.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '0.12.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="boardgamegeek 0.12.0 documentation" href="#" />
+    <link rel="next" title="Changelog" href="changelog.html" /> 
+  </head>
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="changelog.html" title="Changelog"
+             accesskey="N">next</a> |</li>
+        <li class="nav-item nav-item-0"><a href="#">boardgamegeek 0.12.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="#">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">boardgamegeek - A Python API for boardgamegeek.com</a><ul>
+<li><a class="reference internal" href="#introduction">Introduction</a></li>
+<li><a class="reference internal" href="#table-of-contents">Table of Contents</a></li>
+<li><a class="reference internal" href="#features">Features</a></li>
+<li><a class="reference internal" href="#quick-install">Quick Install</a></li>
+<li><a class="reference internal" href="#usage">Usage</a></li>
+<li><a class="reference internal" href="#to-do">To Do</a></li>
+<li><a class="reference internal" href="#contributions">Contributions</a></li>
+<li><a class="reference internal" href="#indices-and-tables">Indices and tables</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Next topic</h4>
+  <p class="topless"><a href="changelog.html"
+                        title="next chapter">Changelog</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/index.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="boardgamegeek-a-python-api-for-boardgamegeek-com">
+<h1>boardgamegeek - A Python API for boardgamegeek.com<a class="headerlink" href="#boardgamegeek-a-python-api-for-boardgamegeek-com" title="Permalink to this headline">¶</a></h1>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p class="last">The documentation is a work in progress. You can check out the unit tests for how to use the library.</p>
+</div>
+<div class="section" id="introduction">
+<h2>Introduction<a class="headerlink" href="#introduction" title="Permalink to this headline">¶</a></h2>
+<p><code class="docutils literal"><span class="pre">boardgamegeek</span></code> is a Python library which makes it easy to access data from <a class="reference external" href="http://www.boardgamegeek.com">BoardGameGeek</a> using their official XML
+API.</p>
+<p>It&#8217;s an almost completely rewritten fork of <a class="reference external" href="https://github.com/philsstein/libBGG">libBGG</a>.</p>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p class="last">The module&#8217;s API is still considered unstable at this point and it might change in the future, especially if wanting
+to add support for the other sites.</p>
+</div>
+</div>
+<div class="section" id="table-of-contents">
+<h2>Table of Contents<a class="headerlink" href="#table-of-contents" title="Permalink to this headline">¶</a></h2>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="changelog.html">Changelog</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="changelog.html#id1">0.12.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="changelog.html#id2">0.11.2</a></li>
+<li class="toctree-l2"><a class="reference internal" href="changelog.html#id3">0.11.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="changelog.html#id4">0.11.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="changelog.html#id5">0.10.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="changelog.html#id6">0.10.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="changelog.html#id7">0.9.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="changelog.html#id8">0.8.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="changelog.html#id9">0.8.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="changelog.html#id10">0.7.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="changelog.html#id11">0.7.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="changelog.html#id12">0.6.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="changelog.html#id13">0.5.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="changelog.html#id14">0.4.3</a></li>
+<li class="toctree-l2"><a class="reference internal" href="changelog.html#id15">0.4.2</a></li>
+<li class="toctree-l2"><a class="reference internal" href="changelog.html#id16">0.4.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="changelog.html#id17">0.3.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="changelog.html#unreleased">0.2.0 (unreleased)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="changelog.html#id18">0.1.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="changelog.html#id19">0.0.14</a></li>
+<li class="toctree-l2"><a class="reference internal" href="changelog.html#id20">0.0.13</a></li>
+<li class="toctree-l2"><a class="reference internal" href="changelog.html#id21">0.0.12</a></li>
+<li class="toctree-l2"><a class="reference internal" href="changelog.html#id22">0.0.11</a></li>
+<li class="toctree-l2"><a class="reference internal" href="changelog.html#id23">0.0.10</a></li>
+<li class="toctree-l2"><a class="reference internal" href="changelog.html#id24">0.0.9</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="modules.html">Modules</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="modules.html#boardgamegeek-api-core-functions"><code class="docutils literal"><span class="pre">boardgamegeek.api</span></code> - Core functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="modules.html#module-boardgamegeek.guild"><code class="docutils literal"><span class="pre">boardgamegeek.guild</span></code> - Classes for storing guild information</a></li>
+<li class="toctree-l2"><a class="reference internal" href="modules.html#module-boardgamegeek.hotitems"><code class="docutils literal"><span class="pre">boardgamegeek.hotitems</span></code> - BoardGameGeek &#8220;Hot Items&#8221;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="modules.html#module-boardgamegeek.plays"><code class="docutils literal"><span class="pre">boardgamegeek.plays</span></code> - BoardGameGeek &#8220;Plays&#8221;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="modules.html#module-boardgamegeek.things"><code class="docutils literal"><span class="pre">boardgamegeek.things</span></code> - Generic objects</a></li>
+<li class="toctree-l2"><a class="reference internal" href="modules.html#module-boardgamegeek.user"><code class="docutils literal"><span class="pre">boardgamegeek.user</span></code> - BoardGameGeek &#8220;Users&#8221;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="modules.html#module-boardgamegeek.utils"><code class="docutils literal"><span class="pre">boardgamegeek.utils</span></code> - Generic helper functions</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</div>
+<div class="section" id="features">
+<h2>Features<a class="headerlink" href="#features" title="Permalink to this headline">¶</a></h2>
+<p>This library exposes (as Python objects with properties) the following <a class="reference external" href="http://www.boardgamegeek.com">BoardGameGeek</a> entities:</p>
+<ul class="simple">
+<li>Users</li>
+<li>Games</li>
+<li>User collections</li>
+<li>Player guilds</li>
+<li>Plays</li>
+<li>Hot items</li>
+</ul>
+<p><a class="reference external" href="https://pypi.python.org/pypi/requests-cache">requests-cache</a> is used for locally caching replies in order to reduce the amount of requests sent to the server.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">The cache is enabled by default and it&#8217;s configured to use memory only. It&#8217;s also possible to use SQLite for a
+persistent cache.</p>
+</div>
+</div>
+<div class="section" id="quick-install">
+<h2>Quick Install<a class="headerlink" href="#quick-install" title="Permalink to this headline">¶</a></h2>
+<p>To install <code class="docutils literal"><span class="pre">boardgamegeek</span></code>, just use pip:</p>
+<div class="highlight-python"><div class="highlight"><pre>&gt; pip install boardgamegeek
+</pre></div>
+</div>
+</div>
+<div class="section" id="usage">
+<h2>Usage<a class="headerlink" href="#usage" title="Permalink to this headline">¶</a></h2>
+<p>Here&#8217;s a quick usage example:</p>
+<div class="highlight-pycon"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">boardgamegeek</span> <span class="kn">import</span> <span class="n">BoardGameGeek</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">bgg</span> <span class="o">=</span> <span class="n">BoardGameGeek</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">g</span> <span class="o">=</span> <span class="n">bgg</span><span class="o">.</span><span class="n">game</span><span class="p">(</span><span class="s">&quot;Android: Netrunner&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">g</span><span class="o">.</span><span class="n">name</span>
+<span class="go">&#39;Android: Netrunner&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">g</span><span class="o">.</span><span class="n">id</span>
+<span class="go">124742</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">g</span><span class="o">.</span><span class="n">alternative_names</span><span class="p">:</span> <span class="k">print</span> <span class="n">n</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s">&quot;utf-8&quot;</span><span class="p">)</span>
+<span class="gp">...</span>
+<span class="go">安卓纪元：矩阵潜袭</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="to-do">
+<h2>To Do<a class="headerlink" href="#to-do" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li>Not all the information exposed by the official API is stored into the Python objects. Need to improve this.</li>
+<li>Try to support the other sites from the boardgamegeek&#8217;s family</li>
+<li>Allow better control for configuring the cache</li>
+<li>Improve documentation :)</li>
+</ul>
+<p>Contributions/suggestions are welcome!</p>
+</div>
+<div class="section" id="contributions">
+<h2>Contributions<a class="headerlink" href="#contributions" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li>Phil S. Stein (philsstein) (libBGG inspired this fork)</li>
+<li>Tom Usher (tomusher)</li>
+</ul>
+</div>
+<div class="section" id="indices-and-tables">
+<h2>Indices and tables<a class="headerlink" href="#indices-and-tables" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><a class="reference internal" href="genindex.html"><span>Index</span></a></li>
+<li><a class="reference internal" href="py-modindex.html"><span>Module Index</span></a></li>
+<li><a class="reference internal" href="search.html"><span>Search Page</span></a></li>
+</ul>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="changelog.html" title="Changelog"
+             >next</a> |</li>
+        <li class="nav-item nav-item-0"><a href="#">boardgamegeek 0.12.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &copy; Copyright 2014, Cosmin Luță.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.3.1.
+    </div>
+  </body>
+</html>
