@@ -707,8 +707,8 @@ class BoardGameGeek(BoardGameGeekNetworkAPI):
         """
         Get information about a game.
 
-        :param name: If not None, get information about a game with this name
-        :param game_id:  If not None, get information about a game with this id
+        :param str name: If not None, get information about a game with this name
+        :param integer game_id:  If not None, get information about a game with this id
         :param str choose: method of selecting the game by name, when dealing with multiple results. Valid values are "first", "recent" or "best-rank"
         :return: ``BoardGame`` object
         :rtype: :py:class:`boardgamegeek.games.BoardGame`
