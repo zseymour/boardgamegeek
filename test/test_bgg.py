@@ -493,7 +493,7 @@ def test_get_plays_of_user(bgg, null_logger):
         assert type(p.date) == datetime.datetime
         assert p.quantity >= 0
         assert p.duration >= 0
-        assert type(p.incomplete) == int
+        assert type(p.incomplete) == bool
         assert type(p.nowinstats) == int
         assert type(p.game_id) == int
         assert type(p.game_name) == str
@@ -529,7 +529,7 @@ def test_get_plays_of_game(bgg, null_logger):
         assert type(p.date) in [datetime.datetime, type(None)]
         assert p.quantity >= 0
         assert p.duration >= 0
-        assert type(p.incomplete) == int
+        assert type(p.incomplete) == bool
         assert type(p.nowinstats) == int
         assert p.game_id == TEST_GAME_ID_2
         assert p.game_name == TEST_GAME_NAME_2
