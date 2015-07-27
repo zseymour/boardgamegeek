@@ -1,12 +1,20 @@
 Changelog
 =========
 
+0.12.1
+------
+
+Changes
+
+  * Properties which returned lists no longer return ``None`` in case data is missing, but an empty list (e.g. for :py:class:`boardgamegeek.games.BoardGame`)
+  * Updated documentation
+
 0.12.0
 ------
 
 Changes
 
-  * Deprecated numeric values for the `search_type` parameter of :py:meth:`boardgamegeek.games.BoardGame.search`. Accepts list of strings as arguments instead, for consistency with the rest of the functions. 
+  * Deprecated numeric values for the `search_type` parameter of :py:meth:`boardgamegeek.games.BoardGame.search`. Accepts list of strings as arguments instead, for consistency with the rest of the functions.
 
 0.11.2
 ------

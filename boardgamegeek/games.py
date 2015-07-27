@@ -59,6 +59,8 @@ class CollectionBoardGame(Thing):
     def rating(self):
         """
         :return: game rating
+        :rtype: float
+        :return: ``None`` if n/a
         """
         return self._data.get("rating")
 
@@ -134,7 +136,7 @@ class CollectionBoardGame(Thing):
 
 class BoardGame(Thing):
     """
-    An object containing the core information about a game.
+    Object containing information about a boardgame
     """
     def __init__(self, data):
 
@@ -191,6 +193,12 @@ class BoardGame(Thing):
         return "BoardGame (id: {})".format(self.id)
 
     def add_expanded_game(self, data):
+        """
+        Add a game expanded by this one
+
+        :param dict data: expanded game's data
+        :raises: :py:exc:`boardgamegeek.exceptions.BoardGameGeekError` if data is invalid
+        """
         try:
             if data["id"] not in self._expands_set:
                 self._data["expands"].append(data)
@@ -200,6 +208,12 @@ class BoardGame(Thing):
             raise BoardGameGeekError("invalid expanded game data")
 
     def add_expansion(self, data):
+        """
+        Add an expansion of this game
+
+        :param dict data: expansion data
+        :raises: :py:exc:`boardgamegeek.exceptions.BoardGameGeekError` if data is invalid
+        """
         try:
             if data["id"] not in self._expansions_set:
                 self._data["expansions"].append(data)
@@ -283,139 +297,277 @@ class BoardGame(Thing):
 
     @property
     def alternative_names(self):
-        return self._data.get("alternative_names")
+        """
+        :return: alternative names
+        :rtype: list of str
+        """
+        return self._data.get("alternative_names", [])
 
     @property
     def thumbnail(self):
+        """
+        :return: thumbnail URL
+        :rtype: str
+        :return: ``None`` if n/a
+        """
         return self._data.get("thumbnail")
 
     @property
     def image(self):
+        """
+        :return: image URL
+        :rtype: str
+        :return: ``None`` if n/a
+        """
         return self._data.get("image")
 
     @property
     def description(self):
-        return self._data.get("description")
+        """
+        :return: description
+        :rtype: str
+        """
+        return self._data.get("description", "")
 
     @property
     def families(self):
-        return self._data.get("families")
+        """
+        :return: families
+        :rtype: list of str
+        """
+        return self._data.get("families", [])
 
     @property
     def categories(self):
-        return self._data.get("categories")
+        """
+        :return: categories
+        :rtype: list of str
+        """
+        return self._data.get("categories", [])
 
     @property
     def mechanics(self):
-        return self._data.get("mechanics")
+        """
+        :return: mechanics
+        :rtype: list of str
+        """
+        return self._data.get("mechanics", [])
 
     @property
     def expansions(self):
         """
-
-        :return: list of expansions for this item
+        :return: expansions
+        :rtype: list of :py:class:`boardgamegeek.things.Thing`
         """
         return self._expansions
 
     @property
     def expands(self):
         """
-        :return: list of games this item expands
+        :return: games this item expands
+        :rtype: list of :py:class:`boardgamegeek.things.Thing`
         """
         return self._expands
 
     @property
     def implementations(self):
-        return self._data.get("implementations")
+        """
+        :return: implementations
+        :rtype: list of str
+        """
+        return self._data.get("implementations", [])
 
     @property
     def designers(self):
-        return self._data.get("designers")
+        """
+        :return: designers
+        :rtype: list of str
+        """
+        return self._data.get("designers", [])
 
     @property
     def artists(self):
-        return self._data.get("artists")
+        """
+        :return: artists
+        :rtype: list of str
+        """
+        return self._data.get("artists", [])
 
     @property
     def publishers(self):
-        return self._data.get("publishers")
+        """
+        :return: publishers
+        :rtype: list of str
+        """
+        return self._data.get("publishers", [])
 
     @property
     def expansion(self):
         """
-
-        :return: True if this item is an expansion to some other item
+        :return: True if this item is an expansion
+        :rtype: bool
         """
         return self._data.get("expansion", False)
 
     @property
     def year(self):
+        """
+        :return: publishing year
+        :rtype: integer
+        :return: ``None`` if n/a
+        """
         return self._data.get("yearpublished")
 
     @property
     def min_players(self):
+        """
+        :return: minimum number of players
+        :rtype: integer
+        :return: ``None`` if n/a
+        """
         return self._data.get("minplayers")
 
     @property
     def max_players(self):
+        """
+        :return: maximum number of players
+        :rtype: integer
+        :return: ``None`` if n/a
+        """
         return self._data.get("maxplayers")
 
     @property
     def playing_time(self):
+        """
+        :return: playing time
+        :rtype: integer
+        :return: ``None`` if n/a
+        """
         return self._data.get("playingtime")
 
     @property
     def min_age(self):
+        """
+        :return: minimum recommended age
+        :rtype: integer
+        :return: ``None`` if n/a
+        """
         return self._data.get("minage")
 
     @property
     def users_rated(self):
+        """
+        :return: how many users rated the game
+        :rtype: integer
+        :return: ``None`` if n/a
+        """
         return self._data.get("usersrated")
 
     @property
     def rating_average(self):
+        """
+        :return: average rating
+        :rtype: float
+        :return: ``None`` if n/a
+        """
         return self._data.get("average")
 
     @property
     def rating_bayes_average(self):
+        """
+        :return: bayes average rating
+        :rtype: float
+        :return: ``None`` if n/a
+        """
         return self._data.get("bayesaverage")
 
     @property
     def rating_stddev(self):
+        """
+        :return: standard deviation
+        :rtype: float
+        :return: ``None`` if n/a
+        """
         return self._data.get("stddev")
 
     @property
     def rating_median(self):
+        """
+        :return:
+        :rtype: float
+        :return: ``None`` if n/a
+        """
         return self._data.get("median")
 
     @property
     def users_owned(self):
+        """
+        :return: number of users owning this game
+        :rtype: integer
+        :return: ``None`` if n/a
+        """
         return self._data.get("owned")
 
     @property
     def users_trading(self):
+        """
+        :return: number of users trading this game
+        :rtype: integer
+        :return: ``None`` if n/a
+        """
         return self._data.get("trading")
 
     @property
     def users_wanting(self):
+        """
+        :return: number of users wanting this game
+        :rtype: integer
+        :return: ``None`` if n/a
+        """
         return self._data.get("wanting")
 
     @property
     def users_wishing(self):
+        """
+        :return: number of users wishing for this game
+        :rtype: integer
+        :return: ``None`` if n/a
+        """
         return self._data.get("wishing")
 
     @property
     def users_commented(self):
+        """
+        :return: number of user comments
+        :rtype: integer
+        :return: ``None`` if n/a
+        """
         return self._data.get("numcomments")
 
     @property
     def rating_num_weights(self):
+        """
+        :return:
+        :rtype: integer
+        :return: ``None`` if n/a
+        """
         return self._data.get("numweights")
 
     @property
     def rating_average_weight(self):
+        """
+        :return: average weight
+        :rtype: float
+        :return: ``None`` if n/a
+        """
         return self._data.get("averageweight")
 
     @property
     def ranks(self):
+        """
+        :return: rankings of this game
+        :rtype: list of dicts, keys: ``friendlyname`` (the friendly name of the rank, e.g. "Board Game Rank"), ``name``
+        (name of the rank, e.g "boardgame"), ``value`` (the rank)
+        :return: ``None`` if n/a
+        """
         return self._data.get("ranks")

@@ -1,5 +1,4 @@
 # coding: utf-8
-
 """
 :mod:`boardgamegeek.api` - Core functions
 =========================================
@@ -9,7 +8,7 @@ objects.
 
 .. module:: boardgamegeek.api
    :platform: Unix, Windows
-   :synopsis: module handling communication with the online BGG API
+   :synopsis: module handling communication with the online BoardGameGeek API
 
 .. moduleauthor:: Cosmin Luță <q4break@gmail.com>
 """

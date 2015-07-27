@@ -5,7 +5,7 @@
 
 .. module:: boardgamegeek.user
    :platform: Unix, Windows
-   :synopsis: BGG "Users"
+   :synopsis: class handling user information
 
 .. moduleauthor:: Cosmin Luță <q4break@gmail.com>
 
@@ -19,8 +19,7 @@ from .things import Thing
 
 class User(Thing):
     """
-    Information about an user on BGG.
-
+    Information about an user.
     """
     def __init__(self, data):
         kw = copy(data)
@@ -58,6 +57,11 @@ class User(Thing):
         return "User: {} (id: {})".format(self.name, self.id)
 
     def add_buddy(self, data):
+        """
+        Add a buddy to this user
+
+        :param dict data: buddy's data
+        """
         self._buddies.append(Thing(data))
         self._data["buddies"].append(data)
 
@@ -113,64 +117,75 @@ class User(Thing):
     @property
     def total_buddies(self):
         """
-
-        :return: number of buddies this user has
+        :return: number of buddies
+        :rtype: integer
         """
         return len(self._data["buddies"])
 
     @property
     def total_guilds(self):
         """
-
-        :return: number of guilds this user is a member of
+        :return: number of guilds
+        :rtype: integer
         """
         return len(self._data["guilds"])
 
     @property
     def top10(self):
+        """
+        :return: user's top10
+        :rtype: list of :py:class:`boardgamegeek.things.Thing`
+        """
         return self._top
 
     @property
     def hot10(self):
+        """
+        :return: user's hot10
+        :rtype: list of :py:class:`boardgamegeek.things.Thing`
+        """
         return self._hot
 
     @property
     def buddies(self):
         """
-
-        :return: list of :class:`Thing` with all the buddies (name and id) this user has
+        :return: user's buddies
+        :rtype: list of :py:class:`boardgamegeek.things.Thing`
         """
         return self._buddies
 
     @property
     def guilds(self):
         """
-
-        :return: list of :class:`Thing` with all the guilds (name and id) this user is a member of
+        :return: user's guilds
+        :rtype: list of :py:class:`boardgamegeek.things.Thing`
         """
         return self._guilds
 
     @property
     def firstname(self):
         """
-
         :return: user's first name
+        :rtype: str
+        :return: ``None`` if n/a
         """
         return self._data.get("firstname")
 
     @property
     def lastname(self):
         """
-
         :return: user's last name
+        :rtype: str
+        :return: ``None`` if n/a
         """
         return self._data.get("lastname")
 
     @property
     def avatar(self):
         """
-
-        :return: link to user's avatar image
+        :return: avatar's URL
+        :rtype: str
+        :return: ``None`` if n/a
         """
         return self._data.get("avatarlink")
 

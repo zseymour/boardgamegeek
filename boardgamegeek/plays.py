@@ -5,7 +5,7 @@
 
 .. module:: boardgamegeek.plays
    :platform: Unix, Windows
-   :synopsis: BGG "Plays"
+   :synopsis: classes for handling plays/play sessions
 
 .. moduleauthor:: Cosmin Luță <q4break@gmail.com>
 
@@ -19,41 +19,83 @@ from .utils import DictObject
 
 
 class PlaysessionPlayer(DictObject):
+    """
+    Class representing a player in a play session
+    """
 
     def __init__(self, data):
         self._data = data
 
-
     @property
     def username(self):
+        """
+        :return: user name
+        :rtype: str
+        :return: ``None`` if n/a
+        """
         return self._data.get("username")
 
     @property
     def user_id(self):
+        """
+        :return: user id
+        :rtype: integer
+        :return: ``None`` if n/a
+        """
         return self._data.get("user_id")
 
     @property
     def name(self):
+        """
+        :return:
+        :rtype:
+        :return: ``None`` if n/a
+        """
         return self._data.get("name")
 
     @property
     def startposition(self):
+        """
+        :return:
+        :rtype:
+        :return: ``None`` if n/a
+        """
         return self._data.get("startposition")
 
     @property
     def new(self):
+        """
+        :return:
+        :rtype:
+        :return: ``None`` if n/a
+        """
         return self._data.get("new")
 
     @property
     def win(self):
+        """
+        :return:
+        :rtype:
+        :return: ``None`` if n/a
+        """
         return self._data.get("win")
 
     @property
     def rating(self):
+        """
+        :return:
+        :rtype:
+        :return: ``None`` if n/a
+        """
         return self._data.get("rating")
 
     @property
     def score(self):
+        """
+        :return:
+        :rtype:
+        :return: ``None`` if n/a
+        """
         return self._data.get("score")
 
 
@@ -105,28 +147,36 @@ class PlaySession(DictObject):
     @property
     def id(self):
         """
-        :return: the play session id
+        :return: id
+        :rtype: integer
+        :return: ``None`` if n/a
         """
         return self._data.get("id")
 
     @property
     def user_id(self):
         """
-        :return: user ID whom this play session belongs to
+        :return: id of the user owning this play session
+        :rtype: integer
+        :return: ``None`` if n/a
         """
         return self._data.get("user_id")
 
     @property
     def date(self):
         """
-        :return: the date when this play session was recorded
+        :return: the date of the play session
+        :rtype: datetime.datetime
+        :return: ``None`` if n/a
         """
         return self._data.get("date")
 
     @property
     def quantity(self):
         """
-        :return:
+        :return: number of recorded plays
+        :rtype: integer
+        :return: ``None`` if n/a
         """
         return self._data.get("quantity")
 
@@ -134,15 +184,18 @@ class PlaySession(DictObject):
     def duration(self):
         """
         :return: duration of the play session
+        :rtype: integer
+        :return: ``None`` if n/a
         """
         return self._data.get("duration")
 
     @property
     def incomplete(self):
         """
-        :return: whether the session was incomplete or not
+        :return: incomplete session
+        :rtype: bool
         """
-        return self._data.get("incomplete")
+        return bool(self._data.get("incomplete"))
 
     @property
     def nowinstats(self):
@@ -154,15 +207,18 @@ class PlaySession(DictObject):
     @property
     def game_id(self):
         """
-
-        :return: id of the game played
+        :return: played game id
+        :rtype: integer
+        :return: ``None`` if n/a
         """
         return self._data.get("game_id")
 
     @property
     def game_name(self):
         """
-        :return: name of the game played
+        :return: played game name
+        :rtype: str
+        :return: ``None`` if n/a
         """
         return self._data.get("game_name")
 
@@ -170,6 +226,8 @@ class PlaySession(DictObject):
     def comment(self):
         """
         :return: comment on the play session
+        :rtype: str
+        :return: ``None`` if n/a
         """
         return self._data.get("comment")
 
@@ -213,25 +271,26 @@ class Plays(DictObject):
     @property
     def user(self):
         """
-        :return: account name of the user owning this list of plays
-        :return: ``None`` if this list is that of a game and not an user's
+        :return: name of the playlist owner
+        :rtype: str
+        :return: ``None`` if this is the playlist of a game (not an user's)
         """
         return self._data.get("username")
 
     @property
     def user_id(self):
         """
-
-        :return: id of the user owning this list of plays
-        :return: ``None`` if this list is that of a game and not an user's
+        :return: id of the playlist owner
+        :rtype: integer
+        :return: ``None`` if this is the playlist of a game (not an user's)
         """
         return self._data.get("user_id")
 
     @property
     def game_id(self):
         """
-
         :return: id of the game this plays list belongs to
+        :rtype: integer
         :return: ``None`` if this list is that of an user
         """
         return self._data.get("game_id")
@@ -239,6 +298,7 @@ class Plays(DictObject):
     @property
     def plays(self):
         """
-        :return: list of :class:`PlaySession`
+        :return: play sessions
+        :rtype: list of :py:class:`boardgamegeek.plays.PlaySession`
         """
         return self._plays

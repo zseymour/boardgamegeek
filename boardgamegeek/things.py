@@ -34,10 +34,18 @@ class Thing(DictObject):
 
     @property
     def name(self):
+        """
+        :return: name
+        :rtype: str
+        """
         return self._data["name"]
 
     @property
     def id(self):
+        """
+        :return: id
+        :rtype: integer
+        """
         return self._data["id"]
 
     def __repr__(self):

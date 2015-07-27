@@ -6,7 +6,7 @@
 
 .. module:: boardgamegeek.hotitems
    :platform: Unix, Windows
-   :synopsis: BGG "Hot Items"
+   :synopsis: classes for handling hot items information
 
 .. moduleauthor:: Cosmin Luță <q4break@gmail.com>
 """
@@ -49,30 +49,32 @@ class HotItem(Thing):
     def rank(self):
         """
         :return: Ranking of this hot item
+        :rtype: integer
         """
         return self._data["rank"]
 
     @property
     def year(self):
         """
-        Year this item was published
-
-        :return: integer representing the year
-        :return: ``None`` if object doesn't refer to a game
+        :return: publishing year
+        :rtype: integer
+        :return: ``None`` if n/a
         """
         return self._data.get("yearpublished")
 
     @property
     def thumbnail(self):
         """
-        :return: url of the thumbnail corresponding to this item
+        :return: thumbnail URL
+        :rtype: str
+        :return: ``None`` if n/a
         """
         return self._data.get("thumbnail")
 
 
 class HotItems(DictObject):
     """
-    A container for :class:`boardgamegeek.hotitems.HotItem`
+    A collection of :py:class:`boardgamegeek.hotitems.HotItem`
     """
     def __init__(self, data):
         kw = copy(data)
@@ -90,7 +92,6 @@ class HotItems(DictObject):
         Add a new hot item to the container
 
         :param data: dictionary containing the data
-
         """
         self._data["items"].append(data)
         self._items.append(HotItem(data))
@@ -98,8 +99,8 @@ class HotItems(DictObject):
     @property
     def items(self):
         """
-
-        :return: the list of :class:`boardgamegeek.hotitems.HotItem`
+        :return: list of hotitems
+        :rtype: list of :py:class:`boardgamegeek.hotitems.HotItem`
         """
         return self._items
 
