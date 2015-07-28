@@ -567,7 +567,7 @@ class BoardGame(Thing):
         """
         :return: rankings of this game
         :rtype: list of dicts, keys: ``friendlyname`` (the friendly name of the rank, e.g. "Board Game Rank"), ``name``
-        (name of the rank, e.g "boardgame"), ``value`` (the rank)
+                (name of the rank, e.g "boardgame"), ``value`` (the rank)
         :return: ``None`` if n/a
         """
         return self._data.get("ranks")

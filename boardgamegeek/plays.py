@@ -21,6 +21,9 @@ from .utils import DictObject
 class PlaysessionPlayer(DictObject):
     """
     Class representing a player in a play session
+
+    :param dict data: a dictionary containing the collection data
+    :raises: :py:class:`boardgamegeek.exceptions.BoardGameGeekError` in case of invalid data
     """
 
     def __init__(self, data):
@@ -102,6 +105,9 @@ class PlaysessionPlayer(DictObject):
 class PlaySession(DictObject):
     """
     Container for a play session information.
+
+    :param dict data: a dictionary containing the collection data
+    :raises: :py:class:`boardgamegeek.exceptions.BoardGameGeekError` in case of invalid data
     """
 
     def __init__(self, data):
@@ -235,6 +241,8 @@ class PlaySession(DictObject):
 class Plays(DictObject):
     """
     A list of play sessions, associated either to an user or to a game.
+
+    :param dict data: a dictionary containing the collection data
     """
 
     def __init__(self, data):
