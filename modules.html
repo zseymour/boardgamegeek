@@ -48,9 +48,13 @@
   <ul>
 <li><a class="reference internal" href="#">Modules</a><ul>
 <li><a class="reference internal" href="#boardgamegeek-api-core-functions"><code class="docutils literal"><span class="pre">boardgamegeek.api</span></code> - Core functions</a></li>
-<li><a class="reference internal" href="#module-boardgamegeek.guild"><code class="docutils literal"><span class="pre">boardgamegeek.guild</span></code> - Classes for storing guild information</a></li>
+<li><a class="reference internal" href="#module-boardgamegeek.collection"><code class="docutils literal"><span class="pre">boardgamegeek.collection</span></code> - Collection information</a></li>
+<li><a class="reference internal" href="#module-boardgamegeek.exceptions"><code class="docutils literal"><span class="pre">boardgamegeek.exceptions</span></code> - Exceptions</a></li>
+<li><a class="reference internal" href="#module-boardgamegeek.games"><code class="docutils literal"><span class="pre">boardgamegeek.games</span></code> - Games information</a></li>
+<li><a class="reference internal" href="#module-boardgamegeek.guild"><code class="docutils literal"><span class="pre">boardgamegeek.guild</span></code> - Guild information</a></li>
 <li><a class="reference internal" href="#module-boardgamegeek.hotitems"><code class="docutils literal"><span class="pre">boardgamegeek.hotitems</span></code> - BoardGameGeek &#8220;Hot Items&#8221;</a></li>
 <li><a class="reference internal" href="#module-boardgamegeek.plays"><code class="docutils literal"><span class="pre">boardgamegeek.plays</span></code> - BoardGameGeek &#8220;Plays&#8221;</a></li>
+<li><a class="reference internal" href="#module-boardgamegeek.search"><code class="docutils literal"><span class="pre">boardgamegeek.search</span></code> - Search results</a></li>
 <li><a class="reference internal" href="#module-boardgamegeek.things"><code class="docutils literal"><span class="pre">boardgamegeek.things</span></code> - Generic objects</a></li>
 <li><a class="reference internal" href="#module-boardgamegeek.user"><code class="docutils literal"><span class="pre">boardgamegeek.user</span></code> - BoardGameGeek &#8220;Users&#8221;</a></li>
 <li><a class="reference internal" href="#module-boardgamegeek.utils"><code class="docutils literal"><span class="pre">boardgamegeek.utils</span></code> - Generic helper functions</a></li>
@@ -92,15 +96,31 @@
   <div class="section" id="module-boardgamegeek.api">
 <span id="modules"></span><h1>Modules<a class="headerlink" href="#module-boardgamegeek.api" title="Permalink to this headline">¶</a></h1>
 <div class="section" id="boardgamegeek-api-core-functions">
-<h2><a class="reference internal" href="#module-boardgamegeek.api" title="boardgamegeek.api: module handling communication with the online BGG API (Unix, Windows)"><code class="xref py py-mod docutils literal"><span class="pre">boardgamegeek.api</span></code></a> - Core functions<a class="headerlink" href="#boardgamegeek-api-core-functions" title="Permalink to this headline">¶</a></h2>
+<h2><a class="reference internal" href="#module-boardgamegeek.api" title="boardgamegeek.api: module handling communication with the online BoardGameGeek API (Unix, Windows)"><code class="xref py py-mod docutils literal"><span class="pre">boardgamegeek.api</span></code></a> - Core functions<a class="headerlink" href="#boardgamegeek-api-core-functions" title="Permalink to this headline">¶</a></h2>
 <p>This module contains the core functionality needed to retrieve data from boardgamegeek.com and parse it into usable
 objects.</p>
 <span class="target" id="module-boardgamegeek.api"></span><dl class="class">
 <dt id="boardgamegeek.api.BoardGameGeek">
-<em class="property">class </em><code class="descclassname">boardgamegeek.api.</code><code class="descname">BoardGameGeek</code><span class="sig-paren">(</span><em>cache=u'memory:///?ttl=3600'</em>, <em>timeout=15</em>, <em>retries=3</em>, <em>retry_delay=5</em>, <em>disable_ssl=False</em>, <em>requests_per_minute=30</em><span class="sig-paren">)</span><a class="headerlink" href="#boardgamegeek.api.BoardGameGeek" title="Permalink to this definition">¶</a></dt>
-<dd><p>Python interface for www.boardgamegeek.com&#8217;s XML API.</p>
+<em class="property">class </em><code class="descclassname">boardgamegeek.api.</code><code class="descname">BoardGameGeek</code><span class="sig-paren">(</span><em>cache=u'memory:///?ttl=3600'</em>, <em>timeout=15</em>, <em>retries=3</em>, <em>retry_delay=5</em>, <em>disable_ssl=False</em>, <em>requests_per_minute=30</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/boardgamegeek/api.html#BoardGameGeek"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#boardgamegeek.api.BoardGameGeek" title="Permalink to this definition">¶</a></dt>
+<dd><p>Python interface for www.boardgamegeek.com&#8217;s XML API 2.</p>
 <p>Caching for the requests can be used by specifying an URI for the <code class="docutils literal"><span class="pre">cache</span></code> parameter. By default, an in-memory
-cache is used, with &#8220;sqlite&#8221; being the other currently supported option.</p>
+cache is used, with sqlite being the other currently supported option.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>cache</strong> &#8211; URL indicating the cache to use for HTTP requests, <code class="docutils literal"><span class="pre">None</span></code> if disabled</li>
+<li><strong>timeout</strong> &#8211; Timeout for network operations</li>
+<li><strong>retries</strong> &#8211; Number of retries to perform in case the API returns HTTP 202 (retry) or in case of timeouts</li>
+<li><strong>retry_delay</strong> &#8211; Time to sleep between retries when the API returns HTTP 202 (retry)</li>
+<li><strong>disable_ssl</strong> &#8211; If true, use HTTP instead of HTTPS for calling the BGG API</li>
+<li><strong>requests_per_minute</strong> &#8211; how many requests per minute to allow to go out to BGG (throttle prevention)</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
 <p>Example usage:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">bgg</span> <span class="o">=</span> <span class="n">BoardGameGeek</span><span class="p">()</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">game</span> <span class="o">=</span> <span class="n">bgg</span><span class="o">.</span><span class="n">game</span><span class="p">(</span><span class="s">&quot;Android: Netrunner&quot;</span><span class="p">)</span>
@@ -118,21 +138,21 @@ cache is used, with &#8220;sqlite&#8221; being the other currently supported opt
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>user_name</strong> &#8211; user name to retrieve the collection for</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>user_name</strong> (<em>str</em>) &#8211; user name to retrieve the collection for</td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><a class="reference internal" href="#boardgamegeek.collection.Collection" title="boardgamegeek.collection.Collection"><code class="xref py py-class docutils literal"><span class="pre">boardgamegeek.collection.Collection</span></code></a></td>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><code class="docutils literal"><span class="pre">Collection</span></code> object</td>
 </tr>
-<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><code class="docutils literal"><span class="pre">None</span></code> if user not found</td>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference internal" href="#boardgamegeek.collection.Collection" title="boardgamegeek.collection.Collection"><code class="xref py py-class docutils literal"><span class="pre">boardgamegeek.collection.Collection</span></code></a></td>
 </tr>
-<tr class="field-even field"><th class="field-name">Raises:</th><td class="field-body"><code class="xref py py-class docutils literal"><span class="pre">boardgamegeek.exceptions.BoardGameGeekAPIError</span></code> if there was a problem getting the collection</td>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><code class="docutils literal"><span class="pre">None</span></code> if user not found</td>
 </tr>
-<tr class="field-odd field"><th class="field-name">Raises:</th><td class="field-body"><code class="xref py py-class docutils literal"><span class="pre">boardgamegeek.exceptions.BoardGameGeekError</span></code> in case of invalid parameters</td>
+<tr class="field-odd field"><th class="field-name">Raises:</th><td class="field-body"><code class="xref py py-exc docutils literal"><span class="pre">boardgamegeek.exceptions.BoardGameGeekError</span></code> in case of invalid parameters</td>
 </tr>
-<tr class="field-even field"><th class="field-name">Raises:</th><td class="field-body"><code class="xref py py-class docutils literal"><span class="pre">boardgamegeek.exceptions.BoardGameGeekAPIRetryError</span></code> if this request should be retried after a short delay</td>
+<tr class="field-even field"><th class="field-name">Raises:</th><td class="field-body"><code class="xref py py-exc docutils literal"><span class="pre">boardgamegeek.exceptions.BoardGameGeekAPIRetryError</span></code> if this request should be retried after a short delay</td>
 </tr>
-<tr class="field-odd field"><th class="field-name">Raises:</th><td class="field-body"><code class="xref py py-class docutils literal"><span class="pre">boardgamegeek.exceptions.BoardGameGeekAPIError</span></code> if the response couldn&#8217;t be parsed</td>
+<tr class="field-odd field"><th class="field-name">Raises:</th><td class="field-body"><code class="xref py py-exc docutils literal"><span class="pre">boardgamegeek.exceptions.BoardGameGeekAPIError</span></code> if the response couldn&#8217;t be parsed</td>
 </tr>
-<tr class="field-even field"><th class="field-name">Raises:</th><td class="field-body"><code class="xref py py-class docutils literal"><span class="pre">boardgamegeek.exceptions.BoardGameGeekTimeoutError</span></code> if there was a timeout</td>
+<tr class="field-even field"><th class="field-name">Raises:</th><td class="field-body"><code class="xref py py-exc docutils literal"><span class="pre">boardgamegeek.exceptions.BoardGameGeekTimeoutError</span></code> if there was a timeout</td>
 </tr>
 </tbody>
 </table>
@@ -140,37 +160,38 @@ cache is used, with &#8220;sqlite&#8221; being the other currently supported opt
 
 <dl class="method">
 <dt id="boardgamegeek.api.BoardGameGeek.game">
-<code class="descname">game</code><span class="sig-paren">(</span><em>name=None</em>, <em>game_id=None</em><span class="sig-paren">)</span><a class="headerlink" href="#boardgamegeek.api.BoardGameGeek.game" title="Permalink to this definition">¶</a></dt>
+<code class="descname">game</code><span class="sig-paren">(</span><em>name=None</em>, <em>game_id=None</em>, <em>choose=u'first'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/boardgamegeek/api.html#BoardGameGeek.game"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#boardgamegeek.api.BoardGameGeek.game" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get information about a game.</p>
-<p>WARNING: it can happen that there are multiple games with the same name, and this function might not always
-pick up the one you&#8217;re interested in. As a workaround, call the <cite>boardgamegeek.api.BoardGame.search</cite> function
-to get the exact id, then use it here.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>name</strong> &#8211; If not None, get information about a game with this name</li>
-<li><strong>game_id</strong> &#8211; If not None, get information about a game with this id</li>
+<li><strong>name</strong> (<em>str</em>) &#8211; If not None, get information about a game with this name</li>
+<li><strong>game_id</strong> (<em>integer</em>) &#8211; If not None, get information about a game with this id</li>
+<li><strong>choose</strong> (<em>str</em>) &#8211; method of selecting the game by name, when dealing with multiple results. Valid values are &#8220;first&#8221;, &#8220;recent&#8221; or &#8220;best-rank&#8221;</li>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><a class="reference internal" href="#boardgamegeek.games.BoardGame" title="boardgamegeek.games.BoardGame"><code class="xref py py-class docutils literal"><span class="pre">boardgamegeek.games.BoardGame</span></code></a></p>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><code class="docutils literal"><span class="pre">BoardGame</span></code> object</p>
 </td>
 </tr>
-<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><code class="docutils literal"><span class="pre">None</span></code> if the game wasn&#8217;t found</p>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first"><a class="reference internal" href="#boardgamegeek.games.BoardGame" title="boardgamegeek.games.BoardGame"><code class="xref py py-class docutils literal"><span class="pre">boardgamegeek.games.BoardGame</span></code></a></p>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Raises:</th><td class="field-body"><p class="first"><code class="xref py py-class docutils literal"><span class="pre">boardgamegeek.exceptions.BoardGameGeekError</span></code> in case of invalid name and id</p>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><code class="docutils literal"><span class="pre">None</span></code> if the game wasn&#8217;t found</p>
 </td>
 </tr>
-<tr class="field-odd field"><th class="field-name">Raises:</th><td class="field-body"><p class="first"><code class="xref py py-class docutils literal"><span class="pre">boardgamegeek.exceptions.BoardGameGeekAPIRetryError</span></code> if this request should be retried after a short delay</p>
+<tr class="field-odd field"><th class="field-name">Raises:</th><td class="field-body"><p class="first"><code class="xref py py-exc docutils literal"><span class="pre">boardgamegeek.exceptions.BoardGameGeekError</span></code> in case of invalid name or game_id</p>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Raises:</th><td class="field-body"><p class="first"><code class="xref py py-class docutils literal"><span class="pre">boardgamegeek.exceptions.BoardGameGeekAPIError</span></code> if the response couldn&#8217;t be parsed</p>
+<tr class="field-even field"><th class="field-name">Raises:</th><td class="field-body"><p class="first"><code class="xref py py-exc docutils literal"><span class="pre">boardgamegeek.exceptions.BoardGameGeekAPIRetryError</span></code> if this request should be retried after a short delay</p>
 </td>
 </tr>
-<tr class="field-odd field"><th class="field-name">Raises:</th><td class="field-body"><p class="first last"><code class="xref py py-class docutils literal"><span class="pre">boardgamegeek.exceptions.BoardGameGeekTimeoutError</span></code> if there was a timeout</p>
+<tr class="field-odd field"><th class="field-name">Raises:</th><td class="field-body"><p class="first"><code class="xref py py-exc docutils literal"><span class="pre">boardgamegeek.exceptions.BoardGameGeekAPIError</span></code> if the response couldn&#8217;t be parsed</p>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Raises:</th><td class="field-body"><p class="first last"><code class="xref py py-exc docutils literal"><span class="pre">boardgamegeek.exceptions.BoardGameGeekTimeoutError</span></code> if there was a timeout</p>
 </td>
 </tr>
 </tbody>
@@ -179,21 +200,21 @@ to get the exact id, then use it here.</p>
 
 <dl class="method">
 <dt id="boardgamegeek.api.BoardGameGeek.games">
-<code class="descname">games</code><span class="sig-paren">(</span><em>name</em><span class="sig-paren">)</span><a class="headerlink" href="#boardgamegeek.api.BoardGameGeek.games" title="Permalink to this definition">¶</a></dt>
+<code class="descname">games</code><span class="sig-paren">(</span><em>name</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/boardgamegeek/api.html#BoardGameGeek.games"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#boardgamegeek.api.BoardGameGeek.games" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return a list containing all games with the given name</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>name</strong> &#8211; The name of the game to search for</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>name</strong> (<em>str</em>) &#8211; the name of the game to search for</td>
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">list of <a class="reference internal" href="#boardgamegeek.games.BoardGame" title="boardgamegeek.games.BoardGame"><code class="xref py py-class docutils literal"><span class="pre">boardgamegeek.games.BoardGame</span></code></a></td>
 </tr>
-<tr class="field-odd field"><th class="field-name">Raises:</th><td class="field-body"><code class="xref py py-class docutils literal"><span class="pre">boardgamegeek.exceptions.BoardGameGeekAPIRetryError</span></code> if this request should be retried after a short delay</td>
+<tr class="field-odd field"><th class="field-name">Raises:</th><td class="field-body"><code class="xref py py-exc docutils literal"><span class="pre">boardgamegeek.exceptions.BoardGameGeekAPIRetryError</span></code> if this request should be retried after a short delay</td>
 </tr>
-<tr class="field-even field"><th class="field-name">Raises:</th><td class="field-body"><code class="xref py py-class docutils literal"><span class="pre">boardgamegeek.exceptions.BoardGameGeekAPIError</span></code> if the response couldn&#8217;t be parsed</td>
+<tr class="field-even field"><th class="field-name">Raises:</th><td class="field-body"><code class="xref py py-exc docutils literal"><span class="pre">boardgamegeek.exceptions.BoardGameGeekAPIError</span></code> if the response couldn&#8217;t be parsed</td>
 </tr>
-<tr class="field-odd field"><th class="field-name">Raises:</th><td class="field-body"><code class="xref py py-class docutils literal"><span class="pre">boardgamegeek.exceptions.BoardGameGeekTimeoutError</span></code> if there was a timeout</td>
+<tr class="field-odd field"><th class="field-name">Raises:</th><td class="field-body"><code class="xref py py-exc docutils literal"><span class="pre">boardgamegeek.exceptions.BoardGameGeekTimeoutError</span></code> if there was a timeout</td>
 </tr>
 </tbody>
 </table>
@@ -201,23 +222,37 @@ to get the exact id, then use it here.</p>
 
 <dl class="method">
 <dt id="boardgamegeek.api.BoardGameGeek.get_game_id">
-<code class="descname">get_game_id</code><span class="sig-paren">(</span><em>name</em><span class="sig-paren">)</span><a class="headerlink" href="#boardgamegeek.api.BoardGameGeek.get_game_id" title="Permalink to this definition">¶</a></dt>
+<code class="descname">get_game_id</code><span class="sig-paren">(</span><em>name</em>, <em>choose=u'first'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/boardgamegeek/api.html#BoardGameGeek.get_game_id"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#boardgamegeek.api.BoardGameGeek.get_game_id" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns the BGG ID of a game, searching by name</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>name</strong> &#8211; The name of the game to search for</li>
-<li><strong>game_type</strong> &#8211; the game type: &#8220;rpgitem&#8221;, &#8220;videogame&#8221;, &#8220;boardgame&#8221;, &#8220;boardgameexpansion&#8221;</li>
-<li><strong>first</strong> &#8211; if true, return the first result, otherwise return the most recent (by year published)</li>
+<li><strong>name</strong> (<em>str</em>) &#8211; The name of the game to search for</li>
+<li><strong>choose</strong> (<em>str</em>) &#8211; method of selecting the game by name, when dealing with multiple results. Valid values are &#8220;first&#8221;, &#8220;recent&#8221; or &#8220;best-rank&#8221;</li>
 </ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">the game&#8217;s id</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first">integer</p>
 </td>
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><code class="docutils literal"><span class="pre">None</span></code> if game wasn&#8217;t found</p>
 </td>
 </tr>
-<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">integer value of the game&#8217;s id</p>
+<tr class="field-odd field"><th class="field-name">Raises:</th><td class="field-body"><p class="first"><code class="xref py py-exc docutils literal"><span class="pre">boardgamegeek.exceptions.BoardGameGeekError</span></code> in case of invalid name</p>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Raises:</th><td class="field-body"><p class="first"><code class="xref py py-exc docutils literal"><span class="pre">boardgamegeek.exceptions.BoardGameGeekAPIRetryError</span></code> if this request should be retried after a short delay</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Raises:</th><td class="field-body"><p class="first"><code class="xref py py-exc docutils literal"><span class="pre">boardgamegeek.exceptions.BoardGameGeekAPIError</span></code> if the response couldn&#8217;t be parsed</p>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Raises:</th><td class="field-body"><p class="first last"><code class="xref py py-exc docutils literal"><span class="pre">boardgamegeek.exceptions.BoardGameGeekTimeoutError</span></code> if there was a timeout</p>
 </td>
 </tr>
 </tbody>
@@ -233,12 +268,30 @@ to get the exact id, then use it here.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>guild_id</strong> &#8211; The ID of the guild</li>
-<li><strong>progress</strong> &#8211; Optional progress callback for member fetching</li>
+<li><strong>guild_id</strong> (<em>integer</em>) &#8211; the id number of the guild</li>
+<li><strong>progress</strong> (<em>callable</em>) &#8211; an optional callable for reporting progress, taking two integers (<code class="docutils literal"><span class="pre">current</span></code>, <code class="docutils literal"><span class="pre">total</span></code>) as arguments</li>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"><a class="reference internal" href="#boardgamegeek.guild.Guild" title="boardgamegeek.guild.Guild"><code class="xref py py-class docutils literal"><span class="pre">boardgamegeek.guild.Guild</span></code></a> object containing the details</p>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><code class="docutils literal"><span class="pre">Guild</span></code> object containing the data</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><code class="docutils literal"><span class="pre">None</span></code> if the information couldn&#8217;t be retrieved</p>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><p class="first"><a class="reference internal" href="#boardgamegeek.guild.Guild" title="boardgamegeek.guild.Guild"><code class="xref py py-class docutils literal"><span class="pre">boardgamegeek.guild.Guild</span></code></a></p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Raises:</th><td class="field-body"><p class="first"><code class="xref py py-exc docutils literal"><span class="pre">boardgamegeek.exceptions.BoardGameGeekError</span></code> in case of an invalid guild id</p>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Raises:</th><td class="field-body"><p class="first"><code class="xref py py-exc docutils literal"><span class="pre">boardgamegeek.exceptions.BoardGameGeekAPIRetryError</span></code> if this request should be retried after a short delay</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Raises:</th><td class="field-body"><p class="first"><code class="xref py py-exc docutils literal"><span class="pre">boardgamegeek.exceptions.BoardGameGeekAPIError</span></code> if the response couldn&#8217;t be parsed</p>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Raises:</th><td class="field-body"><p class="first last"><code class="xref py py-exc docutils literal"><span class="pre">boardgamegeek.exceptions.BoardGameGeekTimeoutError</span></code> if there was a timeout</p>
 </td>
 </tr>
 </tbody>
@@ -253,17 +306,21 @@ to get the exact id, then use it here.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>item_type</strong> &#8211; hot item type (valid values: &#8220;boardgame&#8221;, &#8220;rpg&#8221;, &#8220;videogame&#8221;, &#8220;boardgameperson&#8221;, &#8220;rpgperson&#8221;, &#8220;boardgamecompany&#8221;, &#8220;rpgcompany&#8221;, &#8220;videogamecompany&#8221;)</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>item_type</strong> (<em>str</em>) &#8211; hot item type. Valid values: &#8220;boardgame&#8221;, &#8220;rpg&#8221;, &#8220;videogame&#8221;, &#8220;boardgameperson&#8221;, &#8220;rpgperson&#8221;, &#8220;boardgamecompany&#8221;, &#8220;rpgcompany&#8221;, &#8220;videogamecompany&#8221;)</td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><code class="xref py py-class docutils literal"><span class="pre">boardgamegeek.hotitems.HotItems</span></code> containing the hot items</td>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><code class="docutils literal"><span class="pre">HotItems</span></code> object</td>
 </tr>
-<tr class="field-odd field"><th class="field-name">Raises:</th><td class="field-body"><code class="xref py py-class docutils literal"><span class="pre">boardgamegeek.exceptions.BoardGameGeekError</span></code> if the parameter is invalid</td>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><code class="xref py py-class docutils literal"><span class="pre">boardgamegeek.hotitems.HotItems</span></code></td>
 </tr>
-<tr class="field-even field"><th class="field-name">Raises:</th><td class="field-body"><code class="xref py py-class docutils literal"><span class="pre">boardgamegeek.exceptions.BoardGameGeekAPIRetryError</span></code> if this request should be retried after a short delay</td>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><code class="docutils literal"><span class="pre">None</span></code> in case the hot items couldn&#8217;t be retrieved</td>
 </tr>
-<tr class="field-odd field"><th class="field-name">Raises:</th><td class="field-body"><code class="xref py py-class docutils literal"><span class="pre">boardgamegeek.exceptions.BoardGameGeekAPIError</span></code> if the response couldn&#8217;t be parsed</td>
+<tr class="field-odd field"><th class="field-name">Raises:</th><td class="field-body"><code class="xref py py-exc docutils literal"><span class="pre">boardgamegeek.exceptions.BoardGameGeekError</span></code> if the parameter is invalid</td>
 </tr>
-<tr class="field-even field"><th class="field-name">Raises:</th><td class="field-body"><code class="xref py py-class docutils literal"><span class="pre">boardgamegeek.exceptions.BoardGameGeekTimeoutError</span></code> if there was a timeout</td>
+<tr class="field-even field"><th class="field-name">Raises:</th><td class="field-body"><code class="xref py py-exc docutils literal"><span class="pre">boardgamegeek.exceptions.BoardGameGeekAPIRetryError</span></code> if this request should be retried after a short delay</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Raises:</th><td class="field-body"><code class="xref py py-exc docutils literal"><span class="pre">boardgamegeek.exceptions.BoardGameGeekAPIError</span></code> if the response couldn&#8217;t be parsed</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Raises:</th><td class="field-body"><code class="xref py py-exc docutils literal"><span class="pre">boardgamegeek.exceptions.BoardGameGeekTimeoutError</span></code> if there was a timeout</td>
 </tr>
 </tbody>
 </table>
@@ -272,32 +329,39 @@ to get the exact id, then use it here.</p>
 <dl class="method">
 <dt id="boardgamegeek.api.BoardGameGeek.plays">
 <code class="descname">plays</code><span class="sig-paren">(</span><em>name=None</em>, <em>game_id=None</em>, <em>progress=None</em>, <em>min_date=None</em>, <em>max_date=None</em><span class="sig-paren">)</span><a class="headerlink" href="#boardgamegeek.api.BoardGameGeek.plays" title="Permalink to this definition">¶</a></dt>
-<dd><p>Retrieves the user&#8217;s play list</p>
+<dd><p>Retrieves the plays for an user (if using <code class="docutils literal"><span class="pre">name</span></code>) or for a game (if using <code class="docutils literal"><span class="pre">game_id</span></code>)</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>name</strong> &#8211; user name to retrieve the plays for</li>
-<li><strong>game_id</strong> &#8211; game id to retrieve the plays for</li>
-<li><strong>min_date</strong> &#8211; return only plays of the specified date or later.</li>
+<li><strong>name</strong> (<em>str</em>) &#8211; user name to retrieve the plays for</li>
+<li><strong>game_id</strong> (<em>integer</em>) &#8211; game id to retrieve the plays for</li>
+<li><strong>progress</strong> (<em>callable</em>) &#8211; an optional callable for reporting progress, taking two integers (<code class="docutils literal"><span class="pre">current</span></code>, <code class="docutils literal"><span class="pre">total</span></code>) as arguments</li>
+<li><strong>min_date</strong> (<em>datetime.date</em>) &#8211; return only plays of the specified date or later.</li>
 <li><strong>max_date</strong> (<em>datetime.date</em>) &#8211; return only plays of the specified date or earlier.</li>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><code class="xref py py-class docutils literal"><span class="pre">boardgamegeek.plays.Plays</span></code> object containing all the plays</p>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">object containing all the plays</p>
 </td>
 </tr>
-<tr class="field-odd field"><th class="field-name">Raises:</th><td class="field-body"><p class="first"><code class="xref py py-class docutils literal"><span class="pre">boardgamegeek.exceptions.BoardGameGeekError</span></code> on errors</p>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first"><code class="xref py py-class docutils literal"><span class="pre">boardgamegeek.plays.Plays</span></code></p>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Raises:</th><td class="field-body"><p class="first"><code class="xref py py-class docutils literal"><span class="pre">boardgamegeek.exceptions.BoardGameGeekAPIRetryError</span></code> if this request should be retried after a short delay</p>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><code class="docutils literal"><span class="pre">None</span></code> if the user/game couldn&#8217;t be found</p>
 </td>
 </tr>
-<tr class="field-odd field"><th class="field-name">Raises:</th><td class="field-body"><p class="first"><code class="xref py py-class docutils literal"><span class="pre">boardgamegeek.exceptions.BoardGameGeekAPIError</span></code> if the response couldn&#8217;t be parsed</p>
+<tr class="field-odd field"><th class="field-name">Raises:</th><td class="field-body"><p class="first"><code class="xref py py-exc docutils literal"><span class="pre">boardgamegeek.exceptions.BoardGameGeekError</span></code> on errors</p>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Raises:</th><td class="field-body"><p class="first last"><code class="xref py py-class docutils literal"><span class="pre">boardgamegeek.exceptions.BoardGameGeekTimeoutError</span></code> if there was a timeout</p>
+<tr class="field-even field"><th class="field-name">Raises:</th><td class="field-body"><p class="first"><code class="xref py py-exc docutils literal"><span class="pre">boardgamegeek.exceptions.BoardGameGeekAPIRetryError</span></code> if this request should be retried after a short delay</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Raises:</th><td class="field-body"><p class="first"><code class="xref py py-exc docutils literal"><span class="pre">boardgamegeek.exceptions.BoardGameGeekAPIError</span></code> if the response couldn&#8217;t be parsed</p>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Raises:</th><td class="field-body"><p class="first last"><code class="xref py py-exc docutils literal"><span class="pre">boardgamegeek.exceptions.BoardGameGeekTimeoutError</span></code> if there was a timeout</p>
 </td>
 </tr>
 </tbody>
@@ -313,25 +377,28 @@ to get the exact id, then use it here.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>query</strong> &#8211; the string to search for</li>
-<li><strong>search_type</strong> &#8211; list of strings indicating what to search for. Valid contained values are: &#8220;rpgitem&#8221;, &#8220;videogame&#8221;, &#8220;boardgame&#8221;, &#8220;boardgameexpansion&#8221;</li>
-<li><strong>exact</strong> &#8211; if True, try to match the name exactly</li>
+<li><strong>query</strong> (<em>str</em>) &#8211; the string to search for</li>
+<li><strong>search_type</strong> (<em>str</em>) &#8211; list of strings indicating what to search for. Valid contained values are: &#8220;rpgitem&#8221;, &#8220;videogame&#8221;, &#8220;boardgame&#8221;, &#8220;boardgameexpansion&#8221;</li>
+<li><strong>exact</strong> (<em>bool</em>) &#8211; if True, try to match the name exactly</li>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">list of <code class="xref py py-class docutils literal"><span class="pre">boardgamegeek.search.SearchResult</span></code> objects</p>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">list of <code class="docutils literal"><span class="pre">SearchResult</span></code></p>
 </td>
 </tr>
-<tr class="field-odd field"><th class="field-name">Raises:</th><td class="field-body"><p class="first"><code class="xref py py-class docutils literal"><span class="pre">boardgamegeek.exceptions.BoardGameGeekError</span></code> in case of invalid query</p>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first">list of <code class="xref py py-class docutils literal"><span class="pre">boardgamegeek.search.SearchResult</span></code></p>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Raises:</th><td class="field-body"><p class="first"><code class="xref py py-class docutils literal"><span class="pre">boardgamegeek.exceptions.BoardGameGeekAPIRetryError</span></code> if this request should be retried after a short delay</p>
+<tr class="field-even field"><th class="field-name">Raises:</th><td class="field-body"><p class="first"><code class="xref py py-exc docutils literal"><span class="pre">boardgamegeek.exceptions.BoardGameGeekError</span></code> in case of invalid query</p>
 </td>
 </tr>
-<tr class="field-odd field"><th class="field-name">Raises:</th><td class="field-body"><p class="first"><code class="xref py py-class docutils literal"><span class="pre">boardgamegeek.exceptions.BoardGameGeekAPIError</span></code> if the response couldn&#8217;t be parsed</p>
+<tr class="field-odd field"><th class="field-name">Raises:</th><td class="field-body"><p class="first"><code class="xref py py-exc docutils literal"><span class="pre">boardgamegeek.exceptions.BoardGameGeekAPIRetryError</span></code> if this request should be retried after a short delay</p>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Raises:</th><td class="field-body"><p class="first last"><code class="xref py py-class docutils literal"><span class="pre">boardgamegeek.exceptions.BoardGameGeekTimeoutError</span></code> if there was a timeout</p>
+<tr class="field-even field"><th class="field-name">Raises:</th><td class="field-body"><p class="first"><code class="xref py py-exc docutils literal"><span class="pre">boardgamegeek.exceptions.BoardGameGeekAPIError</span></code> if the response couldn&#8217;t be parsed</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Raises:</th><td class="field-body"><p class="first last"><code class="xref py py-exc docutils literal"><span class="pre">boardgamegeek.exceptions.BoardGameGeekTimeoutError</span></code> if there was a timeout</p>
 </td>
 </tr>
 </tbody>
@@ -346,17 +413,32 @@ to get the exact id, then use it here.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>name</strong> &#8211; user&#8217;s login name</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>name</strong> (<em>str</em>) &#8211; user&#8217;s login name</li>
+<li><strong>progress</strong> (<em>callable</em>) &#8211; an optional callable for reporting progress when fetching the buddy list/guilds, taking two integers (<code class="docutils literal"><span class="pre">current</span></code>, <code class="docutils literal"><span class="pre">total</span></code>) as arguments</li>
+</ul>
+</td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><code class="xref py py-class docutils literal"><span class="pre">boardgamegeek.user.User</span></code></td>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><code class="docutils literal"><span class="pre">User</span></code> object</p>
+</td>
 </tr>
-<tr class="field-odd field"><th class="field-name">Raises:</th><td class="field-body"><code class="xref py py-class docutils literal"><span class="pre">boardgamegeek.exceptions.BoardGameGeekError</span></code> in case of invalid user name</td>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first"><code class="xref py py-class docutils literal"><span class="pre">boardgamegeek.user.User</span></code></p>
+</td>
 </tr>
-<tr class="field-even field"><th class="field-name">Raises:</th><td class="field-body"><code class="xref py py-class docutils literal"><span class="pre">boardgamegeek.exceptions.BoardGameGeekAPIRetryError</span></code> if this request should be retried after a short delay</td>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><code class="docutils literal"><span class="pre">None</span></code> if the user couldn&#8217;t be found</p>
+</td>
 </tr>
-<tr class="field-odd field"><th class="field-name">Raises:</th><td class="field-body"><code class="xref py py-class docutils literal"><span class="pre">boardgamegeek.exceptions.BoardGameGeekAPIError</span></code> if the response couldn&#8217;t be parsed</td>
+<tr class="field-odd field"><th class="field-name">Raises:</th><td class="field-body"><p class="first"><code class="xref py py-exc docutils literal"><span class="pre">boardgamegeek.exceptions.BoardGameGeekError</span></code> in case of invalid user name</p>
+</td>
 </tr>
-<tr class="field-even field"><th class="field-name">Raises:</th><td class="field-body"><code class="xref py py-class docutils literal"><span class="pre">boardgamegeek.exceptions.BoardGameGeekTimeoutError</span></code> if there was a timeout</td>
+<tr class="field-even field"><th class="field-name">Raises:</th><td class="field-body"><p class="first"><code class="xref py py-exc docutils literal"><span class="pre">boardgamegeek.exceptions.BoardGameGeekAPIRetryError</span></code> if this request should be retried after a short delay</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Raises:</th><td class="field-body"><p class="first"><code class="xref py py-exc docutils literal"><span class="pre">boardgamegeek.exceptions.BoardGameGeekAPIError</span></code> if the response couldn&#8217;t be parsed</p>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Raises:</th><td class="field-body"><p class="first last"><code class="xref py py-exc docutils literal"><span class="pre">boardgamegeek.exceptions.BoardGameGeekTimeoutError</span></code> if there was a timeout</p>
+</td>
 </tr>
 </tbody>
 </table>
@@ -365,23 +447,348 @@ to get the exact id, then use it here.</p>
 </dd></dl>
 
 </div>
-<span class="target" id="module-boardgamegeek.collection"></span><dl class="class">
+<span class="target" id="module-boardgamegeek.collection"></span><div class="section" id="module-boardgamegeek.collection">
+<span id="boardgamegeek-collection-collection-information"></span><h2><a class="reference internal" href="#module-boardgamegeek.collection" title="boardgamegeek.collection: classes for storing collection information (Unix, Windows)"><code class="xref py py-mod docutils literal"><span class="pre">boardgamegeek.collection</span></code></a> - Collection information<a class="headerlink" href="#module-boardgamegeek.collection" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
 <dt id="boardgamegeek.collection.Collection">
-<em class="property">class </em><code class="descclassname">boardgamegeek.collection.</code><code class="descname">Collection</code><span class="sig-paren">(</span><em>data</em><span class="sig-paren">)</span><a class="headerlink" href="#boardgamegeek.collection.Collection" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<em class="property">class </em><code class="descclassname">boardgamegeek.collection.</code><code class="descname">Collection</code><span class="sig-paren">(</span><em>data</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/boardgamegeek/collection.html#Collection"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#boardgamegeek.collection.Collection" title="Permalink to this definition">¶</a></dt>
+<dd><p>A dictionary-like object represeting a <code class="docutils literal"><span class="pre">Collection</span></code></p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>data</strong> (<em>dict</em>) &#8211; a dictionary containing the collection data</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Raises:</th><td class="field-body"><code class="xref py py-class docutils literal"><span class="pre">boardgamegeek.exceptions.BoardGameGeekError</span></code> in case of invalid data</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="boardgamegeek.collection.Collection.add_game">
+<code class="descname">add_game</code><span class="sig-paren">(</span><em>game</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/boardgamegeek/collection.html#Collection.add_game"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#boardgamegeek.collection.Collection.add_game" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add a game to the <code class="docutils literal"><span class="pre">Collection</span></code></p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>game</strong> (<em>dict</em>) &#8211; game data</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Raises:</th><td class="field-body"><code class="xref py py-class docutils literal"><span class="pre">boardgamegeek.exceptions.BoardGameGeekError</span></code> in case of invalid data</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
 
-<span class="target" id="module-boardgamegeek.exceptions"></span><span class="target" id="module-boardgamegeek.games"></span><dl class="class">
+<dl class="attribute">
+<dt id="boardgamegeek.collection.Collection.items">
+<code class="descname">items</code><a class="headerlink" href="#boardgamegeek.collection.Collection.items" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the items in the collection</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">the items in the collection</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">list of <a class="reference internal" href="#boardgamegeek.games.CollectionBoardGame" title="boardgamegeek.games.CollectionBoardGame"><code class="xref py py-class docutils literal"><span class="pre">boardgamegeek.games.CollectionBoardGame</span></code></a></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="boardgamegeek.collection.Collection.owner">
+<code class="descname">owner</code><a class="headerlink" href="#boardgamegeek.collection.Collection.owner" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the collection&#8217;s owner</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">the collection&#8217;s owner</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">str</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<span class="target" id="module-boardgamegeek.exceptions"></span><div class="section" id="module-boardgamegeek.exceptions">
+<span id="boardgamegeek-exceptions-exceptions"></span><h2><a class="reference internal" href="#module-boardgamegeek.exceptions" title="boardgamegeek.exceptions: exceptions used in the package (Unix, Windows)"><code class="xref py py-mod docutils literal"><span class="pre">boardgamegeek.exceptions</span></code></a> - Exceptions<a class="headerlink" href="#module-boardgamegeek.exceptions" title="Permalink to this headline">¶</a></h2>
+</div>
+<span class="target" id="module-boardgamegeek.games"></span><div class="section" id="module-boardgamegeek.games">
+<span id="boardgamegeek-games-games-information"></span><h2><a class="reference internal" href="#module-boardgamegeek.games" title="boardgamegeek.games: classes for storing games information (Unix, Windows)"><code class="xref py py-mod docutils literal"><span class="pre">boardgamegeek.games</span></code></a> - Games information<a class="headerlink" href="#module-boardgamegeek.games" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
 <dt id="boardgamegeek.games.CollectionBoardGame">
-<em class="property">class </em><code class="descclassname">boardgamegeek.games.</code><code class="descname">CollectionBoardGame</code><span class="sig-paren">(</span><em>data</em><span class="sig-paren">)</span><a class="headerlink" href="#boardgamegeek.games.CollectionBoardGame" title="Permalink to this definition">¶</a></dt>
-<dd><p>A boardgame retrieved from the collection information, which has
-less information than the one retrieved via the /thing api and which
-also contains some user-specific information</p>
+<em class="property">class </em><code class="descclassname">boardgamegeek.games.</code><code class="descname">CollectionBoardGame</code><span class="sig-paren">(</span><em>data</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/boardgamegeek/games.html#CollectionBoardGame"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#boardgamegeek.games.CollectionBoardGame" title="Permalink to this definition">¶</a></dt>
+<dd><p>A boardgame retrieved from the collection information, which has less information than the one retrieved
+via the /thing api and which also contains some user-specific information.</p>
+<dl class="attribute">
+<dt id="boardgamegeek.games.CollectionBoardGame.for_trade">
+<code class="descname">for_trade</code><a class="headerlink" href="#boardgamegeek.games.CollectionBoardGame.for_trade" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">game for trading</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">bool</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="boardgamegeek.games.CollectionBoardGame.last_modified">
+<code class="descname">last_modified</code><a class="headerlink" href="#boardgamegeek.games.CollectionBoardGame.last_modified" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">last modified date</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">str</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="boardgamegeek.games.CollectionBoardGame.owned">
+<code class="descname">owned</code><a class="headerlink" href="#boardgamegeek.games.CollectionBoardGame.owned" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">game owned</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">bool</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="boardgamegeek.games.CollectionBoardGame.preordered">
+<code class="descname">preordered</code><a class="headerlink" href="#boardgamegeek.games.CollectionBoardGame.preordered" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">game preordered</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">bool</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="boardgamegeek.games.CollectionBoardGame.prev_owned">
+<code class="descname">prev_owned</code><a class="headerlink" href="#boardgamegeek.games.CollectionBoardGame.prev_owned" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">game previously owned</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">bool</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="boardgamegeek.games.CollectionBoardGame.rating">
+<code class="descname">rating</code><a class="headerlink" href="#boardgamegeek.games.CollectionBoardGame.rating" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">game rating</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">float</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><code class="docutils literal"><span class="pre">None</span></code> if n/a</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="boardgamegeek.games.CollectionBoardGame.want">
+<code class="descname">want</code><a class="headerlink" href="#boardgamegeek.games.CollectionBoardGame.want" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">game wanted</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">bool</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="boardgamegeek.games.CollectionBoardGame.want_to_buy">
+<code class="descname">want_to_buy</code><a class="headerlink" href="#boardgamegeek.games.CollectionBoardGame.want_to_buy" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">want to buy</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">bool</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="boardgamegeek.games.CollectionBoardGame.want_to_play">
+<code class="descname">want_to_play</code><a class="headerlink" href="#boardgamegeek.games.CollectionBoardGame.want_to_play" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">want to play</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">bool</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="boardgamegeek.games.CollectionBoardGame.wishlist">
+<code class="descname">wishlist</code><a class="headerlink" href="#boardgamegeek.games.CollectionBoardGame.wishlist" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">game on wishlist</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">bool</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
 </dd></dl>
 
 <dl class="class">
 <dt id="boardgamegeek.games.BoardGame">
-<em class="property">class </em><code class="descclassname">boardgamegeek.games.</code><code class="descname">BoardGame</code><span class="sig-paren">(</span><em>data</em><span class="sig-paren">)</span><a class="headerlink" href="#boardgamegeek.games.BoardGame" title="Permalink to this definition">¶</a></dt>
-<dd><p>An object containing the core information about a game.</p>
+<em class="property">class </em><code class="descclassname">boardgamegeek.games.</code><code class="descname">BoardGame</code><span class="sig-paren">(</span><em>data</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/boardgamegeek/games.html#BoardGame"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#boardgamegeek.games.BoardGame" title="Permalink to this definition">¶</a></dt>
+<dd><p>Object containing information about a boardgame</p>
+<dl class="method">
+<dt id="boardgamegeek.games.BoardGame.add_expanded_game">
+<code class="descname">add_expanded_game</code><span class="sig-paren">(</span><em>data</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/boardgamegeek/games.html#BoardGame.add_expanded_game"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#boardgamegeek.games.BoardGame.add_expanded_game" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add a game expanded by this one</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>data</strong> (<em>dict</em>) &#8211; expanded game&#8217;s data</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Raises:</th><td class="field-body"><code class="xref py py-exc docutils literal"><span class="pre">boardgamegeek.exceptions.BoardGameGeekError</span></code> if data is invalid</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="boardgamegeek.games.BoardGame.add_expansion">
+<code class="descname">add_expansion</code><span class="sig-paren">(</span><em>data</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/boardgamegeek/games.html#BoardGame.add_expansion"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#boardgamegeek.games.BoardGame.add_expansion" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add an expansion of this game</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>data</strong> (<em>dict</em>) &#8211; expansion data</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Raises:</th><td class="field-body"><code class="xref py py-exc docutils literal"><span class="pre">boardgamegeek.exceptions.BoardGameGeekError</span></code> if data is invalid</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="boardgamegeek.games.BoardGame.alternative_names">
+<code class="descname">alternative_names</code><a class="headerlink" href="#boardgamegeek.games.BoardGame.alternative_names" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">alternative names</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">list of str</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="boardgamegeek.games.BoardGame.artists">
+<code class="descname">artists</code><a class="headerlink" href="#boardgamegeek.games.BoardGame.artists" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">artists</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">list of str</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="boardgamegeek.games.BoardGame.categories">
+<code class="descname">categories</code><a class="headerlink" href="#boardgamegeek.games.BoardGame.categories" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">categories</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">list of str</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="boardgamegeek.games.BoardGame.description">
+<code class="descname">description</code><a class="headerlink" href="#boardgamegeek.games.BoardGame.description" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">description</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">str</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="boardgamegeek.games.BoardGame.designers">
+<code class="descname">designers</code><a class="headerlink" href="#boardgamegeek.games.BoardGame.designers" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">designers</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">list of str</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
 <dl class="attribute">
 <dt id="boardgamegeek.games.BoardGame.expands">
 <code class="descname">expands</code><a class="headerlink" href="#boardgamegeek.games.BoardGame.expands" title="Permalink to this definition">¶</a></dt>
@@ -389,7 +796,9 @@ also contains some user-specific information</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">list of games this item expands</td>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">games this item expands</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">list of <code class="xref py py-class docutils literal"><span class="pre">boardgamegeek.things.Thing</span></code></td>
 </tr>
 </tbody>
 </table>
@@ -402,7 +811,9 @@ also contains some user-specific information</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">True if this item is an expansion to some other item</td>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">True if this item is an expansion</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">bool</td>
 </tr>
 </tbody>
 </table>
@@ -415,7 +826,410 @@ also contains some user-specific information</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">list of expansions for this item</td>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">expansions</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">list of <code class="xref py py-class docutils literal"><span class="pre">boardgamegeek.things.Thing</span></code></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="boardgamegeek.games.BoardGame.families">
+<code class="descname">families</code><a class="headerlink" href="#boardgamegeek.games.BoardGame.families" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">families</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">list of str</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="boardgamegeek.games.BoardGame.image">
+<code class="descname">image</code><a class="headerlink" href="#boardgamegeek.games.BoardGame.image" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">image URL</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">str</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><code class="docutils literal"><span class="pre">None</span></code> if n/a</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="boardgamegeek.games.BoardGame.implementations">
+<code class="descname">implementations</code><a class="headerlink" href="#boardgamegeek.games.BoardGame.implementations" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">implementations</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">list of str</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="boardgamegeek.games.BoardGame.max_players">
+<code class="descname">max_players</code><a class="headerlink" href="#boardgamegeek.games.BoardGame.max_players" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">maximum number of players</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">integer</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><code class="docutils literal"><span class="pre">None</span></code> if n/a</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="boardgamegeek.games.BoardGame.mechanics">
+<code class="descname">mechanics</code><a class="headerlink" href="#boardgamegeek.games.BoardGame.mechanics" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">mechanics</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">list of str</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="boardgamegeek.games.BoardGame.min_age">
+<code class="descname">min_age</code><a class="headerlink" href="#boardgamegeek.games.BoardGame.min_age" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">minimum recommended age</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">integer</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><code class="docutils literal"><span class="pre">None</span></code> if n/a</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="boardgamegeek.games.BoardGame.min_players">
+<code class="descname">min_players</code><a class="headerlink" href="#boardgamegeek.games.BoardGame.min_players" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">minimum number of players</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">integer</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><code class="docutils literal"><span class="pre">None</span></code> if n/a</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="boardgamegeek.games.BoardGame.playing_time">
+<code class="descname">playing_time</code><a class="headerlink" href="#boardgamegeek.games.BoardGame.playing_time" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">playing time</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">integer</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><code class="docutils literal"><span class="pre">None</span></code> if n/a</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="boardgamegeek.games.BoardGame.publishers">
+<code class="descname">publishers</code><a class="headerlink" href="#boardgamegeek.games.BoardGame.publishers" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">publishers</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">list of str</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="boardgamegeek.games.BoardGame.ranks">
+<code class="descname">ranks</code><a class="headerlink" href="#boardgamegeek.games.BoardGame.ranks" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">rankings of this game</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">list of dicts, keys: <code class="docutils literal"><span class="pre">friendlyname</span></code> (the friendly name of the rank, e.g. &#8220;Board Game Rank&#8221;), <code class="docutils literal"><span class="pre">name</span></code>
+(name of the rank, e.g &#8220;boardgame&#8221;), <code class="docutils literal"><span class="pre">value</span></code> (the rank)</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><code class="docutils literal"><span class="pre">None</span></code> if n/a</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="boardgamegeek.games.BoardGame.rating_average">
+<code class="descname">rating_average</code><a class="headerlink" href="#boardgamegeek.games.BoardGame.rating_average" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">average rating</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">float</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><code class="docutils literal"><span class="pre">None</span></code> if n/a</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="boardgamegeek.games.BoardGame.rating_average_weight">
+<code class="descname">rating_average_weight</code><a class="headerlink" href="#boardgamegeek.games.BoardGame.rating_average_weight" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">average weight</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">float</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><code class="docutils literal"><span class="pre">None</span></code> if n/a</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="boardgamegeek.games.BoardGame.rating_bayes_average">
+<code class="descname">rating_bayes_average</code><a class="headerlink" href="#boardgamegeek.games.BoardGame.rating_bayes_average" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">bayes average rating</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">float</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><code class="docutils literal"><span class="pre">None</span></code> if n/a</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="boardgamegeek.games.BoardGame.rating_median">
+<code class="descname">rating_median</code><a class="headerlink" href="#boardgamegeek.games.BoardGame.rating_median" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"></td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">float</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><code class="docutils literal"><span class="pre">None</span></code> if n/a</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="boardgamegeek.games.BoardGame.rating_num_weights">
+<code class="descname">rating_num_weights</code><a class="headerlink" href="#boardgamegeek.games.BoardGame.rating_num_weights" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"></td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">integer</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><code class="docutils literal"><span class="pre">None</span></code> if n/a</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="boardgamegeek.games.BoardGame.rating_stddev">
+<code class="descname">rating_stddev</code><a class="headerlink" href="#boardgamegeek.games.BoardGame.rating_stddev" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">standard deviation</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">float</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><code class="docutils literal"><span class="pre">None</span></code> if n/a</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="boardgamegeek.games.BoardGame.thumbnail">
+<code class="descname">thumbnail</code><a class="headerlink" href="#boardgamegeek.games.BoardGame.thumbnail" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">thumbnail URL</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">str</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><code class="docutils literal"><span class="pre">None</span></code> if n/a</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="boardgamegeek.games.BoardGame.users_commented">
+<code class="descname">users_commented</code><a class="headerlink" href="#boardgamegeek.games.BoardGame.users_commented" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">number of user comments</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">integer</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><code class="docutils literal"><span class="pre">None</span></code> if n/a</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="boardgamegeek.games.BoardGame.users_owned">
+<code class="descname">users_owned</code><a class="headerlink" href="#boardgamegeek.games.BoardGame.users_owned" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">number of users owning this game</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">integer</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><code class="docutils literal"><span class="pre">None</span></code> if n/a</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="boardgamegeek.games.BoardGame.users_rated">
+<code class="descname">users_rated</code><a class="headerlink" href="#boardgamegeek.games.BoardGame.users_rated" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">how many users rated the game</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">integer</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><code class="docutils literal"><span class="pre">None</span></code> if n/a</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="boardgamegeek.games.BoardGame.users_trading">
+<code class="descname">users_trading</code><a class="headerlink" href="#boardgamegeek.games.BoardGame.users_trading" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">number of users trading this game</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">integer</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><code class="docutils literal"><span class="pre">None</span></code> if n/a</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="boardgamegeek.games.BoardGame.users_wanting">
+<code class="descname">users_wanting</code><a class="headerlink" href="#boardgamegeek.games.BoardGame.users_wanting" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">number of users wanting this game</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">integer</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><code class="docutils literal"><span class="pre">None</span></code> if n/a</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="boardgamegeek.games.BoardGame.users_wishing">
+<code class="descname">users_wishing</code><a class="headerlink" href="#boardgamegeek.games.BoardGame.users_wishing" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">number of users wishing for this game</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">integer</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><code class="docutils literal"><span class="pre">None</span></code> if n/a</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="boardgamegeek.games.BoardGame.year">
+<code class="descname">year</code><a class="headerlink" href="#boardgamegeek.games.BoardGame.year" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">publishing year</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">integer</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><code class="docutils literal"><span class="pre">None</span></code> if n/a</td>
 </tr>
 </tbody>
 </table>
@@ -423,19 +1237,212 @@ also contains some user-specific information</p>
 
 </dd></dl>
 
+</div>
 <span class="target" id="module-boardgamegeek.guild"></span><div class="section" id="module-boardgamegeek.guild">
-<span id="boardgamegeek-guild-classes-for-storing-guild-information"></span><h2><a class="reference internal" href="#module-boardgamegeek.guild" title="boardgamegeek.guild: classes for storing guild information (Unix, Windows)"><code class="xref py py-mod docutils literal"><span class="pre">boardgamegeek.guild</span></code></a> - Classes for storing guild information<a class="headerlink" href="#module-boardgamegeek.guild" title="Permalink to this headline">¶</a></h2>
+<span id="boardgamegeek-guild-guild-information"></span><h2><a class="reference internal" href="#module-boardgamegeek.guild" title="boardgamegeek.guild: classes for storing guild information (Unix, Windows)"><code class="xref py py-mod docutils literal"><span class="pre">boardgamegeek.guild</span></code></a> - Guild information<a class="headerlink" href="#module-boardgamegeek.guild" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="boardgamegeek.guild.Guild">
-<em class="property">class </em><code class="descclassname">boardgamegeek.guild.</code><code class="descname">Guild</code><span class="sig-paren">(</span><em>data</em><span class="sig-paren">)</span><a class="headerlink" href="#boardgamegeek.guild.Guild" title="Permalink to this definition">¶</a></dt>
-<dd><dl class="attribute">
+<em class="property">class </em><code class="descclassname">boardgamegeek.guild.</code><code class="descname">Guild</code><span class="sig-paren">(</span><em>data</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/boardgamegeek/guild.html#Guild"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#boardgamegeek.guild.Guild" title="Permalink to this definition">¶</a></dt>
+<dd><p>Class containing guild information</p>
+<dl class="attribute">
+<dt id="boardgamegeek.guild.Guild.addr1">
+<code class="descname">addr1</code><a class="headerlink" href="#boardgamegeek.guild.Guild.addr1" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">first field of the address</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">str</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><code class="docutils literal"><span class="pre">None</span></code> if n/a</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="boardgamegeek.guild.Guild.addr2">
+<code class="descname">addr2</code><a class="headerlink" href="#boardgamegeek.guild.Guild.addr2" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">second field of the address</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">str</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><code class="docutils literal"><span class="pre">None</span></code> if n/a</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
 <dt id="boardgamegeek.guild.Guild.address">
 <code class="descname">address</code><a class="headerlink" href="#boardgamegeek.guild.Guild.address" title="Permalink to this definition">¶</a></dt>
 <dd><table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">Both address fields concatenated</td>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">address (both fields concatenated)</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">str</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><code class="docutils literal"><span class="pre">None</span></code> if n/a</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="boardgamegeek.guild.Guild.category">
+<code class="descname">category</code><a class="headerlink" href="#boardgamegeek.guild.Guild.category" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">category</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">str</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><code class="docutils literal"><span class="pre">None</span></code> if n/a</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="boardgamegeek.guild.Guild.city">
+<code class="descname">city</code><a class="headerlink" href="#boardgamegeek.guild.Guild.city" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">city</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">str</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><code class="docutils literal"><span class="pre">None</span></code> if n/a</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="boardgamegeek.guild.Guild.country">
+<code class="descname">country</code><a class="headerlink" href="#boardgamegeek.guild.Guild.country" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">country</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">str</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><code class="docutils literal"><span class="pre">None</span></code> if n/a</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="boardgamegeek.guild.Guild.description">
+<code class="descname">description</code><a class="headerlink" href="#boardgamegeek.guild.Guild.description" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">description</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">str</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><code class="docutils literal"><span class="pre">None</span></code> if n/a</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="boardgamegeek.guild.Guild.manager">
+<code class="descname">manager</code><a class="headerlink" href="#boardgamegeek.guild.Guild.manager" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">manager</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">str</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><code class="docutils literal"><span class="pre">None</span></code> if n/a</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="boardgamegeek.guild.Guild.members">
+<code class="descname">members</code><a class="headerlink" href="#boardgamegeek.guild.Guild.members" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">members of the guild</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">list of str</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><code class="docutils literal"><span class="pre">None</span></code> if n/a</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="boardgamegeek.guild.Guild.postalcode">
+<code class="descname">postalcode</code><a class="headerlink" href="#boardgamegeek.guild.Guild.postalcode" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">postal code</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">integer</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><code class="docutils literal"><span class="pre">None</span></code> if n/a</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="boardgamegeek.guild.Guild.state">
+<code class="descname">state</code><a class="headerlink" href="#boardgamegeek.guild.Guild.state" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">state or provine</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">str</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><code class="docutils literal"><span class="pre">None</span></code> if n/a</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="boardgamegeek.guild.Guild.website">
+<code class="descname">website</code><a class="headerlink" href="#boardgamegeek.guild.Guild.website" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">website address</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">str</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><code class="docutils literal"><span class="pre">None</span></code> if n/a</td>
 </tr>
 </tbody>
 </table>
@@ -445,16 +1452,19 @@ also contains some user-specific information</p>
 
 </div>
 <span class="target" id="module-boardgamegeek.hotitems"></span><div class="section" id="module-boardgamegeek.hotitems">
-<span id="boardgamegeek-hotitems-boardgamegeek-hot-items"></span><h2><a class="reference internal" href="#module-boardgamegeek.hotitems" title="boardgamegeek.hotitems: BGG &quot;Hot Items&quot; (Unix, Windows)"><code class="xref py py-mod docutils literal"><span class="pre">boardgamegeek.hotitems</span></code></a> - BoardGameGeek &#8220;Hot Items&#8221;<a class="headerlink" href="#module-boardgamegeek.hotitems" title="Permalink to this headline">¶</a></h2>
+<span id="boardgamegeek-hotitems-boardgamegeek-hot-items"></span><h2><a class="reference internal" href="#module-boardgamegeek.hotitems" title="boardgamegeek.hotitems: classes for handling hot items information (Unix, Windows)"><code class="xref py py-mod docutils literal"><span class="pre">boardgamegeek.hotitems</span></code></a> - BoardGameGeek &#8220;Hot Items&#8221;<a class="headerlink" href="#module-boardgamegeek.hotitems" title="Permalink to this headline">¶</a></h2>
 </div>
 <span class="target" id="module-boardgamegeek.plays"></span><div class="section" id="module-boardgamegeek.plays">
-<span id="boardgamegeek-plays-boardgamegeek-plays"></span><h2><a class="reference internal" href="#module-boardgamegeek.plays" title="boardgamegeek.plays: BGG &quot;Plays&quot; (Unix, Windows)"><code class="xref py py-mod docutils literal"><span class="pre">boardgamegeek.plays</span></code></a> - BoardGameGeek &#8220;Plays&#8221;<a class="headerlink" href="#module-boardgamegeek.plays" title="Permalink to this headline">¶</a></h2>
+<span id="boardgamegeek-plays-boardgamegeek-plays"></span><h2><a class="reference internal" href="#module-boardgamegeek.plays" title="boardgamegeek.plays: classes for handling plays/play sessions (Unix, Windows)"><code class="xref py py-mod docutils literal"><span class="pre">boardgamegeek.plays</span></code></a> - BoardGameGeek &#8220;Plays&#8221;<a class="headerlink" href="#module-boardgamegeek.plays" title="Permalink to this headline">¶</a></h2>
 </div>
-<span class="target" id="module-boardgamegeek.search"></span><span class="target" id="module-boardgamegeek.things"></span><div class="section" id="module-boardgamegeek.things">
+<span class="target" id="module-boardgamegeek.search"></span><div class="section" id="module-boardgamegeek.search">
+<span id="boardgamegeek-search-search-results"></span><h2><a class="reference internal" href="#module-boardgamegeek.search" title="boardgamegeek.search: classes for handling search results (Unix, Windows)"><code class="xref py py-mod docutils literal"><span class="pre">boardgamegeek.search</span></code></a> - Search results<a class="headerlink" href="#module-boardgamegeek.search" title="Permalink to this headline">¶</a></h2>
+</div>
+<span class="target" id="module-boardgamegeek.things"></span><div class="section" id="module-boardgamegeek.things">
 <span id="boardgamegeek-things-generic-objects"></span><h2><a class="reference internal" href="#module-boardgamegeek.things" title="boardgamegeek.things: Generic objects (Unix, Windows)"><code class="xref py py-mod docutils literal"><span class="pre">boardgamegeek.things</span></code></a> - Generic objects<a class="headerlink" href="#module-boardgamegeek.things" title="Permalink to this headline">¶</a></h2>
 </div>
 <span class="target" id="module-boardgamegeek.user"></span><div class="section" id="module-boardgamegeek.user">
-<span id="boardgamegeek-user-boardgamegeek-users"></span><h2><a class="reference internal" href="#module-boardgamegeek.user" title="boardgamegeek.user: BGG &quot;Users&quot; (Unix, Windows)"><code class="xref py py-mod docutils literal"><span class="pre">boardgamegeek.user</span></code></a> - BoardGameGeek &#8220;Users&#8221;<a class="headerlink" href="#module-boardgamegeek.user" title="Permalink to this headline">¶</a></h2>
+<span id="boardgamegeek-user-boardgamegeek-users"></span><h2><a class="reference internal" href="#module-boardgamegeek.user" title="boardgamegeek.user: class handling user information (Unix, Windows)"><code class="xref py py-mod docutils literal"><span class="pre">boardgamegeek.user</span></code></a> - BoardGameGeek &#8220;Users&#8221;<a class="headerlink" href="#module-boardgamegeek.user" title="Permalink to this headline">¶</a></h2>
 </div>
 <span class="target" id="module-boardgamegeek.utils"></span><div class="section" id="module-boardgamegeek.utils">
 <span id="boardgamegeek-utils-generic-helper-functions"></span><h2><a class="reference internal" href="#module-boardgamegeek.utils" title="boardgamegeek.utils: generic helper functions (Unix, Windows)"><code class="xref py py-mod docutils literal"><span class="pre">boardgamegeek.utils</span></code></a> - Generic helper functions<a class="headerlink" href="#module-boardgamegeek.utils" title="Permalink to this headline">¶</a></h2>
