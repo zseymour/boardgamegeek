@@ -28,7 +28,7 @@ It's an almost completely rewritten fork of libBGG_.
 Documentation
 =============
 
-Documentation is available at http://boardgamegeek.readthedocs.org/
+Documentation is available at http://lcosmin.github.io/boardgamegeek 
 
 
 Usage
