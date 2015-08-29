@@ -1,6 +1,14 @@
 Changelog
 =========
 
+0.13.0
+------
+
+Features
+
+  * Added the ``choose`` parameter to :py:meth:`boardgamegeek.api.BoardGameGeek.game` which lets you control how the "right" game is selected when searching by name. One of "first", "recent" and "best-rank"
+    can be specified in order to select the first search result, the most recently published one or the best ranked. 
+
 0.12.1
 ------
 
