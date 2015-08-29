@@ -5,3 +5,7 @@ tags
 *.pyc
 *.bak
 RELEASE-VERSION
+build
+*.egg-info
+_modules
+dist
