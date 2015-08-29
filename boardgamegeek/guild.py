@@ -1,7 +1,7 @@
 # coding: utf-8
 """
-:mod:`boardgamegeek.guild` - Classes for storing guild information
-==================================================================
+:mod:`boardgamegeek.guild` - Guild information
+==============================================
 
 .. module:: boardgamegeek.guild
    :platform: Unix, Windows
@@ -16,7 +16,9 @@ from .things import Thing
 
 
 class Guild(Thing):
-
+    """
+    Class containing guild information
+    """
     def _format(self, log):
         log.info("id         : {}".format(self.id))
         log.info("name       : {}".format(self.name))
@@ -36,16 +38,28 @@ class Guild(Thing):
 
     @property
     def country(self):
+        """
+        :return: country
+        :rtype: str
+        :return: ``None`` if n/a
+        """
         return self._data.get("country")
 
     @property
     def city(self):
+        """
+        :return: city
+        :rtype: str
+        :return: ``None`` if n/a
+        """
         return self._data.get("city")
 
     @property
     def address(self):
         """
-        :return: Both address fields concatenated
+        :return: address (both fields concatenated)
+        :rtype: str
+        :return: ``None`` if n/a
         """
         address = ""
         if self._data.get("addr1"):
@@ -60,38 +74,83 @@ class Guild(Thing):
 
     @property
     def addr1(self):
+        """
+        :return: first field of the address
+        :rtype: str
+        :return: ``None`` if n/a
+        """
         return self._data.get("addr1")
 
     @property
     def addr2(self):
+        """
+        :return: second field of the address
+        :rtype: str
+        :return: ``None`` if n/a
+        """
         return self._data.get("addr2")
 
     @property
     def postalcode(self):
+        """
+        :return: postal code
+        :rtype: integer
+        :return: ``None`` if n/a
+        """
         return self._data.get("postalcode")
 
     @property
     def state(self):
+        """
+        :return: state or provine
+        :rtype: str
+        :return: ``None`` if n/a
+        """
         return self._data.get("stateorprovince")
 
     @property
     def category(self):
+        """
+        :return: category
+        :rtype: str
+        :return: ``None`` if n/a
+        """
         return self._data.get("category")
 
     @property
     def members(self):
-        return self._data.get("members")
+        """
+        :return: members of the guild
+        :rtype: list of str
+        :return: ``None`` if n/a
+        """
+        return self._data.get("members", [])
 
     @property
     def description(self):
+        """
+        :return: description
+        :rtype: str
+        :return: ``None`` if n/a
+        """
         return self._data.get("description")
 
     @property
     def manager(self):
+        """
+        :return: manager
+        :rtype: str
+        :return: ``None`` if n/a
+        """
         return self._data.get("manager")
 
     @property
     def website(self):
+        """
+        :return: website address
+        :rtype: str
+        :return: ``None`` if n/a
+        """
         return self._data.get("website")
 
     def __len__(self):

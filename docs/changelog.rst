@@ -1,12 +1,28 @@
 Changelog
 =========
 
+0.13.0
+------
+
+Features
+
+  * Added the ``choose`` parameter to :py:meth:`boardgamegeek.api.BoardGameGeek.game` which lets you control how the "right" game is selected when searching by name. One of "first", "recent" and "best-rank"
+    can be specified in order to select the first search result, the most recently published one or the best ranked. 
+
+0.12.1
+------
+
+Changes
+
+  * Properties which returned lists no longer return ``None`` in case data is missing, but an empty list (e.g. for :py:class:`boardgamegeek.games.BoardGame`)
+  * Updated documentation
+
 0.12.0
 ------
 
 Changes
 
-  * Deprecated numeric values for the `search_type` parameter of :py:function:`boardgamegeek.games.BoardGame.search`. Accepts list of strings as arguments instead, for consistency with the rest of the functions. 
+  * Deprecated numeric values for the `search_type` parameter of :py:meth:`boardgamegeek.games.BoardGame.search`. Accepts list of strings as arguments instead, for consistency with the rest of the functions.
 
 0.11.2
 ------

@@ -101,30 +101,12 @@ def main():
     if args.game:
         # fetch the most popular
         if args.most_popular:
-            # if the user wants to return the most popular game, we need to call
-            # the search function and then grab game info and order by ranking
-            game = None
-
-            for r in bgg.search(args.game,
-                                exact=True,
-                                search_type=BoardGameGeekNetworkAPI.SEARCH_BOARD_GAME | BoardGameGeekNetworkAPI.SEARCH_BOARD_GAME_EXPANSION):
-                # get info about all the found games, return data for the one
-                # with the highest BGG rank
-                g = bgg.game(game_id=r.id)
-
-                if game is None:
-                    game = g
-                elif g.boardgame_rank is not None and g.boardgame_rank < game.boardgame_rank:
-                    game = g
-
-            if game:
-                game._format(log)
-
+            game = bgg.game(args.game, choose="best-rank")
         else:
-            # fetch the most recent one
-            game = bgg.game(args.game)
-            if game:
-                game._format(log)
+        # fetch the most recent one
+            game = bgg.game(args.game, choose="recent")
+        if game:
+            game._format(log)
 
     if args.game_stats:
         game = bgg.game(args.game_stats)

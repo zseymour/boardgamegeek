@@ -1,4 +1,15 @@
 # coding: utf8
+"""
+:mod:`boardgamegeek.search` - Search results
+============================================
+
+.. module:: boardgamegeek.search
+   :platform: Unix, Windows
+   :synopsis: classes for handling search results
+
+.. moduleauthor:: Cosmin Luță <q4break@gmail.com>
+
+"""
 from __future__ import unicode_literals
 
 from .exceptions import BoardGameGeekError
@@ -6,6 +17,9 @@ from .things import Thing
 
 
 class SearchResult(Thing):
+    """
+    Result of a search
+    """
 
     def __init__(self, data):
         if "yearpublished" in data:
