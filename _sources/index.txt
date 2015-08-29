@@ -2,10 +2,10 @@
 boardgamegeek - A Python API for boardgamegeek.com
 ==================================================
 
-.. warning::
-   
-   The documentation is a work in progress. You can check out the unit tests for how to use the library.
-   
+.. note::
+
+   The documentation is a work in progress. You can check out the unit tests for examples on how to use the library.
+
 
 Introduction
 ============
@@ -15,11 +15,6 @@ Introduction
 API.
 
 It's an almost completely rewritten fork of libBGG_.
-
-
-.. warning::
-    The module's API is still considered unstable at this point and it might change in the future, especially if wanting
-    to add support for the other sites.
 
 Table of Contents
 =================
