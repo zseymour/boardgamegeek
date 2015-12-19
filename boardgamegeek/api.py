@@ -36,6 +36,7 @@ from .hotitems import HotItems
 from .plays import Plays
 from .exceptions import BoardGameGeekAPIError, BoardGameGeekError, BoardGameGeekAPIRetryError, BoardGameGeekAPINonXMLError
 from .utils import xml_subelement_attr, xml_subelement_text, xml_subelement_attr_list, get_parsed_xml_response
+from .utils import fix_unsigned_negative
 from .search import SearchResult
 from .utils import get_cache_session_from_uri, RateLimitingAdapter, DEFAULT_REQUESTS_PER_MINUTE
 
@@ -585,7 +586,7 @@ class BoardGameGeekNetworkAPI(object):
         Search for a game
 
         :param str query: the string to search for
-        :param str search_type: list of strings indicating what to search for. Valid contained values are: "rpgitem", "videogame", "boardgame", "boardgameexpansion"
+        :param str search_type: list of strings indicating what to search for. Valid contained values are: "rpgitem", "videogame", "boardgame" (default), "boardgameexpansion"
         :param bool exact: if True, try to match the name exactly
         :return: list of ``SearchResult``
         :rtype: list of :py:class:`boardgamegeek.search.SearchResult`
@@ -597,6 +598,9 @@ class BoardGameGeekNetworkAPI(object):
         """
         if not query:
             raise BoardGameGeekError("invalid query string")
+
+        if search_type is None:
+            search_type = ["boardgame"]
 
         params = {"query": query}
 
@@ -644,7 +648,11 @@ class BoardGameGeekNetworkAPI(object):
         for item in root.findall("item"):
             kwargs = {"id": item.attrib["id"],
                       "name": xml_subelement_attr(item, "name"),
-                      "yearpublished": xml_subelement_attr(item, "yearpublished", default=0, convert=int, quiet=True),
+                      "yearpublished": fix_unsigned_negative(xml_subelement_attr(item,
+                                                                                 "yearpublished",
+                                                                                 default=0,
+                                                                                 convert=int,
+                                                                                 quiet=True)),
                       "type": item.attrib["type"]}
 
             results.append(SearchResult(kwargs))

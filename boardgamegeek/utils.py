@@ -385,3 +385,10 @@ def fix_url(url):
     if url and url.startswith("//"):
         url = "http:{}".format(url)
     return url
+
+def fix_unsigned_negative(value):
+    # the BGG api seems to return negative years casted to unsigned ints (32 bit) in search results. This function
+    # fixes the values so that they're negative again.
+    if value > 0x7FFFFFFF:
+        value -= 0x100000000
+    return value

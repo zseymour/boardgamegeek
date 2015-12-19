@@ -229,7 +229,7 @@ class BoardGame(Thing):
         if self.alternative_names:
             for i in self.alternative_names:
                 log.info("alternative name  : {}".format(i))
-        log.info("publishing year   : {}".format(self.year))
+        log.info("year published    : {}".format(self.year))
         log.info("minimum players   : {}".format(self.min_players))
         log.info("maximum players   : {}".format(self.max_players))
         log.info("playing time      : {}".format(self.playing_time))
