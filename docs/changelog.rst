@@ -1,6 +1,11 @@
 Changelog
 =========
 
+0.13.2
+------
+
+  * Forgot to bump up version with the previous release
+
 0.13.1
 ------
 
