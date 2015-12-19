@@ -1,6 +1,17 @@
 Changelog
 =========
 
+0.13.1
+------
+
+Changes
+
+  * If :py:meth:`boardgamegeek.games.BoardGame.search` is called without specifying `search_type`, this defaults to ["boardgame"]
+
+Fixes
+
+  * Correcting negative years that are returned by BGG's XMLAPI (when doing searches) as very large numbers. 
+
 0.13.0
 ------
 
