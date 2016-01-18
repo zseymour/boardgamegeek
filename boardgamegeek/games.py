@@ -29,6 +29,7 @@ class CollectionBoardGame(Thing):
     def _format(self, log):
         log.info("boardgame id      : {}".format(self.id))
         log.info("boardgame name    : {}".format(self.name))
+        log.info("number of plays   : {}".format(self.numplays))
 
         log.info("last modified     : {}".format(self.lastmodified))
 
@@ -132,6 +133,10 @@ class CollectionBoardGame(Thing):
     def wishlist_priority(self):
         # TODO: convert to int (it's str)
         return self._data.get("wishlistpriority")
+
+    @property
+    def numplays(self):
+        return self._data.get("numplays", 0)
 
 
 class BoardGame(Thing):

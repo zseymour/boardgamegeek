@@ -563,6 +563,7 @@ class BoardGameGeekNetworkAPI(object):
             # name and id of the game in collection
             game = {"name": xml_subelement_text(xml_el, "name"),
                     "id": int(xml_el.attrib.get("objectid")),
+                    "numplays": xml_subelement_text(xml_el, "numplays", convert=int, default=0),
                     "rating": rating}
 
             status = xml_el.find("status")
