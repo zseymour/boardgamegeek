@@ -109,6 +109,51 @@ class DictObject(object):
         return self._data
 
 
+def xml_subelement_attr_by_attr(xml_elem, subelement, filter_attr, filter_value, convert=None, attribute="value", default=None, quiet=False):
+    """
+    Search for a sub-element having an attribute ``filter_attr`` set to ``filter_value``
+
+    For the following XML document:
+
+    .. code-block:: xml
+
+        <xml_elem>
+            <subelement filter="this" value="THIS" />
+        </xml_elem>
+
+    a call to ``xml_subelement_attr(xml_elem, "subelement", "filter", "this")`` would return ``"THIS"``
+
+
+    :param xml_elem: search the children nodes of this element
+    :param subelement: Name of the sub-element to search for
+    :param filter_attr: Name of the attribute the sub-element must contain
+    :param filter_value: Value of the attribute
+    :param convert: if not None, a callable to perform the conversion of this attribute to a certain object type
+    :param attribute: name of the attribute to get
+    :param default: default value if the subelement or attribute is not found
+    :param quiet: if True, don't raise exception from conversions, return default instead
+    :return: value of the attribute or ``None`` in error cases
+
+    """
+    if xml_elem is None or not subelement:
+        return None
+
+    for subel in xml_elem.findall('.//{}[@{}="{}"]'.format(subelement, filter_attr, filter_value)):
+        value = subel.attrib.get(attribute)
+        if value is None:
+            value = default
+        elif convert:
+            try:
+                value = convert(value)
+            except:
+                if quiet:
+                    value = default
+                else:
+                    raise
+        return value
+    return default
+
+
 def xml_subelement_attr(xml_elem, subelement, convert=None, attribute="value", default=None, quiet=False):
     """
     Search for a sub-element and return the value of its attribute.

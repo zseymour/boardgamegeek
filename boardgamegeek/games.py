@@ -23,6 +23,19 @@ class CollectionBoardGame(Thing):
     A boardgame retrieved from the collection information, which has less information than the one retrieved
     via the /thing api and which also contains some user-specific information.
     """
+
+    def __init__(self, data):
+
+        kw = copy(data)
+        self._version = None
+
+        if "version" in data:
+            version = kw.pop("version")
+            print "XXX: version data: {}".format(version)
+            self._version = BoardGameVersion(version)
+
+        super(CollectionBoardGame, self).__init__(kw)
+
     def __repr__(self):
         return "CollectionBoardGame (id: {})".format(self.id)
 
@@ -30,9 +43,7 @@ class CollectionBoardGame(Thing):
         log.info("boardgame id      : {}".format(self.id))
         log.info("boardgame name    : {}".format(self.name))
         log.info("number of plays   : {}".format(self.numplays))
-
         log.info("last modified     : {}".format(self.lastmodified))
-
         log.info("rating            : {}".format(self.rating))
         log.info("own               : {}".format(self.owned))
         log.info("preordered        : {}".format(self.preordered))
@@ -43,6 +54,8 @@ class CollectionBoardGame(Thing):
         log.info("wishlist          : {}".format(self.wishlist))
         log.info("wishlist priority : {}".format(self.wishlist_priority))
         log.info("for trade         : {}".format(self.for_trade))
+        if self._version is not None:
+            self._version._format(log)
 
     @property
     def lastmodified(self):
@@ -55,6 +68,10 @@ class CollectionBoardGame(Thing):
         :rtype: str
         """
         return self._data.get("lastmodified")
+
+    @property
+    def numplays(self):
+        return self._data.get("numplays", 0)
 
     @property
     def rating(self):
@@ -88,6 +105,15 @@ class CollectionBoardGame(Thing):
         :rtype: bool
         """
         return bool(int(self._data.get("prevowned", 0)))
+
+    @property
+    def version(self):
+        """
+
+        :return: ``None`` if n/a
+        :rtype: :pyclass:`boardgamegeek.BoardGameVersion`
+        """
+        return self._version
 
     @property
     def want(self):
@@ -134,14 +160,122 @@ class CollectionBoardGame(Thing):
         # TODO: convert to int (it's str)
         return self._data.get("wishlistpriority")
 
+
+
+class BoardGameVersion(Thing):
+    """
+    Object containing information about a board game version
+    """
+    def __init__(self, data):
+        kw = copy(data)
+
+        for to_fix in ["thumbnail", "image"]:
+            if to_fix in kw:
+                kw[to_fix] = fix_url(kw[to_fix])
+
+        super(BoardGameVersion, self).__init__(kw)
+
+    def __repr__(self):
+        return "BoardGameVersion (id: {})".format(self.id)
+
+    def _format(self, log):
+        log.info("version id        : {}".format(self.id))
+        log.info("version name      : {}".format(self.name))
+        log.info("version language  : {}".format(self.language))
+        log.info("version publisher : {}".format(self.publisher))
+        log.info("version artist    : {}".format(self.artist))
+        log.info("W x L x D         : {} x {} x {}".format(self.width, self.length, self.depth))
+        log.info("weight            : {}".format(self.weight))
+        log.info("year              : {}".format(self.year))
+
     @property
-    def numplays(self):
-        return self._data.get("numplays", 0)
+    def artist(self):
+        """
+
+        :return: artist of this version
+        :rtype: string
+        :return: ``None`` if n/a
+        """
+        return self._data.get("artist")
+
+    @property
+    def depth(self):
+        """
+        :return: depth of the box
+        :rtype: double
+        :return: 0.0 if n/a
+        """
+        return self._data.get("depth")
+
+    @property
+    def length(self):
+        """
+        :return: length of the box
+        :rtype: double
+        :return: 0.0 if n/a
+        """
+        return self._data.get("length")
+
+    @property
+    def language(self):
+        """
+        :return: language of this version
+        :rtype: string
+        :return: ``None`` if n/a
+        """
+        return self._data.get("language")
+
+    @property
+    def name(self):
+        """
+        :return: name of this version
+        :rtype: string
+        :return: ``None`` if n/a
+        """
+        return self._data.get("name")
+
+    @property
+    def publisher(self):
+        """
+
+        :return: publisher of this version
+        :rtype: string
+        :return: ``None`` if n/a
+        """
+        return self._data.get("publisher")
+
+    @property
+    def weight(self):
+        """
+        :return: weight of the box
+        :rtype: double
+        :return: 0.0 if n/a
+        """
+        return self._data.get("weight")
+
+    @property
+    def width(self):
+        """
+        :return: width of the box
+        :rtype: double
+        :return: 0.0 if n/a
+        """
+        return self._data.get("width")
+
+    @property
+    def year(self):
+        """
+        :return: publishing year
+        :rtype: integer
+        :return: ``None`` if n/a
+        """
+        return self._data.get("yearpublished")
+
 
 
 class BoardGame(Thing):
     """
-    Object containing information about a boardgame
+    Object containing information about a board game
     """
     def __init__(self, data):
 

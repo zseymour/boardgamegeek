@@ -36,7 +36,7 @@ from .hotitems import HotItems
 from .plays import Plays
 from .exceptions import BoardGameGeekAPIError, BoardGameGeekError, BoardGameGeekAPIRetryError, BoardGameGeekAPINonXMLError
 from .utils import xml_subelement_attr, xml_subelement_text, xml_subelement_attr_list, get_parsed_xml_response
-from .utils import fix_unsigned_negative
+from .utils import fix_unsigned_negative, xml_subelement_attr_by_attr
 from .search import SearchResult
 from .utils import get_cache_session_from_uri, RateLimitingAdapter, DEFAULT_REQUESTS_PER_MINUTE
 
@@ -524,8 +524,7 @@ class BoardGameGeekNetworkAPI(object):
                    stats=True, own=None, rated=None, played=None, commented=None, trade=None, want=None, wishlist=None,
                    wishlist_prio=None, preordered=None, want_to_play=None, want_to_buy=None, prev_owned=None,
                    has_parts=None, want_parts=None, min_rating=None, rating=None, min_bgg_rating=None, bgg_rating=None,
-
-                   ):
+                   min_plays=None, max_plays=None, collection_id=None, modified_since=None):
         """
         Returns an user's game collection
 
@@ -554,9 +553,12 @@ class BoardGameGeekNetworkAPI(object):
                                "Has parts" field
         :param bool want_parts: include (if ``True``) or exclude (if ``False``) items for which there is a comment in
                                 the "Want parts" field
-        :param double min_rating : return items 
-        :param bool : include (if ``True``) or exclude (if ``False``) items
-        :param bool : include (if ``True``) or exclude (if ``False``) items
+        :param double min_rating: return items rated by the user with a minimum of ``min_rating``
+        :param double rating: return items rated by the user with a maximum of ``rating``
+        :param double min_bgg_rating : return items rated on BGG with a minimum of ``min_bgg_rating``
+        :param double bgg_rating: return items rated on BGG with a maximum of ``bgg_rating``
+        :param int collection_id: restrict results to the collection specified by this id
+        :param str modified_since: restrict results to those whose status (own, want, etc.) has been changed/added since ``modified_since``. Format: ``YY-MM-DD`` or ``YY-MM-DD HH:MM:SS``
 
 
         :return: ``Collection`` object
@@ -568,13 +570,96 @@ class BoardGameGeekNetworkAPI(object):
         :raises: :py:exc:`boardgamegeek.exceptions.BoardGameGeekAPIError` if the response couldn't be parsed
         :raises: :py:exc:`boardgamegeek.exceptions.BoardGameGeekTimeoutError` if there was a timeout
         """
+
+        # Parameter validation
+
         if not user_name:
             raise BoardGameGeekError("no user name specified")
 
+        if subtype not in COLLECTION_SUBTYPES:
+            raise BoardGameGeekError("invalid 'subtype': {}".format(subtype))
+
+        params={"username": user_name, "subtype": subtype}
+
+        if exclude_subtype is not None:
+            if exclude_subtype not in COLLECTION_SUBTYPES:
+                raise BoardGameGeekError("invalid 'exclude_subtype': {}".format(exclude_subtype))
+
+            if subtype == exclude_subtype:
+                raise BoardGameGeekError("incompatible 'subtype' and 'exclude_subtype'")
+
+            params["excludesubtype"] = exclude_subtype
+
+        if ids is not None:
+            params["id"] = ",".join(["{}".format(id_) for id_ in ids])
+
+        for param in ["version", "brief", "stats", "own", "rated", "played", "trade", "want", "wishlist", "preordered"]:
+            p = locals()[param]
+            if p is not None:
+                params[param] = 1 if p else 0
+
+        if commented is not None:
+            params["comment"] = 1 if commented else 0
+
+        if wishlist_prio is not None:
+            if 1 <= wishlist_prio <= 5:
+                params["wishlishpriority"] = wishlist_prio
+            else:
+                raise BoardGameGeekError("invalid 'wishlist_prio'")
+
+        if want_to_play is not None:
+            params["wanttoplay"] = 1 if want_to_play else 0
+
+        if want_to_buy is not None:
+            params["wanttobuy"] = 1 if want_to_buy else 0
+
+        if prev_owned is not None:
+            params["prevowned"] = 1 if prev_owned else 0
+
+        if has_parts is not None:
+            params["hasparts"] = 1 if has_parts else 0
+
+        if want_parts is not None:
+            params["wantparts"] = 1 if want_parts else 0
+
+        if min_rating is not None:
+            if 1.0 <= min_rating <= 10.0:
+                params["minrating"] = min_rating
+            else:
+                raise BoardGameGeekError("invalid 'min_rating'")
+
+        if rating is not None:
+            if 1.0 <= rating <= 10.0:
+                params["rating"] = rating
+            else:
+                raise BoardGameGeekError("invalid 'rating'")
+
+        if min_bgg_rating is not None:
+            if 1.0 <= min_bgg_rating <= 10.0:
+                params["minbggrating"] = min_bgg_rating
+            else:
+                raise BoardGameGeekError("invalid 'bgg_min_rating'")
+
+        if bgg_rating is not None:
+            if 1.0 <= bgg_rating <= 10.0:
+                params["bggrating"] = bgg_rating
+            else:
+                raise BoardGameGeekError("invalid 'bgg_rating'")
+
+        if collection_id is not None:
+            params["collid"] = collection_id
+
+        if modified_since is not None:
+            params["modifiedsince"] = modified_since
+
+
+        #
+        # Make the request to BGG
+        #
         try:
             root = get_parsed_xml_response(self.requests_session,
                                            self._collection_api_url,
-                                           params={"username": user_name, "stats": 1},
+                                           params=params,
                                            timeout=self._timeout,
                                            retries=self._retries,
                                            retry_delay=self._retry_delay)
@@ -596,28 +681,49 @@ class BoardGameGeekNetworkAPI(object):
             stats = xml_el.find("stats")
             rating = xml_subelement_attr(stats, "rating", convert=float, quiet=True)
 
-            # TODO: check for and add version items
-
-            # name and id of the game in collection
-            game = {"name": xml_subelement_text(xml_el, "name"),
-                    "id": int(xml_el.attrib.get("objectid")),
-                    "numplays": xml_subelement_text(xml_el, "numplays", convert=int, default=0),
-                    "rating": rating}
+            # initial data for this collection item
+            coll_item = {"name": xml_subelement_text(xml_el, "name"),
+                         "id": int(xml_el.attrib.get("objectid")),
+                         "numplays": xml_subelement_text(xml_el, "numplays", convert=int, default=0),
+                         "rating": rating}
 
             # TODO: Test with stats=False
             status = xml_el.find("status")
-            game.update({stat: status.attrib.get(stat) for stat in ["lastmodified",
-                                                                    "own",
-                                                                    "preordered",
-                                                                    "prevowned",
-                                                                    "want",
-                                                                    "wanttobuy",
-                                                                    "wanttoplay",
-                                                                    "fortrade",
-                                                                    "wishlist",
-                                                                    "wishlistpriority"]})
+            coll_item.update({stat: status.attrib.get(stat) for stat in ["lastmodified",
+                                                                         "own",
+                                                                         "preordered",
+                                                                         "prevowned",
+                                                                         "want",
+                                                                         "wanttobuy",
+                                                                         "wanttoplay",
+                                                                         "fortrade",
+                                                                         "wishlist",
+                                                                         "wishlistpriority"]})
 
-            collection.add_game(game)
+            version = xml_el.find("version")
+            if version is not None:
+
+                # This collection item has version information
+                for xml_el in version.findall(".//item[@type='boardgameversion']"):
+                    data = {"id": int(xml_el.attrib["id"]),
+                            "yearpublished": fix_unsigned_negative(xml_subelement_attr(xml_el,
+                                                                                       "yearpublished",
+                                                                                       convert=int,
+                                                                                       default=0,
+                                                                                       quiet=True)),
+                            "language": xml_subelement_attr_by_attr(xml_el, "link", "type", "language"),
+                            "publisher": xml_subelement_attr_by_attr(xml_el, "link", "type", "boardgamepublisher"),
+                            "artist": xml_subelement_attr_by_attr(xml_el, "link", "type", "boardgameartist"),
+                            "name": xml_subelement_attr(xml_el, "name")}
+
+                    for item in ["width", "length", "depth", "weight"]:
+                        data[item] = xml_subelement_attr(xml_el, item, convert=float, quiet=True, default=0.0)
+
+                    data["product_code"] = xml_subelement_attr(version, "productcode", convert=int)
+
+                coll_item["version"] = data
+
+            collection.add_game(coll_item)
 
         return collection
 
