@@ -47,6 +47,8 @@ html_parser = hp.HTMLParser()
 HOT_ITEM_CHOICES = ["boardgame", "rpg", "videogame", "boardgameperson", "rpgperson", "boardgamecompany",
                     "rpgcompany", "videogamecompany"]
 
+COLLECTION_SUBTYPES = ["boardgame", "boardgameexpansion", "boardgameaccessory", "rpgitem", "rpgissue", "videogame"]
+
 
 class BoardGameGeekNetworkAPI(object):
     """
@@ -518,11 +520,45 @@ class BoardGameGeekNetworkAPI(object):
 
         return hot_items
 
-    def collection(self, user_name):
+    def collection(self, user_name, subtype="boardgame", exclude_subtype=None, ids=None, version=False, brief=False,
+                   stats=True, own=None, rated=None, played=None, commented=None, trade=None, want=None, wishlist=None,
+                   wishlist_prio=None, preordered=None, want_to_play=None, want_to_buy=None, prev_owned=None,
+                   has_parts=None, want_parts=None, min_rating=None, rating=None, min_bgg_rating=None, bgg_rating=None,
+
+                   ):
         """
-        Returns the user's game collection
+        Returns an user's game collection
 
         :param str user_name: user name to retrieve the collection for
+        :param str subtype: what type of items to return. One of: boardgame, boardgameexpansion, boardgameaccessory,
+                            rpgitem, rpgissue, or videogame
+        :param str exclude_subtype: if not ``None`` (default), exclude the specified subtype. One of: boardgame,
+                                    boardgameexpansion, boardgameaccessory, rpgitem, rpgissue, or videogame
+        :param list ids: if not ``None`` (default), limit the results to the specified ids.
+        :param bool version: include item version information
+        :param bool brief: return more abbreviated results
+        :param bool stats: fetch statistics for each collection item
+        :param bool own: include (if ``True``) or exclude (if ``False``) owned items
+        :param bool rated: include (if ``True``) or exclude (if ``False``) rated items
+        :param bool played: include (if ``True``) or exclude (if ``False``) played items
+        :param bool commented: include (if ``True``) or exclude (if ``False``) items commented on
+        :param bool trade: include (if ``True``) or exclude (if ``False``) items for trade
+        :param bool want: include (if ``True``) or exclude (if ``False``) items wanted in trade
+        :param bool wishlist: include (if ``True``) or exclude (if ``False``) items in the wishlist
+        :param int wishlist_prio: return only the items with the specified wishlist priority (valid values: 1 to 5)
+        :param bool preordered: include (if ``True``) or exclude (if ``False``) preordered items
+        :param bool want_to_play: include (if ``True``) or exclude (if ``False``) items wanting to play
+        :param bool want_to_buy: include (if ``True``) or exclude (if ``False``) items wanting to buy
+        :param bool prev_owned: include (if ``True``) or exclude (if ``False``) previously owned items
+        :param bool has_parts: include (if ``True``) or exclude (if ``False``) items for which there is a comment in the
+                               "Has parts" field
+        :param bool want_parts: include (if ``True``) or exclude (if ``False``) items for which there is a comment in
+                                the "Want parts" field
+        :param double min_rating : return items 
+        :param bool : include (if ``True``) or exclude (if ``False``) items
+        :param bool : include (if ``True``) or exclude (if ``False``) items
+
+
         :return: ``Collection`` object
         :rtype: :py:class:`boardgamegeek.collection.Collection`
         :return: ``None`` if user not found
@@ -555,10 +591,12 @@ class BoardGameGeekNetworkAPI(object):
         collection = Collection({"owner": user_name, "items": []})
 
         # search for all boardgames in the collection, add them to the list
-        for xml_el in root.findall(".//item[@subtype='boardgame']"):
+        for xml_el in root.findall(".//item[@subtype='{}']".format(subtype)):
             # get the user's rating for this game in his collection
             stats = xml_el.find("stats")
             rating = xml_subelement_attr(stats, "rating", convert=float, quiet=True)
+
+            # TODO: check for and add version items
 
             # name and id of the game in collection
             game = {"name": xml_subelement_text(xml_el, "name"),
@@ -566,6 +604,7 @@ class BoardGameGeekNetworkAPI(object):
                     "numplays": xml_subelement_text(xml_el, "numplays", convert=int, default=0),
                     "rating": rating}
 
+            # TODO: Test with stats=False
             status = xml_el.find("status")
             game.update({stat: status.attrib.get(stat) for stat in ["lastmodified",
                                                                     "own",
