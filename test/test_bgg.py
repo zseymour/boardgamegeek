@@ -135,8 +135,7 @@ def test_sqlite_caching():
     os.unlink(name)
 
 
-
-#region user() testing
+# region user() testing
 def test_get_user_with_invalid_parameters(bgg):
     # test how the module reacts to unexpected parameters
     for invalid in [None, ""]:
@@ -193,7 +192,20 @@ def test_get_valid_user_info(bgg, null_logger):
     # for coverage's sake
     user._format(null_logger)
     assert type(user.data()) == dict
+
+    # test that fetching user's data without buddies, guilds, hot & top works
+    user = bgg.user(TEST_VALID_USER, progress=progress_cb, buddies=False, guilds=False, hot=False, top=False)
+
+    assert user is not None
+    assert user.name == TEST_VALID_USER
+    assert user.id == TEST_VALID_USER_ID
+
+    assert user.buddies == []
+    assert user.guilds == []
+    assert user.top10 == []
+    assert user.hot10 == []
 #endregion
+
 
 #region collection() testing
 def test_get_collection_with_invalid_parameters(bgg):
@@ -248,6 +260,7 @@ def test_creating_collection_out_of_raw_data():
         # raises exception on invalid game data
         c.add_game({"bla": "bla"})
 #endregion
+
 
 #region guild() testing
 def test_get_guild_with_invalid_parameters(bgg):
@@ -409,6 +422,7 @@ def test_get_game_id_by_name(bgg):
             best_rank = g.boardgame_rank
     assert game_id == best_id
 
+
 def test_get_games_by_name(bgg, null_logger):
     games = bgg.games("coup")
 
@@ -420,6 +434,7 @@ def test_get_games_by_name(bgg, null_logger):
 
     assert len(games) > 1
 #endregion
+
 
 #region search() testing
 def test_search(bgg):
@@ -440,6 +455,7 @@ def test_search(bgg):
     with pytest.raises(BoardGameGeekError):
         bgg.search("Agricola", search_type=["invalid-search-type"])
 #endregion
+
 
 #region plays() testing
 def test_get_plays_with_invalid_parameters(bgg):
@@ -558,6 +574,7 @@ def test_create_plays_with_initial_data():
     assert p[0].date == now
 #endregion
 
+
 #region hot_items() testing
 def test_get_hot_items_invalid_type(bgg):
     with pytest.raises(BoardGameGeekError):
@@ -603,6 +620,7 @@ def test_hot_items_initial_data():
     assert h[0].rank == 10
 #endregion
 
+
 #region Thing testing
 def test_thing_creation():
     with pytest.raises(BoardGameGeekError):
@@ -619,6 +637,7 @@ def test_thing_creation():
     assert t.id == 10
     assert t.name == "fubăr"
 #endregion
+
 
 #region Utils testing
 def test_get_xml_subelement_attr(xml):
@@ -737,13 +756,13 @@ def test_rate_limiting_for_requests():
     # create two threads, give each a list of games to fetch, disable cache and time the amount needed to
     # fetch the data. requests should be serialized, even if made from two different threads
 
-    test_set_1 = [5,    # acquire
+    test_set_1 = [5,     # acquire
                   31260, # agricola
                   72125] # "eclipse"
 
-    test_set_2 = [18602, #caylus
-                28720, #  brass
-                53953] # thunderstone]
+    test_set_2 = [18602, # caylus
+                  28720, # brass
+                  53953] # thunderstone]
 
     def _worker_thread(games):
         bgg = BoardGameGeek(cache=None, requests_per_minute=20)

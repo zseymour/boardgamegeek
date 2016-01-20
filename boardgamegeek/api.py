@@ -212,19 +212,26 @@ class BoardGameGeekNetworkAPI(object):
 
         return Guild(kwargs)
 
-    def user(self, name, progress=None):
+    def user(self, name, progress=None, buddies=True, guilds=True, hot=True, top=True, domain="boardgame"):
         """
         Retrieves details about an user
 
         :param str name: user's login name
-        :param callable progress: an optional callable for reporting progress when fetching the buddy list/guilds, taking two integers (``current``, ``total``) as arguments
-
+        :param callable progress: an optional callable for reporting progress when fetching the buddy list/guilds,
+                                  taking two integers (``current``, ``total``) as arguments
+        :param bool buddies: if ``True``, get the user's buddies
+        :param bool guilds: if ``True``, get the user's guilds
+        :param bool hot: if ``True``, get the user's "hot" list
+        :param bool top: if ``True``, get the user's "top" list
+        :param str domain: restrict items on the "hot" and "top" lists to ``domain``. Valid values are "boardgame" (default),
+                           "rpg" and "videogame"
         :return: ``User`` object
         :rtype: :py:class:`boardgamegeek.user.User`
         :return: ``None`` if the user couldn't be found
 
         :raises: :py:exc:`boardgamegeek.exceptions.BoardGameGeekError` in case of invalid user name
-        :raises: :py:exc:`boardgamegeek.exceptions.BoardGameGeekAPIRetryError` if this request should be retried after a short delay
+        :raises: :py:exc:`boardgamegeek.exceptions.BoardGameGeekAPIRetryError` if this request should be retried after a
+                 short delay
         :raises: :py:exc:`boardgamegeek.exceptions.BoardGameGeekAPIError` if the response couldn't be parsed
         :raises: :py:exc:`boardgamegeek.exceptions.BoardGameGeekTimeoutError` if there was a timeout
         """
@@ -232,7 +239,15 @@ class BoardGameGeekNetworkAPI(object):
         if not name:
             raise BoardGameGeekError("no user name specified")
 
-        params = {"name": name, "buddies": 1, "guilds": 1, "hot": 1, "top": 1}
+        if domain not in ["boardgame", "rpg", "videogame"]:
+            raise BoardGameGeekError("invalid 'domain'")
+
+        params = {"name": name,
+                  "buddies": 1 if buddies else 0,
+                  "guilds": 1 if guilds else 0,
+                  "hot": 1 if hot else 0,
+                  "top": 1 if top else 0,
+                  "domain": domain}
 
         try:
             root = get_parsed_xml_response(self.requests_session,
@@ -247,24 +262,23 @@ class BoardGameGeekNetworkAPI(object):
 
         # when the user is not found, the API returns an response, but with most fields empty. id is empty too
         try:
-            kwargs = {"name": root.attrib["name"],
-                      "id": int(root.attrib["id"])}
+            data = {"name": root.attrib["name"],
+                    "id": int(root.attrib["id"])}
         except:
             return None
 
         for i in ["firstname", "lastname", "avatarlink",
                   "stateorprovince", "country", "webaddress", "xboxaccount",
                   "wiiaccount", "steamaccount", "psnaccount", "traderating"]:
-            kwargs[i] = xml_subelement_attr(root, i)
+            data[i] = xml_subelement_attr(root, i)
 
-        kwargs["lastlogin"] = xml_subelement_attr(root,
-                                                  "lastlogin",
-                                                  convert=lambda x: datetime.datetime.strptime(x, "%Y-%m-%d"),
-                                                  quiet=True)
+        data["yearregistered"] = xml_subelement_attr(root, "yearregistered", convert=int, quiet=True)
+        data["lastlogin"] = xml_subelement_attr(root,
+                                                "lastlogin",
+                                                convert=lambda x: datetime.datetime.strptime(x, "%Y-%m-%d"),
+                                                quiet=True)
 
-        kwargs["yearregistered"] = xml_subelement_attr(root, "yearregistered", convert=int, quiet=True)
-
-        user = User(kwargs)
+        user = User(data)
 
         # add top items
         for top_item in root.findall(".//top/item"):
@@ -481,14 +495,15 @@ class BoardGameGeekNetworkAPI(object):
         """
         Return the list of "Hot Items"
 
-        :param str item_type: hot item type. Valid values: "boardgame", "rpg", "videogame", "boardgameperson", "rpgperson", "boardgamecompany", "rpgcompany", "videogamecompany")
-
+        :param str item_type: hot item type. Valid values: "boardgame", "rpg", "videogame", "boardgameperson",
+                              "rpgperson", "boardgamecompany", "rpgcompany", "videogamecompany")
         :return: ``HotItems`` object
         :rtype: :py:class:`boardgamegeek.hotitems.HotItems`
         :return: ``None`` in case the hot items couldn't be retrieved
 
         :raises: :py:exc:`boardgamegeek.exceptions.BoardGameGeekError` if the parameter is invalid
-        :raises: :py:exc:`boardgamegeek.exceptions.BoardGameGeekAPIRetryError` if this request should be retried after a short delay
+        :raises: :py:exc:`boardgamegeek.exceptions.BoardGameGeekAPIRetryError` if this request should be retried after
+                  a short delay
         :raises: :py:exc:`boardgamegeek.exceptions.BoardGameGeekAPIError` if the response couldn't be parsed
         :raises: :py:exc:`boardgamegeek.exceptions.BoardGameGeekTimeoutError` if there was a timeout
         """
