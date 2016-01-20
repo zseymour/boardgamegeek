@@ -257,7 +257,7 @@ class BoardGameGeekNetworkAPI(object):
                                            retries=self._retries,
                                            retry_delay=self._retry_delay)
         except BoardGameGeekAPINonXMLError:
-            # if the api doesn't return XML, assume the user wasn't found
+            # if the api doesn't return XML, assume user not found (BGG API does that sometimes)
             return None
 
         # when the user is not found, the API returns an response, but with most fields empty. id is empty too
@@ -283,12 +283,12 @@ class BoardGameGeekNetworkAPI(object):
         # add top items
         for top_item in root.findall(".//top/item"):
             user.add_top_item({"id": int(top_item.attrib["id"]),
-                                "name": top_item.attrib["name"]})
+                               "name": top_item.attrib["name"]})
 
         # add hot items
         for hot_item in root.findall(".//hot/item"):
             user.add_hot_item({"id": int(hot_item.attrib["id"]),
-                                "name": hot_item.attrib["name"]})
+                               "name": hot_item.attrib["name"]})
 
         total_buddies = 0
         total_guilds = 0
@@ -413,9 +413,7 @@ class BoardGameGeekNetworkAPI(object):
                                            retries=self._retries,
                                            retry_delay=self._retry_delay)
         except BoardGameGeekAPINonXMLError as e:
-            # The API seems to return HTML in case of an invalid username.
-            # just return None for the time being.
-            log.error("error trying to fetch plays: {}".format(e))
+            # if the api doesn't return XML, assume plays not found (BGG API does that sometimes)
             return None
 
         try:
@@ -527,7 +525,7 @@ class BoardGameGeekNetworkAPI(object):
                                            retries=self._retries,
                                            retry_delay=self._retry_delay)
         except BoardGameGeekAPINonXMLError:
-            # if the api doesn't return XML, assume there was some error
+            # if the api doesn't return XML, assume hot items not found (BGG API does that sometimes)
             return None
 
         hot_items = HotItems({})
@@ -686,6 +684,7 @@ class BoardGameGeekNetworkAPI(object):
                                            retries=self._retries,
                                            retry_delay=self._retry_delay)
         except BoardGameGeekAPINonXMLError:
+            # if the api doesn't return XML, assume collection not found (BGG API does that sometimes)
             return None
 
         # check if there's an error (e.g. invalid username)
@@ -809,7 +808,7 @@ class BoardGameGeekNetworkAPI(object):
                                            retries=self._retries,
                                            retry_delay=self._retry_delay)
         except BoardGameGeekAPINonXMLError:
-            # if the api doesn't return XML, assume there was some error
+            # if the api doesn't return XML, assume nothing was found (BGG API does that sometimes)
             return None
 
         results = []
@@ -914,6 +913,7 @@ class BoardGameGeek(BoardGameGeekNetworkAPI):
                                            retries=self._retries,
                                            retry_delay=self._retry_delay)
         except BoardGameGeekAPINonXMLError:
+            # if the api doesn't return XML, assume game not found (BGG API does that sometimes)
             return None
 
         # xml is structured like <item ...> blablabla><item>..
