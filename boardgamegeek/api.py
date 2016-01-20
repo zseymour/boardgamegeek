@@ -353,16 +353,18 @@ class BoardGameGeekNetworkAPI(object):
 
         return user
 
-    def plays(self, name=None, game_id=None, progress=None, min_date=None, max_date=None):
+    def plays(self, name=None, game_id=None, progress=None, min_date=None, max_date=None, subtype="boardgame"):
         """
         Retrieves the plays for an user (if using ``name``) or for a game (if using ``game_id``)
 
         :param str name: user name to retrieve the plays for
         :param integer game_id: game id to retrieve the plays for
-        :param callable progress: an optional callable for reporting progress, taking two integers (``current``, ``total``) as arguments
-        :param datetime.date min_date: return only plays of the specified date or later.
-        :param datetime.date max_date: return only plays of the specified date or earlier.
-
+        :param callable progress: an optional callable for reporting progress, taking two integers (``current``,
+                                  ``total``) as arguments
+        :param datetime.date min_date: return only plays of the specified date or later
+        :param datetime.date max_date: return only plays of the specified date or earlier
+        :param str subtype: limit plays results to the specified subtype. Valid values: "boardgame", "boardgameexpansion",
+                            "boardgameaccessory", "rpgitem", "videogame"
         :return: object containing all the plays
         :rtype: :py:class:`boardgamegeek.plays.Plays`
         :return: ``None`` if the user/game couldn't be found
@@ -378,12 +380,17 @@ class BoardGameGeekNetworkAPI(object):
         if name and game_id:
             raise BoardGameGeekError("can't retrieve by user and by game at the same time")
 
+        if subtype not in ["boardgame", "boardgameexpansion", "boardgameaccessory", "rpgitem", "videogame"]:
+            raise BoardGameGeekError("invalid 'subtype'")
+
+        params = {"subtype": subtype}
+
         if name:
-            params = {"username": name}
+            params["username"] = name
         else:
             try:
-                params = {"id": int(game_id)}
-            except:
+                params["id"] = int(game_id)
+            except ValueError:
                 raise BoardGameGeekError("invalid game id")
 
         if min_date:
