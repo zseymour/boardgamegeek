@@ -50,6 +50,7 @@ HOT_ITEM_CHOICES = ["boardgame", "rpg", "videogame", "boardgameperson", "rpgpers
 COLLECTION_SUBTYPES = ["boardgame", "boardgameexpansion", "boardgameaccessory", "rpgitem", "rpgissue", "videogame"]
 
 
+
 class BoardGameGeekNetworkAPI(object):
     """
     Base class for the BoardGameGeek websites APIs. All site-specific clients are derived from this.
@@ -84,6 +85,29 @@ class BoardGameGeekNetworkAPI(object):
 
         # add the rate limiting adapter
         self.requests_session.mount(api_endpoint, RateLimitingAdapter(rpm=requests_per_minute))
+
+
+    @staticmethod
+    def _get_board_game_version_from_element(xml_el):
+        data = {"id": int(xml_el.attrib["id"]),
+                "yearpublished": fix_unsigned_negative(xml_subelement_attr(xml_el,
+                                                                           "yearpublished",
+                                                                           convert=int,
+                                                                           default=0,
+                                                                           quiet=True)),
+                "language": xml_subelement_attr_by_attr(xml_el, "link", "type", "language"),
+                "publisher": xml_subelement_attr_by_attr(xml_el, "link", "type", "boardgamepublisher"),
+                "artist": xml_subelement_attr_by_attr(xml_el, "link", "type", "boardgameartist"),
+                "thumbnail": xml_subelement_text(xml_el, "thumbnail"),
+                "image": xml_subelement_text(xml_el, "image"),
+                "name": xml_subelement_attr(xml_el, "name"),
+                "product_code": xml_subelement_attr(xml_el, "productcode", convert=int, quiet=True)}
+
+        for item in ["width", "length", "depth", "weight"]:
+            data[item] = xml_subelement_attr(xml_el, item, convert=float, quiet=True, default=0.0)
+
+        return data
+
 
     def _get_game_id(self, name, game_type, choose):
         """
@@ -721,28 +745,18 @@ class BoardGameGeekNetworkAPI(object):
                                                                          "wishlist",
                                                                          "wishlistpriority"]})
 
+            # get the version, if any
             version = xml_el.find("version")
-            if version is not None:
-
+            if version:
                 # This collection item has version information
-                for xml_el in version.findall(".//item[@type='boardgameversion']"):
-                    data = {"id": int(xml_el.attrib["id"]),
-                            "yearpublished": fix_unsigned_negative(xml_subelement_attr(xml_el,
-                                                                                       "yearpublished",
-                                                                                       convert=int,
-                                                                                       default=0,
-                                                                                       quiet=True)),
-                            "language": xml_subelement_attr_by_attr(xml_el, "link", "type", "language"),
-                            "publisher": xml_subelement_attr_by_attr(xml_el, "link", "type", "boardgamepublisher"),
-                            "artist": xml_subelement_attr_by_attr(xml_el, "link", "type", "boardgameartist"),
-                            "name": xml_subelement_attr(xml_el, "name")}
+                for ver in version.findall(".//item[@type='boardgameversion']"):
+                    try:
+                        coll_item["version"] = self._get_board_game_version_from_element(ver)
+                    except KeyError:
+                        raise BoardGameGeekAPIError("malformed XML element ('version')")
 
-                    for item in ["width", "length", "depth", "weight"]:
-                        data[item] = xml_subelement_attr(xml_el, item, convert=float, quiet=True, default=0.0)
-
-                    data["product_code"] = xml_subelement_attr(version, "productcode", convert=int)
-
-                coll_item["version"] = data
+                    # There should be only 1 version anyway
+                    break
 
             collection.add_game(coll_item)
 
@@ -866,7 +880,7 @@ class BoardGameGeek(BoardGameGeekNetworkAPI):
         Returns the BGG ID of a game, searching by name
 
         :param str name: The name of the game to search for
-        :param str choose: method of selecting the game by name, when dealing with multiple results. Valid values are "first", "recent" or "best-rank"
+        :param str choose: method of selecting the game by name, when dealing with multiple results. Valid values: "first", "recent" or "best-rank"
         :return: the game's id
         :rtype: integer
         :return: ``None`` if game wasn't found
@@ -959,15 +973,13 @@ class BoardGameGeek(BoardGameGeekNetworkAPI):
                 "designers": xml_subelement_attr_list(root, ".//link[@type='boardgamedesigner']"),
                 "artists": xml_subelement_attr_list(root, ".//link[@type='boardgameartist']"),
                 "publishers": xml_subelement_attr_list(root, ".//link[@type='boardgamepublisher']"),
-                "description": xml_subelement_text(root, "description", convert=html_parser.unescape, quiet=True),
-                }
+                "description": xml_subelement_text(root, "description", convert=html_parser.unescape, quiet=True)}
 
         expands = []        # list of items this game expands
         expansions = []     # list of expansions this game has
         for e in root.findall(".//link[@type='boardgameexpansion']"):
             try:
-                item = {"id": e.attrib["id"],
-                        "name": e.attrib["value"]}
+                item = {"id": e.attrib["id"], "name": e.attrib["value"]}
             except KeyError:
                 raise BoardGameGeekAPIError("malformed XML element ('link type=boardgameexpansion')")
 
@@ -1005,6 +1017,20 @@ class BoardGameGeek(BoardGameGeekNetworkAPI):
                     raise BoardGameGeekAPIError("malformed XML element ('video')")
 
             data["videos"] = vid_list
+
+        # look for the versions
+        versions = root.find(".//versions")
+        if versions:
+            ver_list = []
+
+            for version in versions.findall(".//item[@type='boardgameversion']"):
+                try:
+                    data = self._get_board_game_version_from_element(version)
+                    ver_list.append(data)
+                except KeyError:
+                    raise BoardGameGeekAPIError("malformed XML element ('versions')")
+
+            data["versions"] = ver_list
 
         # look for the statistics
         stats = root.find(".//ratings")

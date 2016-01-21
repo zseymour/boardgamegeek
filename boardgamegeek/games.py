@@ -399,6 +399,19 @@ class BoardGame(Thing):
             except KeyError:
                 raise BoardGameGeekError("invalid video data")
 
+        if "versions" not in kw:
+            kw["versions"] = []
+
+        self._versions = []
+        self._versions_set = set()
+        for data in kw["versions"]:
+            try:
+                if data["id"] not in self._versions_set:
+                    self._versions.append(BoardGameVersion(data))
+                    self._versions_set.add(data["id"])
+            except KeyError:
+                raise BoardGameGeekError("invalid version data")
+
         self.boardgame_rank = None
 
         if "ranks" in kw:
@@ -508,6 +521,18 @@ class BoardGame(Thing):
             log.info("publishers")
             for i in self.publishers:
                 log.info("- {}".format(i))
+
+        if self.videos:
+            log.info("videos")
+            for v in self.videos:
+                v._format(log)
+                log.info("--------")
+
+        if self.versions:
+            log.info("versions")
+            for v in self.versions:
+                v._format(log)
+                log.info("--------")
 
         log.info("users rated game  : {}".format(self.users_rated))
         log.info("users avg rating  : {}".format(self.rating_average))
@@ -814,3 +839,19 @@ class BoardGame(Thing):
         :return: ``None`` if n/a
         """
         return self._data.get("ranks")
+
+    @property
+    def videos(self):
+        """
+        :return: videos of this game
+        :rtype: list of :py:class:`boardgamegeek.game.BoardGameVideo`
+        """
+        return self._data.get("videos", [])
+
+    @property
+    def versions(self):
+        """
+        :return: versions of this game
+        :rtype: list of :py:class:`boardgamegeek.game.BoardGameVersion`
+        """
+        return self._data.get("versions", [])

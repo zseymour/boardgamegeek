@@ -14,7 +14,7 @@ import time
 from boardgamegeek import BoardGameGeek, BoardGameGeekError
 from boardgamegeek.api import BoardGameGeekNetworkAPI
 from boardgamegeek.collection import Collection
-from boardgamegeek.games import CollectionBoardGame
+from boardgamegeek.games import CollectionBoardGame, BoardGameVersion, BoardGameVideo
 from boardgamegeek.hotitems import HotItems, HotItem
 from boardgamegeek.plays import PlaySession, Plays
 from boardgamegeek.things import Thing
@@ -352,7 +352,6 @@ def check_game(game):
     assert "Farming" in game.categories
 
     assert game.families == ["Agricola", "Animals: Cattle", "Animals: Sheep", "Harvest Series", "Solitaire Games"]
-
     assert game.designers == ["Uwe Rosenberg"]
 
     assert "Lookout Games" in game.publishers
@@ -373,13 +372,45 @@ def check_game(game):
 
     assert type(game.boardgame_rank) == int
 
+    # check for videos
+    assert type(game.videos) == list
+    assert len(game.videos) > 0
+    for vid in game.videos:
+        assert type(vid) == BoardGameVideo
+        assert type(vid.id) == int
+        assert type(vid.name) == str
+        assert type(vid.category) == str
+        assert type(vid.language) == str
+        assert type(vid.uploader) == str
+        assert vid.link.startswith("http")
+        assert type(vid.uploader_id) == int
+        assert type(vid.post_date) == datetime.datetime
+
+    # check for versions
+    assert type(game.versions) == list
+    assert len(game.versions) > 0
+    for ver in game.versions:
+        assert type(ver) == BoardGameVersion
+        assert type(ver.id) == int
+        assert type(ver.name) == str
+        assert type(ver.language) == str
+        assert type(ver.publisher) == str
+        assert type(ver.artist) == str
+        assert type(ver.product_code) == int
+        assert type(ver.year) == int
+        assert type(ver.width) == int
+        assert type(ver.length) == int
+        assert type(ver.depth) == int
+
+
+
     # make sure no exception gets thrown
     repr(game)
 
 
 def test_get_known_game_info(bgg, null_logger):
     # use an older game that's not so likely to change
-    game = bgg.game(TEST_GAME_NAME)
+    game = bgg.game(TEST_GAME_NAME, videos=True, versions=True)
 
     check_game(game)
 
@@ -390,7 +421,7 @@ def test_get_known_game_info(bgg, null_logger):
 
 
 def test_get_known_game_info_by_id(bgg):
-    game = bgg.game(None, game_id=TEST_GAME_ID)
+    game = bgg.game(None, game_id=TEST_GAME_ID, videos=True, versions=True)
     check_game(game)
 
 
