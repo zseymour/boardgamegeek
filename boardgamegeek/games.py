@@ -671,6 +671,24 @@ class BoardGame(Thing):
         return self._data.get("playingtime")
 
     @property
+    def min_playing_time(self):
+        """
+        Minimum playing time
+        :return: ``None if n/a
+        :rtype: integer
+        """
+        return self._data.get("minplaytime")
+
+    @property
+    def max_playing_time(self):
+        """
+        Maximum playing time
+        :return: ``None if n/a
+        :rtype: integer
+        """
+        return self._data.get("maxplaytime")
+
+    @property
     def min_age(self):
         """
         :return: minimum recommended age
