@@ -114,17 +114,19 @@ class PlaySession(DictObject):
         if "id" not in data:
             raise BoardGameGeekError("missing id of PlaySession")
 
-        if "date" in data:
-            if type(data["date"]) != datetime.datetime:
+        kw = copy(data)
+
+        if "date" in kw:
+            if type(kw["date"]) != datetime.datetime:
                 try:
-                    data["date"] = datetime.datetime.strptime(data["date"], "%Y-%m-%d")
+                    kw["date"] = datetime.datetime.strptime(kw["date"], "%Y-%m-%d")
                 except:
-                    data["date"] = None
+                    kw["date"] = None
 
         # create "nice" dictionaries out of plain ones, so you can .dot access stuff.
-        data["players"] = [PlaysessionPlayer(player) for player in data.get("players", [])]
+        kw["players"] = [PlaysessionPlayer(player) for player in data.get("players", [])]
 
-        super(PlaySession, self).__init__(data)
+        super(PlaySession, self).__init__(kw)
 
     def _format(self, log):
         log.info("play id         : {}".format(self.id))
