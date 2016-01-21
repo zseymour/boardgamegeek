@@ -12,6 +12,7 @@
 """
 from __future__ import unicode_literals
 from copy import copy
+import datetime
 
 from .things import Thing
 from .exceptions import BoardGameGeekError
@@ -161,6 +162,77 @@ class CollectionBoardGame(Thing):
         return self._data.get("wishlistpriority")
 
 
+class BoardGameVideo(Thing):
+    """
+    Object containing information about a board game video
+    """
+    def __init__(self, data):
+        kw = copy(data)
+
+        if "post_date" in kw:
+            date = kw["post_date"]
+            if type(date) != datetime.datetime:
+                try:
+                    kw["date"] = datetime.datetime.strptime(date[:-6], "%Y-%m-%dT%H:%M:%S")
+                except:
+                    kw["date"] = None
+
+        super(BoardGameVideo, self).__init__(kw)
+
+    @property
+    def category(self):
+        """
+        :return: the category of this video
+        :return: ``None`` if n/a
+        :rtype: string
+        """
+        return self._data.get("category")
+
+    @property
+    def link(self):
+        """
+        :return: the link to this video
+        :return: ``None`` if n/a
+        :rtype: string
+        """
+        return self._data.get("link")
+
+    @property
+    def language(self):
+        """
+        :return: the language of this video
+        :return: ``None`` if n/a
+        :rtype: string
+        """
+        return self._data.get("language")
+
+    @property
+    def uploader(self):
+        """
+        :return: the name of the user which uploaded this video
+        :return: ``None`` if n/a
+        :rtype: string
+        """
+        return self._data.get("uploader")
+
+    @property
+    def uploader_id(self):
+        """
+        :return: id of the uploader
+        :rtype: integer
+        :return: ``None`` if n/a
+        """
+        return self._data.get("uploader_id")
+
+    @property
+    def post_date(self):
+        """
+        :return: date when this video was uploaded
+        :rtype: datetime.datetime
+        :return: ``None`` if n/a
+        """
+        return self._data.get("post_date")
+
 
 class BoardGameVersion(Thing):
     """
@@ -281,13 +353,14 @@ class BoardGame(Thing):
 
         kw = copy(data)
 
-        # if we have any "expansions" for this item..
-        if "expansions" not in kw:
-            kw["expansions"] = []
-
+        # Fix thumbnail/image links
         for to_fix in ["thumbnail", "image"]:
             if to_fix in kw:
                 kw[to_fix] = fix_url(kw[to_fix])
+
+        # if we have any "expansions" for this item..
+        if "expansions" not in kw:
+            kw["expansions"] = []
 
         self._expansions = []           # list of Thing for the expansions
         self._expansions_set = set()    # set for making sure things are unique
@@ -312,6 +385,19 @@ class BoardGame(Thing):
                     self._expands.append(Thing(data))
             except KeyError:
                 raise BoardGameGeekError("invalid expanded game data")
+
+        if "videos" not in kw:
+            kw["videos"] = []
+
+        self._videos = []
+        self._videos_ids = set()
+        for video in kw["videos"]:
+            try:
+                if video["id"] not in self._videos_ids:
+                    self._videos.append(BoardGameVideo(video))
+                    self._videos_ids.add(video["id"])
+            except KeyError:
+                raise BoardGameGeekError("invalid video data")
 
         self.boardgame_rank = None
 

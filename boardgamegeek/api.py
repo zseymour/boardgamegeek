@@ -877,19 +877,29 @@ class BoardGameGeek(BoardGameGeekNetworkAPI):
         """
         return self._get_game_id(name, game_type="boardgame", choose=choose)
 
-    def game(self, name=None, game_id=None, choose="first"):
+    def game(self, name=None, game_id=None, choose="first", versions=False, videos=False, stats=True, historical=False,
+             marketplace=False, comments=False, rating_comments=False):
         """
         Get information about a game.
 
         :param str name: If not None, get information about a game with this name
         :param integer game_id:  If not None, get information about a game with this id
-        :param str choose: method of selecting the game by name, when dealing with multiple results. Valid values are "first", "recent" or "best-rank"
+        :param str choose: method of selecting the game by name, when dealing with multiple results.
+                           Valid values are : "first", "recent" or "best-rank"
+        :param bool versions: include versions information
+        :param bool videos: include videos
+        :param bool stats: include statistics data
+        :param bool historical: include historical data
+        :param bool marketplace: include marketplace data
+        :param bool comments: include comments
+        :param bool rating_comments: include comments with rating (ignored in favor of ``comments``, if that is true)
         :return: ``BoardGame`` object
         :rtype: :py:class:`boardgamegeek.games.BoardGame`
         :return: ``None`` if the game wasn't found
 
         :raises: :py:exc:`boardgamegeek.exceptions.BoardGameGeekError` in case of invalid name or game_id
-        :raises: :py:exc:`boardgamegeek.exceptions.BoardGameGeekAPIRetryError` if this request should be retried after a short delay
+        :raises: :py:exc:`boardgamegeek.exceptions.BoardGameGeekAPIRetryError` if this request should be retried after a
+                 short delay
         :raises: :py:exc:`boardgamegeek.exceptions.BoardGameGeekAPIError` if the response couldn't be parsed
         :raises: :py:exc:`boardgamegeek.exceptions.BoardGameGeekTimeoutError` if there was a timeout
         """
@@ -905,10 +915,20 @@ class BoardGameGeek(BoardGameGeekNetworkAPI):
 
         log.debug("retrieving game id {}{}".format(game_id, " ({})".format(name) if name is not None else ""))
 
+        params = {"id": game_id,
+                  "versions": 1 if versions else 0,
+                  "videos": 1 if videos else 0,
+                  "historical": 1 if historical else 0,
+                  "marketplace": 1 if marketplace else 0,
+                  "comments": 1 if comments else 0,
+                  "ratingcomments": 1 if rating_comments else 0,
+                  "pagesize": 100,
+                  "stats": 1 if stats else 0}
+
         try:
             root = get_parsed_xml_response(self.requests_session,
                                            self._thing_api_url,
-                                           params={"id": game_id, "stats": 1},
+                                           params=params,
                                            timeout=self._timeout,
                                            retries=self._retries,
                                            retry_delay=self._retry_delay)
@@ -916,35 +936,40 @@ class BoardGameGeek(BoardGameGeekNetworkAPI):
             # if the api doesn't return XML, assume game not found (BGG API does that sometimes)
             return None
 
-        # xml is structured like <item ...> blablabla><item>..
         root = root.find("item")
         if root is None:
-            msg = "error parsing game data for game id: {}{}".format(game_id,
-                                                                      " ({})".format(name) if name is not None else "")
+            msg = "invalid data for game id: {}{}".format(game_id, "" if name is None else " ({})".format(name))
             raise BoardGameGeekAPIError(msg)
 
         game_type = root.attrib["type"]
         if game_type not in ["boardgame", "boardgameexpansion"]:
-            log.debug("item id {} is not a boardgame (type: {})".format(game_id, game_type))
-            raise BoardGameGeekError("item is not a board game")
+            log.debug("unsupported type {} for item id {}".format(game_type, game_id))
+            raise BoardGameGeekError("item has an unsupported type")
 
-        kwargs = {"id": game_id,
-                  "thumbnail": xml_subelement_text(root, "thumbnail"),
-                  "image": xml_subelement_text(root, "image"),
-                  "expansion": game_type == "boardgameexpansion",       # is this game an expansion?
-                  "families": xml_subelement_attr_list(root, ".//link[@type='boardgamefamily']"),
-                  "categories": xml_subelement_attr_list(root, ".//link[@type='boardgamecategory']"),
-                  "implementations": xml_subelement_attr_list(root, ".//link[@type='boardgameimplementation']"),
-                  "mechanics": xml_subelement_attr_list(root, ".//link[@type='boardgamemechanic']"),
-                  "designers": xml_subelement_attr_list(root, ".//link[@type='boardgamedesigner']"),
-                  "artists": xml_subelement_attr_list(root, ".//link[@type='boardgameartist']"),
-                  "publishers": xml_subelement_attr_list(root, ".//link[@type='boardgamepublisher']")}
+        data = {"id": game_id,
+                "name": xml_subelement_attr(root, ".//name[@type='primary']"),
+                "alternative_names": xml_subelement_attr_list(root, ".//name[@type='alternate']"),
+                "thumbnail": xml_subelement_text(root, "thumbnail"),
+                "image": xml_subelement_text(root, "image"),
+                "expansion": game_type == "boardgameexpansion",       # is this game an expansion?
+                "families": xml_subelement_attr_list(root, ".//link[@type='boardgamefamily']"),
+                "categories": xml_subelement_attr_list(root, ".//link[@type='boardgamecategory']"),
+                "implementations": xml_subelement_attr_list(root, ".//link[@type='boardgameimplementation']"),
+                "mechanics": xml_subelement_attr_list(root, ".//link[@type='boardgamemechanic']"),
+                "designers": xml_subelement_attr_list(root, ".//link[@type='boardgamedesigner']"),
+                "artists": xml_subelement_attr_list(root, ".//link[@type='boardgameartist']"),
+                "publishers": xml_subelement_attr_list(root, ".//link[@type='boardgamepublisher']"),
+                "description": xml_subelement_text(root, "description", convert=html_parser.unescape, quiet=True),
+                }
 
         expands = []        # list of items this game expands
         expansions = []     # list of expansions this game has
         for e in root.findall(".//link[@type='boardgameexpansion']"):
-            item = {"id": e.attrib["id"],
-                    "name": e.attrib["value"]}
+            try:
+                item = {"id": e.attrib["id"],
+                        "name": e.attrib["value"]}
+            except KeyError:
+                raise BoardGameGeekAPIError("malformed XML element ('link type=boardgameexpansion')")
 
             if e.attrib.get("inbound", "false").lower()[0] == 't':
                 # this is an item expanded by game_id
@@ -952,49 +977,65 @@ class BoardGameGeek(BoardGameGeekNetworkAPI):
             else:
                 expansions.append(item)
 
-        kwargs["expansions"] = expansions
-        kwargs["expands"] = expands
-        kwargs["description"] = xml_subelement_text(root, "description", convert=html_parser.unescape, quiet=True)
+        data["expansions"] = expansions
+        data["expands"] = expands
 
         # These XML elements have a numberic value, attempt to convert them to integers
-        for i in ["yearpublished", "minplayers", "maxplayers", "playingtime", "minage"]:
-            kwargs[i] = xml_subelement_attr(root, i, convert=int, quiet=True)
+        for i in ["yearpublished", "minplayers", "maxplayers", "playingtime", "minplaytime", "maxplaytime", "minage"]:
+            data[i] = xml_subelement_attr(root, i, convert=int, quiet=True)
 
-        # What's the name of the game :P
-        kwargs["name"] = xml_subelement_attr(root, ".//name[@type='primary']")
+        # Look for the videos
+        # TODO: The BGG API doesn't take the page=NNN parameter into account for videos; when it does, paginate them too
+        videos = root.find(".//videos")
+        if videos:
+            vid_list = []
+            for vid in videos.findall(".//video"):
+                try:
+                    vd = {"id": vid.attrib["id"],
+                          "name": vid.attrib["title"],
+                          "category": vid.attrib.get("category"),
+                          "language": vid.attrib.get("language"),
+                          "link": vid.attrib["link"],
+                          "uploader": vid.attrib.get("username"),
+                          "uploader_id": vid.attrib.get("userid"),
+                          "post_date": vid.attrib.get("postdate")
+                          }
+                    vid_list.append(vd)
+                except KeyError:
+                    raise BoardGameGeekAPIError("malformed XML element ('video')")
 
-        # Get alternative names too
-        kwargs["alternative_names"] = xml_subelement_attr_list(root, ".//name[@type='alternate']")
+            data["videos"] = vid_list
 
-        # look for statistics info
+        # look for the statistics
         stats = root.find(".//ratings")
-        kwargs.update({
-            "usersrated": xml_subelement_attr(stats, "usersrated", convert=int, quiet=True),
-            "average": xml_subelement_attr(stats, "average", convert=float, quiet=True),
-            "bayesaverage": xml_subelement_attr(stats, "bayesaverage", convert=float, quiet=True),
-            "stddev": xml_subelement_attr(stats, "stddev", convert=float, quiet=True),
-            "median": xml_subelement_attr(stats, "median", convert=float, quiet=True),
-            "owned": xml_subelement_attr(stats, "owned", convert=int, quiet=True),
-            "trading": xml_subelement_attr(stats, "trading", convert=int, quiet=True),
-            "wanting": xml_subelement_attr(stats, "wanting", convert=int, quiet=True),
-            "wishing": xml_subelement_attr(stats, "wishing", convert=int, quiet=True),
-            "numcomments": xml_subelement_attr(stats, "numcomments", convert=int, quiet=True),
-            "numweights": xml_subelement_attr(stats, "numweights", convert=int, quiet=True),
-            "averageweight": xml_subelement_attr(stats, "averageweight", convert=float, quiet=True)
-        })
+        if stats:
+            data.update({
+                "usersrated": xml_subelement_attr(stats, "usersrated", convert=int, quiet=True),
+                "average": xml_subelement_attr(stats, "average", convert=float, quiet=True),
+                "bayesaverage": xml_subelement_attr(stats, "bayesaverage", convert=float, quiet=True),
+                "stddev": xml_subelement_attr(stats, "stddev", convert=float, quiet=True),
+                "median": xml_subelement_attr(stats, "median", convert=float, quiet=True),
+                "owned": xml_subelement_attr(stats, "owned", convert=int, quiet=True),
+                "trading": xml_subelement_attr(stats, "trading", convert=int, quiet=True),
+                "wanting": xml_subelement_attr(stats, "wanting", convert=int, quiet=True),
+                "wishing": xml_subelement_attr(stats, "wishing", convert=int, quiet=True),
+                "numcomments": xml_subelement_attr(stats, "numcomments", convert=int, quiet=True),
+                "numweights": xml_subelement_attr(stats, "numweights", convert=int, quiet=True),
+                "averageweight": xml_subelement_attr(stats, "averageweight", convert=float, quiet=True)
+            })
 
-        kwargs["ranks"] = []
+        data["ranks"] = []
         ranks = root.findall(".//rank")
         for rank in ranks:
             try:
                 rank_value = int(rank.attrib.get("value"))
             except:
                 rank_value = None
-            kwargs["ranks"].append({"name": rank.attrib.get("name"),
-                                    "friendlyname": rank.attrib.get("friendlyname"),
-                                    "value": rank_value})
+            data["ranks"].append({"name": rank.attrib.get("name"),
+                                  "friendlyname": rank.attrib.get("friendlyname"),
+                                  "value": rank_value})
 
-        return BoardGame(kwargs)
+        return BoardGame(data)
 
     def games(self, name):
         """
