@@ -101,13 +101,12 @@ class BoardGameGeekNetworkAPI(object):
                 "thumbnail": xml_subelement_text(xml_el, "thumbnail"),
                 "image": xml_subelement_text(xml_el, "image"),
                 "name": xml_subelement_attr(xml_el, "name"),
-                "product_code": xml_subelement_attr(xml_el, "productcode", convert=int, quiet=True)}
+                "product_code": xml_subelement_attr(xml_el, "productcode")}
 
         for item in ["width", "length", "depth", "weight"]:
             data[item] = xml_subelement_attr(xml_el, item, convert=float, quiet=True, default=0.0)
 
         return data
-
 
     def _get_game_id(self, name, game_type, choose):
         """
