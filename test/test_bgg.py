@@ -9,7 +9,8 @@ import pytest
 import xml.etree.ElementTree as ET
 import pickle
 import time
-
+import sys
+import datetime
 
 from boardgamegeek import BoardGameGeek, BoardGameGeekError
 from boardgamegeek.api import BoardGameGeekNetworkAPI
@@ -20,9 +21,12 @@ from boardgamegeek.plays import PlaySession, Plays
 from boardgamegeek.things import Thing
 from boardgamegeek.utils import DictObject
 
-
 import boardgamegeek.utils as bggutil
-import datetime
+
+if sys.version_info >= (3,):
+    STR_TYPES_OR_NONE = [str, type(None)]
+else:
+    STR_TYPES_OR_NONE = [str, unicode, type(None)]
 
 progress_called = False
 
@@ -36,8 +40,6 @@ TEST_INVALID_USER = "someOneThatHopefullyWontExistPlsGuysDontCreateThisUser"
 TEST_INVALID_GAME_NAME = "blablablathisgamewonteverexist"
 TEST_GAME_NAME = "Agricola"
 TEST_GAME_ID = 31260
-
-
 
 #TEST_GAME_NAME_2 = "Merchant of Venus (second edition)"
 #TEST_GAME_ID_2 = 131646
@@ -378,10 +380,10 @@ def check_game(game):
     for vid in game.videos:
         assert type(vid) == BoardGameVideo
         assert type(vid.id) == int
-        assert type(vid.name) == str
-        assert type(vid.category) == str
-        assert type(vid.language) == str
-        assert type(vid.uploader) == str
+        assert type(vid.name) in STR_TYPES_OR_NONE
+        assert type(vid.category) in STR_TYPES_OR_NONE
+        assert type(vid.language) in STR_TYPES_OR_NONE
+        assert type(vid.uploader) in STR_TYPES_OR_NONE
         assert vid.link.startswith("http")
         assert type(vid.uploader_id) == int
         assert type(vid.post_date) == datetime.datetime
@@ -392,17 +394,16 @@ def check_game(game):
     for ver in game.versions:
         assert type(ver) == BoardGameVersion
         assert type(ver.id) == int
-        assert type(ver.name) == str
-        assert type(ver.language) == str
-        assert type(ver.publisher) == str
-        assert type(ver.artist) == str
-        assert type(ver.product_code) == int
+        assert type(ver.name) in STR_TYPES_OR_NONE
+        assert type(ver.language) in STR_TYPES_OR_NONE
+        assert type(ver.publisher) in STR_TYPES_OR_NONE
+        assert type(ver.artist) in STR_TYPES_OR_NONE
+        assert type(ver.product_code) in STR_TYPES_OR_NONE
         assert type(ver.year) == int
-        assert type(ver.width) == int
-        assert type(ver.length) == int
-        assert type(ver.depth) == int
-
-
+        assert type(ver.width) == float
+        assert type(ver.length) == float
+        assert type(ver.depth) == float
+        assert type(ver.weight) == float
 
     # make sure no exception gets thrown
     repr(game)
