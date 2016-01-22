@@ -960,23 +960,23 @@ class BoardGameGeek(BoardGameGeekNetworkAPI):
             raise BoardGameGeekError("item has an unsupported type")
 
         data = {"id": game_id,
-                "name": xml_subelement_attr(root, ".//name[@type='primary']"),
-                "alternative_names": xml_subelement_attr_list(root, ".//name[@type='alternate']"),
+                "name": xml_subelement_attr(root, "name[@type='primary']"),
+                "alternative_names": xml_subelement_attr_list(root, "name[@type='alternate']"),
                 "thumbnail": xml_subelement_text(root, "thumbnail"),
                 "image": xml_subelement_text(root, "image"),
                 "expansion": game_type == "boardgameexpansion",       # is this game an expansion?
-                "families": xml_subelement_attr_list(root, ".//link[@type='boardgamefamily']"),
-                "categories": xml_subelement_attr_list(root, ".//link[@type='boardgamecategory']"),
-                "implementations": xml_subelement_attr_list(root, ".//link[@type='boardgameimplementation']"),
-                "mechanics": xml_subelement_attr_list(root, ".//link[@type='boardgamemechanic']"),
-                "designers": xml_subelement_attr_list(root, ".//link[@type='boardgamedesigner']"),
-                "artists": xml_subelement_attr_list(root, ".//link[@type='boardgameartist']"),
-                "publishers": xml_subelement_attr_list(root, ".//link[@type='boardgamepublisher']"),
+                "families": xml_subelement_attr_list(root, "link[@type='boardgamefamily']"),
+                "categories": xml_subelement_attr_list(root, "link[@type='boardgamecategory']"),
+                "implementations": xml_subelement_attr_list(root, "link[@type='boardgameimplementation']"),
+                "mechanics": xml_subelement_attr_list(root, "link[@type='boardgamemechanic']"),
+                "designers": xml_subelement_attr_list(root, "link[@type='boardgamedesigner']"),
+                "artists": xml_subelement_attr_list(root, "link[@type='boardgameartist']"),
+                "publishers": xml_subelement_attr_list(root, "link[@type='boardgamepublisher']"),
                 "description": xml_subelement_text(root, "description", convert=html_parser.unescape, quiet=True)}
 
         expands = []        # list of items this game expands
         expansions = []     # list of expansions this game has
-        for e in root.findall(".//link[@type='boardgameexpansion']"):
+        for e in root.findall("link[@type='boardgameexpansion']"):
             try:
                 item = {"id": e.attrib["id"], "name": e.attrib["value"]}
             except KeyError:
@@ -997,10 +997,10 @@ class BoardGameGeek(BoardGameGeekNetworkAPI):
 
         # Look for the videos
         # TODO: The BGG API doesn't take the page=NNN parameter into account for videos; when it does, paginate them too
-        videos = root.find(".//videos")
-        if videos:
+        videos = root.find("videos")
+        if videos is not None:
             vid_list = []
-            for vid in videos.findall(".//video"):
+            for vid in videos.findall("video"):
                 try:
                     vd = {"id": vid.attrib["id"],
                           "name": vid.attrib["title"],
@@ -1018,23 +1018,23 @@ class BoardGameGeek(BoardGameGeekNetworkAPI):
             data["videos"] = vid_list
 
         # look for the versions
-        versions = root.find(".//versions")
-        if versions:
+        versions = root.find("versions")
+        if versions is not None:
             ver_list = []
 
-            for version in versions.findall(".//item[@type='boardgameversion']"):
+            for version in versions.findall("item[@type='boardgameversion']"):
                 try:
-                    data = self._get_board_game_version_from_element(version)
-                    ver_list.append(data)
+                    vd = self._get_board_game_version_from_element(version)
+                    ver_list.append(vd)
                 except KeyError:
                     raise BoardGameGeekAPIError("malformed XML element ('versions')")
 
             data["versions"] = ver_list
 
         # look for the statistics
-        stats = root.find(".//ratings")
-        if stats:
-            data.update({
+        stats = root.find("statistics/ratings")
+        if stats is not None:
+            sd = {
                 "usersrated": xml_subelement_attr(stats, "usersrated", convert=int, quiet=True),
                 "average": xml_subelement_attr(stats, "average", convert=float, quiet=True),
                 "bayesaverage": xml_subelement_attr(stats, "bayesaverage", convert=float, quiet=True),
@@ -1047,18 +1047,19 @@ class BoardGameGeek(BoardGameGeekNetworkAPI):
                 "numcomments": xml_subelement_attr(stats, "numcomments", convert=int, quiet=True),
                 "numweights": xml_subelement_attr(stats, "numweights", convert=int, quiet=True),
                 "averageweight": xml_subelement_attr(stats, "averageweight", convert=float, quiet=True)
-            })
+            }
+            data.update(sd)
 
-        data["ranks"] = []
-        ranks = root.findall(".//rank")
-        for rank in ranks:
-            try:
-                rank_value = int(rank.attrib.get("value"))
-            except:
-                rank_value = None
-            data["ranks"].append({"name": rank.attrib.get("name"),
-                                  "friendlyname": rank.attrib.get("friendlyname"),
-                                  "value": rank_value})
+            data["ranks"] = []
+            ranks = stats.findall("ranks/rank")
+            for rank in ranks:
+                try:
+                    rank_value = int(rank.attrib.get("value"))
+                except:
+                    rank_value = None
+                data["ranks"].append({"name": rank.attrib.get("name"),
+                                      "friendlyname": rank.attrib.get("friendlyname"),
+                                      "value": rank_value})
 
         return BoardGame(data)
 
