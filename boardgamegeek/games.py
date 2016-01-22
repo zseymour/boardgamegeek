@@ -32,7 +32,6 @@ class CollectionBoardGame(Thing):
 
         if "version" in data:
             version = kw.pop("version")
-            print "XXX: version data: {}".format(version)
             self._version = BoardGameVersion(version)
 
         super(CollectionBoardGame, self).__init__(kw)
@@ -173,11 +172,23 @@ class BoardGameVideo(Thing):
             date = kw["post_date"]
             if type(date) != datetime.datetime:
                 try:
-                    kw["date"] = datetime.datetime.strptime(date[:-6], "%Y-%m-%dT%H:%M:%S")
+                    kw["post_date"] = datetime.datetime.strptime(date[:-6], "%Y-%m-%dT%H:%M:%S")
                 except:
-                    kw["date"] = None
+                    kw["post_date"] = None
+
+        kw["uploader_id"] = int(kw["uploader_id"])
 
         super(BoardGameVideo, self).__init__(kw)
+
+    def _format(self, log):
+        log.info("video id          : {}".format(self.id))
+        log.info("video title       : {}".format(self.name))
+        log.info("video category    : {}".format(self.category))
+        log.info("video link        : {}".format(self.link))
+        log.info("video language    : {}".format(self.language))
+        log.info("video uploader    : {}".format(self.uploader))
+        log.info("video uploader id : {}".format(self.uploader_id))
+        log.info("video posted at   : {}".format(self.post_date))
 
     @property
     def category(self):
@@ -251,14 +262,15 @@ class BoardGameVersion(Thing):
         return "BoardGameVersion (id: {})".format(self.id)
 
     def _format(self, log):
-        log.info("version id        : {}".format(self.id))
-        log.info("version name      : {}".format(self.name))
-        log.info("version language  : {}".format(self.language))
-        log.info("version publisher : {}".format(self.publisher))
-        log.info("version artist    : {}".format(self.artist))
-        log.info("W x L x D         : {} x {} x {}".format(self.width, self.length, self.depth))
-        log.info("weight            : {}".format(self.weight))
-        log.info("year              : {}".format(self.year))
+        log.info("version id           : {}".format(self.id))
+        log.info("version name         : {}".format(self.name))
+        log.info("version language     : {}".format(self.language))
+        log.info("version publisher    : {}".format(self.publisher))
+        log.info("version artist       : {}".format(self.artist))
+        log.info("version product code : {}".format(self.product_code))
+        log.info("W x L x D            : {} x {} x {}".format(self.width, self.length, self.depth))
+        log.info("weight               : {}".format(self.weight))
+        log.info("year                 : {}".format(self.year))
 
     @property
     def artist(self):
@@ -307,6 +319,16 @@ class BoardGameVersion(Thing):
         return self._data.get("name")
 
     @property
+    def product_code(self):
+        """
+
+        :return: product code of this version
+        :rtype: string
+        :return: ``None`` if n/a
+        """
+        return self._data.get("product_code")
+
+    @property
     def publisher(self):
         """
 
@@ -342,7 +364,6 @@ class BoardGameVersion(Thing):
         :return: ``None`` if n/a
         """
         return self._data.get("yearpublished")
-
 
 
 class BoardGame(Thing):
@@ -846,7 +867,7 @@ class BoardGame(Thing):
         :return: videos of this game
         :rtype: list of :py:class:`boardgamegeek.game.BoardGameVideo`
         """
-        return self._data.get("videos", [])
+        return self._videos
 
     @property
     def versions(self):
@@ -854,4 +875,4 @@ class BoardGame(Thing):
         :return: versions of this game
         :rtype: list of :py:class:`boardgamegeek.game.BoardGameVersion`
         """
-        return self._data.get("versions", [])
+        return self._versions
