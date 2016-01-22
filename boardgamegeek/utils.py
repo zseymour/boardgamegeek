@@ -419,6 +419,7 @@ def get_cache_session_from_uri(uri):
 
     raise BoardGameGeekError("invalid cache URI: {}".format(uri))
 
+
 def fix_url(url):
     """
     The BGG API started returning URLs like //cf.geekdo-images.com/images/pic55406.jpg for thumbnails and images.
@@ -430,6 +431,7 @@ def fix_url(url):
     if url and url.startswith("//"):
         url = "http:{}".format(url)
     return url
+
 
 def fix_unsigned_negative(value):
     # the BGG api seems to return negative years casted to unsigned ints (32 bit) in search results. This function

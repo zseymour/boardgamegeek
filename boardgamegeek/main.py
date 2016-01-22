@@ -8,8 +8,8 @@ from boardgamegeek.api import BoardGameGeek, BoardGameGeekNetworkAPI, HOT_ITEM_C
 log = logging.getLogger("boardgamegeek")
 log_fmt = "[%(levelname)s] %(message)s"
 
-def brief_game_stats(game):
 
+def brief_game_stats(game):
     try:
         desc = '''"{}",{},{}-{},{},{},{},{},"{}","{}"'''.format(game.name, game.year,
                game.min_players, game.max_players,

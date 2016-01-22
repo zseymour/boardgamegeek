@@ -86,7 +86,6 @@ class BoardGameGeekNetworkAPI(object):
         # add the rate limiting adapter
         self.requests_session.mount(api_endpoint, RateLimitingAdapter(rpm=requests_per_minute))
 
-
     @staticmethod
     def _get_board_game_version_from_element(xml_el):
         data = {"id": int(xml_el.attrib["id"]),
