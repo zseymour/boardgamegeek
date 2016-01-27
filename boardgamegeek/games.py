@@ -16,7 +16,7 @@ import datetime
 
 from .things import Thing
 from .exceptions import BoardGameGeekError
-from .utils import fix_url
+from .utils import fix_url, DictObject
 
 
 class CollectionBoardGame(Thing):
@@ -159,6 +159,24 @@ class CollectionBoardGame(Thing):
     def wishlist_priority(self):
         # TODO: convert to int (it's str)
         return self._data.get("wishlistpriority")
+
+
+class BoardGameComment(DictObject):
+
+    @property
+    def commenter(self):
+        return self._data["username"]
+
+    @property
+    def comment(self):
+        return self._data["comment"]
+
+    @property
+    def rating(self):
+        return self._data["rating"]
+
+    def _format(self, log):
+        log.info(u"comment by {} (rating: {}): {}".format(self.commenter, self.rating, self.comment))
 
 
 class BoardGameVideo(Thing):
@@ -446,6 +464,11 @@ class BoardGame(Thing):
                         self.boardgame_rank = int(value)
                     break
 
+        self._comments = []
+        if "comments" in kw:
+            for comment in kw["comments"]:
+                self._comments.append(BoardGameComment(comment))
+
         super(BoardGame, self).__init__(kw)
 
     def __repr__(self):
@@ -565,6 +588,9 @@ class BoardGame(Thing):
         log.info("users trading     : {}".format(self.users_trading))
         log.info("ranks             : {}".format(self.ranks))
         log.info("description       : {}".format(self.description))
+        if self.comments:
+            for c in self.comments:
+                c._format(log)
 
     @property
     def alternative_names(self):
@@ -615,6 +641,10 @@ class BoardGame(Thing):
         :rtype: list of str
         """
         return self._data.get("categories", [])
+
+    @property
+    def comments(self):
+        return self._comments
 
     @property
     def mechanics(self):

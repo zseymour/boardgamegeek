@@ -6,6 +6,8 @@
 
 .. moduleauthor:: Cosmin Luță <q4break@gmail.com>
 """
+__import__('pkg_resources').declare_namespace(__name__)
+
 from .api import BoardGameGeek
 from .exceptions import BoardGameGeekError, BoardGameGeekAPIRetryError, BoardGameGeekAPIError, BoardGameGeekTimeoutError
 from .version import __version__

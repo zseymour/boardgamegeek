@@ -50,7 +50,6 @@ HOT_ITEM_CHOICES = ["boardgame", "rpg", "videogame", "boardgameperson", "rpgpers
 COLLECTION_SUBTYPES = ["boardgame", "boardgameexpansion", "boardgameaccessory", "rpgitem", "rpgissue", "videogame"]
 
 
-
 class BoardGameGeekNetworkAPI(object):
     """
     Base class for the BoardGameGeek websites APIs. All site-specific clients are derived from this.
@@ -300,6 +299,7 @@ class BoardGameGeekNetworkAPI(object):
                                                 convert=lambda x: datetime.datetime.strptime(x, "%Y-%m-%d"),
                                                 quiet=True)
 
+        # TODO: get rid of the add_top/hot_item methods, move them in the
         user = User(data)
 
         # add top items
@@ -834,6 +834,7 @@ class BoardGameGeekNetworkAPI(object):
                                                                                  quiet=True)),
                       "type": item.attrib["type"]}
 
+            # TODO: move this inside the object
             results.append(SearchResult(kwargs))
 
         return results
@@ -890,7 +891,7 @@ class BoardGameGeek(BoardGameGeekNetworkAPI):
         return self._get_game_id(name, game_type="boardgame", choose=choose)
 
     def game(self, name=None, game_id=None, choose="first", versions=False, videos=False, stats=True, historical=False,
-             marketplace=False, comments=False, rating_comments=False):
+             marketplace=False, comments=False, rating_comments=False, progress=None):
         """
         Get information about a game.
 
@@ -1059,6 +1060,92 @@ class BoardGameGeek(BoardGameGeekNetworkAPI):
                 data["ranks"].append({"name": rank.attrib.get("name"),
                                       "friendlyname": rank.attrib.get("friendlyname"),
                                       "value": rank_value})
+
+        items_to_paginate = {}
+
+        if comments:
+            data["comments"] = []
+
+            # TODO: this crap is not working (API PROBLEM??)
+
+            comments = root.find("comments")
+            if comments is not None:
+                total_comments = int(comments.attrib["totalitems"])
+                items_to_paginate["comments"] = total_comments
+
+                for comm in root.findall("comments/comment"):
+                    comment = {
+                        "username": comm.attrib["username"],
+                        "rating": comm.attrib.get("rating", "n/a").lower(),
+                        "comment": comm.attrib.get("value", "n/a")
+                    }
+                    data["comments"].append(comment)
+
+                page = 1
+
+                def _call_progress_cb():
+                    if progress is not None:
+                        progress(len(data["comments"]), total_comments)
+
+                while len(data["comments"]) < total_comments:
+                    added_comment = False
+                    page += 1
+                    new_root = get_parsed_xml_response(self.requests_session,
+                                                       self._thing_api_url,
+                                                       params={"id": game_id,
+                                                               "pagesize": 100,
+                                                               "comments": 1,
+                                                               "page": page})
+
+                    for comm in new_root.findall("comments/comment"):
+                        comment = {
+                            "username": comm.attrib["username"],
+                            "rating": comm.attrib.get("rating", "n/a").lower(),
+                            "comment": comm.attrib.get("value", "n/a")
+                        }
+                        data["comments"].append(comment)
+                        added_comment = True
+
+                    _call_progress_cb()
+
+                    if not added_comment:
+                        break
+
+
+        # max_items_to_fetch = max(total_buddies, total_guilds)
+        #
+        # def _call_progress_cb():
+        #     if progress is not None:
+        #         progress(max(user.total_buddies, user.total_guilds), max_items_to_fetch)
+        #
+        # _call_progress_cb()
+        #
+        # page = 2
+        # while max(user.total_buddies, user.total_guilds) < max_items_to_fetch:
+        #     added_buddy = False
+        #     added_guild = False
+        #     params["page"] = page
+        #     root = get_parsed_xml_response(self.requests_session,
+        #                                    self._user_api_url,
+        #                                    params=params,
+        #                                    timeout=self._timeout)
+        #
+        #     for buddy in root.findall(".//buddy"):
+        #         user.add_buddy({"name": buddy.attrib["name"],
+        #                         "id": buddy.attrib["id"]})
+        #         added_buddy = True
+        #
+        #     for guild in root.findall(".//guild"):
+        #         user.add_guild({"name": guild.attrib["name"],
+        #                         "id": guild.attrib["id"]})
+        #         added_guild = True
+        #
+        #     _call_progress_cb()
+        #     page += 1
+        #
+        #     if not added_buddy and not added_guild:
+        #         log.debug("didn't add any buddy/guild after fetching page {}, stopping here".format(page))
+        #         break
 
         return BoardGame(data)
 
