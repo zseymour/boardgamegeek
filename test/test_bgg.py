@@ -17,7 +17,7 @@ from boardgamegeek.api import BoardGameGeekNetworkAPI
 from boardgamegeek.collection import Collection
 from boardgamegeek.games import CollectionBoardGame, BoardGameVersion, BoardGameVideo
 from boardgamegeek.hotitems import HotItems, HotItem
-from boardgamegeek.plays import PlaySession, Plays
+from boardgamegeek.plays import PlaySession, GamePlays, UserPlays, Plays
 from boardgamegeek.things import Thing
 from boardgamegeek.utils import DictObject
 
@@ -531,9 +531,9 @@ def test_get_plays_of_user(bgg, null_logger):
 
     plays = bgg.plays(name=TEST_VALID_USER, progress=progress_cb)
 
+    assert type(plays) == UserPlays
     assert plays.user == TEST_VALID_USER
     assert plays.user_id == TEST_VALID_USER_ID
-    assert plays.game_id is None    # None since we got the plays for an user
 
     for p in plays.plays:
         assert type(p.id) == int
@@ -567,8 +567,8 @@ def test_get_plays_of_game(bgg, null_logger):
 
     plays = bgg.plays(game_id=TEST_GAME_ID_2, progress=progress_cb)
 
-    assert plays.user is None
-    assert plays.user_id is None
+    assert type(plays) == GamePlays
+
     assert plays.game_id == TEST_GAME_ID_2
 
     for p in plays.plays:

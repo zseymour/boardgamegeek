@@ -1,6 +1,12 @@
 Changelog
 =========
 
+Massive refactoring.
+
+Splitting Plays into two classes, UserPlays and GamePlays.
+TODO: allow breaking from fetching pages by raising an exception from the progress callback
+
+
 0.13.2
 ------
 

@@ -124,7 +124,7 @@ class PlaySession(DictObject):
                     kw["date"] = None
 
         # create "nice" dictionaries out of plain ones, so you can .dot access stuff.
-        kw["players"] = [PlaysessionPlayer(player) for player in data.get("players", [])]
+        self._players = [PlaysessionPlayer(player) for player in kw.get("players", [])]
 
         super(PlaySession, self).__init__(kw)
 
@@ -239,6 +239,10 @@ class PlaySession(DictObject):
         """
         return self._data.get("comment")
 
+    @property
+    def players(self):
+        return self._players
+
 
 class Plays(DictObject):
     """
@@ -249,24 +253,12 @@ class Plays(DictObject):
 
     def __init__(self, data):
         kw = copy(data)
-        if "plays" not in kw:
-            kw["plays"] = []
         self._plays = []
 
-        for p in kw["plays"]:
+        for p in kw.get("plays", []):
             self._plays.append(PlaySession(p))
 
         super(Plays, self).__init__(kw)
-
-    def _format(self, log):
-        if self.user:
-            log.info("plays of        : {} ({})".format(self.user, self.user_id))
-        else:
-            log.info("plays of game id: {}".format(self.game_id))
-        log.info("count           : {}".format(len(self)))
-        for p in self.plays:
-            p._format(log)
-            log.info("")
 
     def __getitem__(self, item):
         return self._plays.__getitem__(item)
@@ -274,9 +266,37 @@ class Plays(DictObject):
     def __len__(self):
         return len(self._plays)
 
+    @property
+    def plays(self):
+        """
+        :return: play sessions
+        :rtype: list of :py:class:`boardgamegeek.plays.PlaySession`
+        """
+        return self._plays
+
+    @property
+    def plays_count(self):
+        """
+        :return: plays count, as reported by the server
+        :rtype: integer
+        """
+        return self._data.get("plays_count", 0)
+
+
+class UserPlays(Plays):
+
+    def _format(self, log):
+        log.info("plays of        : {} ({})".format(self.user, self.user_id))
+        log.info("count           : {}".format(len(self)))
+        for p in self.plays:
+            p._format(log)
+            log.info("")
+
     def add_play(self, data):
-        self._data["plays"].append(data)
-        self._plays.append(PlaySession(data))
+        kw = copy(data)
+        # User plays don't have the ID set in the XML
+        kw["user_id"] = self.user_id
+        self._plays.append(PlaySession(kw))
 
     @property
     def user(self):
@@ -296,6 +316,19 @@ class Plays(DictObject):
         """
         return self._data.get("user_id")
 
+
+class GamePlays(Plays):
+
+    def _format(self, log):
+        log.info("plays of game id: {}".format(self.game_id))
+        log.info("count           : {}".format(len(self)))
+        for p in self.plays:
+            p._format(log)
+            log.info("")
+
+    def add_play(self, data):
+        self._plays.append(PlaySession(data))
+
     @property
     def game_id(self):
         """
@@ -304,11 +337,3 @@ class Plays(DictObject):
         :return: ``None`` if this list is that of an user
         """
         return self._data.get("game_id")
-
-    @property
-    def plays(self):
-        """
-        :return: play sessions
-        :rtype: list of :py:class:`boardgamegeek.plays.PlaySession`
-        """
-        return self._plays

@@ -32,7 +32,6 @@ from .games import BoardGame
 from .user import User
 from .collection import Collection
 from .hotitems import HotItems
-from .plays import Plays
 from .exceptions import BoardGameGeekAPIError, BoardGameGeekError, BoardGameGeekAPINonXMLError
 from .utils import xml_subelement_attr, xml_subelement_text, xml_subelement_attr_list, get_parsed_xml_response
 from .utils import fix_unsigned_negative, xml_subelement_attr_by_attr
@@ -40,6 +39,7 @@ from .search import SearchResult
 from .utils import get_cache_session_from_uri, RateLimitingAdapter, DEFAULT_REQUESTS_PER_MINUTE
 
 from .loaders.guild import create_guild_from_xml, add_guild_members_from_xml
+from .loaders.plays import create_plays_from_xml, add_plays_from_xml
 
 
 log = logging.getLogger("boardgamegeek.api")
@@ -49,6 +49,11 @@ HOT_ITEM_CHOICES = ["boardgame", "rpg", "videogame", "boardgameperson", "rpgpers
                     "rpgcompany", "videogamecompany"]
 
 COLLECTION_SUBTYPES = ["boardgame", "boardgameexpansion", "boardgameaccessory", "rpgitem", "rpgissue", "videogame"]
+
+
+def call_progress_cb(progress_cb, current, total):
+    if progress_cb is not None:
+        progress_cb(current, total)
 
 
 class BoardGameGeekNetworkAPI(object):
@@ -161,10 +166,6 @@ class BoardGameGeekNetworkAPI(object):
         except:
             raise BoardGameGeekError("invalid guild id")
 
-        def _call_progress_cb(current, total):
-            if progress is not None:
-                progress(current, total)
-
         try:
             xml_root = get_parsed_xml_response(self.requests_session,
                                                self._guild_api_url,
@@ -181,7 +182,7 @@ class BoardGameGeekNetworkAPI(object):
 
         # Add the first page of members
         added_member = add_guild_members_from_xml(guild, xml_root)
-        _call_progress_cb(len(guild), guild.members_count)
+        call_progress_cb(progress, len(guild), guild.members_count)
 
         # Fetch the other pages of members
         page = 1
@@ -200,7 +201,7 @@ class BoardGameGeekNetworkAPI(object):
                 break
 
             added_member = add_guild_members_from_xml(guild, xml_root)
-            _call_progress_cb(len(guild), guild.members_count)
+            call_progress_cb(progress, len(guild), guild.members_count)
 
         return guild
 
@@ -380,6 +381,7 @@ class BoardGameGeekNetworkAPI(object):
 
         if name:
             params["username"] = name
+            game_id = None
         else:
             try:
                 params["id"] = int(game_id)
@@ -399,93 +401,45 @@ class BoardGameGeekNetworkAPI(object):
                 raise BoardGameGeekError("maxdate must be a datetime.date object")
 
         try:
-            root = get_parsed_xml_response(self.requests_session,
-                                           self._plays_api_url,
-                                           params=params,
-                                           timeout=self._timeout,
-                                           retries=self._retries,
-                                           retry_delay=self._retry_delay)
-        except BoardGameGeekAPINonXMLError as e:
+            xml_root = get_parsed_xml_response(self.requests_session,
+                                               self._plays_api_url,
+                                               params=params,
+                                               timeout=self._timeout,
+                                               retries=self._retries,
+                                               retry_delay=self._retry_delay)
+        except BoardGameGeekAPINonXMLError:
             # if the api doesn't return XML, assume plays not found (BGG API does that sometimes)
             return None
 
-        try:
-            # in case of error, the root node doesn't have a 'total' attribute
-            count = int(root.attrib["total"])   # how many plays
-        except:
+        plays = create_plays_from_xml(xml_root, game_id)
+        if plays is None:
             return None
 
-        if name:
-            plays = Plays({"username": root.attrib["username"],
-                           "user_id": int(root.attrib["userid"])})
-        else:
-            plays = Plays({"game_id": game_id})
+        added_plays = add_plays_from_xml(plays, xml_root)
 
-        def _add_plays(plays, root):
-            added_plays = False
-            for play in root.findall(".//play"):
-                added_plays = True
+        page = 1
 
-                # if we're listing plays by game, each <play> has an userid. If this isn't set, we must be listing
-                # an user's collection, thus set it from plays.user_id
-                userid = int(play.attrib.get("userid", plays.user_id))
-
-                player_list = []
-                # TODO: add the game subtype too
-                kwargs = {"id": int(play.attrib["id"]),
-                          "date": play.attrib["date"],
-                          "quantity": int(play.attrib["quantity"]),
-                          "duration": int(play.attrib["length"]),
-                          "incomplete": int(play.attrib["incomplete"]),
-                          "nowinstats": int(play.attrib["nowinstats"]),
-                          "user_id": userid,
-                          "game_id": xml_subelement_attr(play, "item", attribute="objectid", convert=int),
-                          "game_name": xml_subelement_attr(play, "item", attribute="name"),
-                          "comment": xml_subelement_text(play, "comments"),
-                          "players": player_list}
-
-                for player in play.findall(".//player"):
-                    player_data = {"username": player.attrib.get("username"),
-                                   "user_id": int(player.attrib.get("userid", -1)),
-                                   "name": player.attrib.get("name"),
-                                   "startposition": player.attrib.get("startposition"),
-                                   "new": player.attrib.get("new"),
-                                   "win": player.attrib.get("win"),
-                                   "rating": player.attrib.get("rating"),
-                                   "score": player.attrib.get("score")}
-
-                    player_list.append(player_data)
-                plays.add_play(kwargs)
-
-            return added_plays
-
-        _add_plays(plays, root)
-
-        def _call_progress_cb():
-            if progress is not None:
-                progress(len(plays), count)
-
-        _call_progress_cb()
-
-        page = 2
-        while len(plays) < count:
+        # Since the BGG API doesn't seem to report the total number of plays for games correctly (it's 0), just
+        # continue until we can't add anymore
+        while added_plays:
+            page += 1
             log.debug("fetching page {} of plays".format(page))
 
             params["page"] = page
 
-            # fetch the next pages of plays
-            root = get_parsed_xml_response(self.requests_session,
-                                           self._plays_api_url,
-                                           params=params,
-                                           timeout=self._timeout,
-                                           retries=self._retries,
-                                           retry_delay=self._retry_delay)
-
-            if not _add_plays(plays, root):
+            try:
+                # fetch the next pages of plays
+                xml_root = get_parsed_xml_response(self.requests_session,
+                                                   self._plays_api_url,
+                                                   params=params,
+                                                   timeout=self._timeout,
+                                                   retries=self._retries,
+                                                   retry_delay=self._retry_delay)
+            except BoardGameGeekAPINonXMLError:
                 break
 
-            page += 1
-            _call_progress_cb()
+            added_plays = add_plays_from_xml(plays, xml_root)
+            call_progress_cb(progress, len(plays), plays.plays_count)
 
         return plays
 
