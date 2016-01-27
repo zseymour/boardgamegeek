@@ -29,7 +29,6 @@ else:
 
 
 from .games import BoardGame
-from .guild import Guild
 from .user import User
 from .collection import Collection
 from .hotitems import HotItems
@@ -39,6 +38,8 @@ from .utils import xml_subelement_attr, xml_subelement_text, xml_subelement_attr
 from .utils import fix_unsigned_negative, xml_subelement_attr_by_attr
 from .search import SearchResult
 from .utils import get_cache_session_from_uri, RateLimitingAdapter, DEFAULT_REQUESTS_PER_MINUTE
+
+from .loaders.guild import create_guild_from_xml, add_members_from_xml
 
 
 log = logging.getLogger("boardgamegeek.api")
@@ -160,78 +161,48 @@ class BoardGameGeekNetworkAPI(object):
         except:
             raise BoardGameGeekError("invalid guild id")
 
+        def _call_progress_cb(current, total):
+            if progress is not None:
+                progress(current, total)
+
         try:
-            root = get_parsed_xml_response(self.requests_session,
-                                           self._guild_api_url,
-                                           params={"id": guild_id, "members": 1},
-                                           timeout=self._timeout,
-                                           retries=self._retries,
-                                           retry_delay=self._retry_delay)
+            xml_root = get_parsed_xml_response(self.requests_session,
+                                               self._guild_api_url,
+                                               params={"id": guild_id, "members": 1},
+                                               timeout=self._timeout,
+                                               retries=self._retries,
+                                               retry_delay=self._retry_delay)
         except BoardGameGeekAPINonXMLError:
             return None
 
-        if "name" not in root.attrib:
-            log.warn("unable to get guild information (name not found)".format(guild_id))
+        guild = create_guild_from_xml(xml_root, html_parser)
+        if guild is None:
             return None
 
-        kwargs = {"name": root.attrib["name"],
-                  "created": root.attrib.get("created"),
-                  "id": guild_id,
-                  "members": []}
+        # Add the first page of members
+        added_member = add_members_from_xml(guild, xml_root)
+        _call_progress_cb(len(guild), guild.members_count)
 
-        # grab initial info from first page
-        for tag in ["category", "website", "manager"]:
-            kwargs[tag] = xml_subelement_text(root, tag)
-
-        kwargs["description"] = xml_subelement_text(root, "description", convert=html_parser.unescape, quiet=True)
-
-        # Grab location info
-        location = root.find("location")
-        if location is not None:
-            kwargs["city"] = xml_subelement_text(location, "city")
-            kwargs["country"] = xml_subelement_text(location, "country")
-            kwargs["postalcode"] = xml_subelement_text(location, "postalcode")
-            kwargs["addr1"] = xml_subelement_text(location, "addr1")
-            kwargs["addr2"] = xml_subelement_text(location, "addr2")
-            kwargs["stateorprovince"] = xml_subelement_text(location, "stateorprovince")
-
-        el = root.find(".//members[@count]")
-        count = int(el.attrib["count"])
-
-        # first page of members has already been retrieved with the initial call
-        for el in root.findall(".//member"):
-            kwargs["members"].append(el.attrib["name"])
-
-        def _call_progress_cb():
-            if progress is not None:
-                progress(len(kwargs["members"]), count)
-
-        _call_progress_cb()
-
-        page = 2
-
-        while len(kwargs["members"]) < count:
-            added_member = False
-            log.debug("fetching page {}".format(page))
-            root = get_parsed_xml_response(self.requests_session,
-                                           self._guild_api_url,
-                                           params={"id": guild_id, "members": 1, "page": page},
-                                           timeout=self._timeout,
-                                           retries=self._retries,
-                                           retry_delay=self._retry_delay)
-
-            for el in root.findall(".//member"):
-                kwargs["members"].append(el.attrib["name"])
-                added_member = True
-
-            _call_progress_cb()
-
+        # Fetch the other pages of members
+        page = 1
+        while len(guild) < guild.members_count and added_member:
             page += 1
-            if not added_member:
-                # didn't add anything anymore? break
+            log.debug("fetching page {}".format(page))
+            try:
+                xml_root = get_parsed_xml_response(self.requests_session,
+                                                   self._guild_api_url,
+                                                   params={"id": guild_id, "members": 1, "page": page},
+                                                   timeout=self._timeout,
+                                                   retries=self._retries,
+                                                   retry_delay=self._retry_delay)
+            except BoardGameGeekAPINonXMLError:
+                log.debug("non-XML response while loading guild members")
                 break
 
-        return Guild(kwargs)
+            added_member = add_members_from_xml(guild, xml_root)
+            _call_progress_cb(len(guild), guild.members_count)
+
+        return guild
 
     def user(self, name, progress=None, buddies=True, guilds=True, hot=True, top=True, domain="boardgame"):
         """
