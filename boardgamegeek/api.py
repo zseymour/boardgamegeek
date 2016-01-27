@@ -33,13 +33,13 @@ from .user import User
 from .collection import Collection
 from .hotitems import HotItems
 from .plays import Plays
-from .exceptions import BoardGameGeekAPIError, BoardGameGeekError, BoardGameGeekAPIRetryError, BoardGameGeekAPINonXMLError
+from .exceptions import BoardGameGeekAPIError, BoardGameGeekError, BoardGameGeekAPINonXMLError
 from .utils import xml_subelement_attr, xml_subelement_text, xml_subelement_attr_list, get_parsed_xml_response
 from .utils import fix_unsigned_negative, xml_subelement_attr_by_attr
 from .search import SearchResult
 from .utils import get_cache_session_from_uri, RateLimitingAdapter, DEFAULT_REQUESTS_PER_MINUTE
 
-from .loaders.guild import create_guild_from_xml, add_members_from_xml
+from .loaders.guild import create_guild_from_xml, add_guild_members_from_xml
 
 
 log = logging.getLogger("boardgamegeek.api")
@@ -180,7 +180,7 @@ class BoardGameGeekNetworkAPI(object):
             return None
 
         # Add the first page of members
-        added_member = add_members_from_xml(guild, xml_root)
+        added_member = add_guild_members_from_xml(guild, xml_root)
         _call_progress_cb(len(guild), guild.members_count)
 
         # Fetch the other pages of members
@@ -199,7 +199,7 @@ class BoardGameGeekNetworkAPI(object):
                 log.debug("non-XML response while loading guild members")
                 break
 
-            added_member = add_members_from_xml(guild, xml_root)
+            added_member = add_guild_members_from_xml(guild, xml_root)
             _call_progress_cb(len(guild), guild.members_count)
 
         return guild

@@ -39,7 +39,7 @@ def create_guild_from_xml(xml_root, html_parser):
     return Guild(data)
 
 
-def add_members_from_xml(guild, xml_root):
+def add_guild_members_from_xml(guild, xml_root):
     """
     Processes the XML and adds members to ``guild``
     :param guild: the :py:class:`boardgamegeek.Guild` object to add members to
