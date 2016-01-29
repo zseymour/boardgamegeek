@@ -101,6 +101,7 @@ class DictObject(object):
         except:
             raise AttributeError
 
+    # TODO: remove this ? Turn to property ?
     def data(self):
         """
         Access to the internal data dictionary, for easy dumping
@@ -441,3 +442,22 @@ def fix_unsigned_negative(value):
     return value
 
 
+def get_board_game_version_from_element(xml_elem):
+    data = {"id": int(xml_elem.attrib["id"]),
+            "yearpublished": fix_unsigned_negative(xml_subelement_attr(xml_elem,
+                                                                       "yearpublished",
+                                                                       convert=int,
+                                                                       default=0,
+                                                                       quiet=True)),
+            "language": xml_subelement_attr_by_attr(xml_elem, "link", "type", "language"),
+            "publisher": xml_subelement_attr_by_attr(xml_elem, "link", "type", "boardgamepublisher"),
+            "artist": xml_subelement_attr_by_attr(xml_elem, "link", "type", "boardgameartist"),
+            "thumbnail": xml_subelement_text(xml_elem, "thumbnail"),
+            "image": xml_subelement_text(xml_elem, "image"),
+            "name": xml_subelement_attr(xml_elem, "name"),
+            "product_code": xml_subelement_attr(xml_elem, "productcode")}
+
+    for item in ["width", "length", "depth", "weight"]:
+        data[item] = xml_subelement_attr(xml_elem, item, convert=float, quiet=True, default=0.0)
+
+    return data

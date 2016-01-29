@@ -119,7 +119,7 @@ def main():
             guild._format(log)
 
     if args.collection:
-        collection = bgg.collection(args.collection, version=True)
+        collection = bgg.collection(args.collection, versions=True)
         if collection:
             collection._format(log)
 

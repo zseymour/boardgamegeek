@@ -30,16 +30,16 @@ else:
 
 from .games import BoardGame
 from .user import User
-from .collection import Collection
-from .hotitems import HotItems
 from .exceptions import BoardGameGeekAPIError, BoardGameGeekError, BoardGameGeekAPINonXMLError
 from .utils import xml_subelement_attr, xml_subelement_text, xml_subelement_attr_list, get_parsed_xml_response
-from .utils import fix_unsigned_negative, xml_subelement_attr_by_attr
 from .search import SearchResult
 from .utils import get_cache_session_from_uri, RateLimitingAdapter, DEFAULT_REQUESTS_PER_MINUTE
+from .utils import get_board_game_version_from_element
 
-from .loaders.guild import create_guild_from_xml, add_guild_members_from_xml
-from .loaders.plays import create_plays_from_xml, add_plays_from_xml
+from .loaders import create_guild_from_xml, add_guild_members_from_xml
+from .loaders import create_plays_from_xml, add_plays_from_xml
+from .loaders import create_hot_items_from_xml, add_hot_items_from_xml
+from .loaders import create_collection_from_xml, add_collection_items_from_xml
 
 
 log = logging.getLogger("boardgamegeek.api")
@@ -90,27 +90,6 @@ class BoardGameGeekNetworkAPI(object):
 
         # add the rate limiting adapter
         self.requests_session.mount(api_endpoint, RateLimitingAdapter(rpm=requests_per_minute))
-
-    @staticmethod
-    def _get_board_game_version_from_element(xml_el):
-        data = {"id": int(xml_el.attrib["id"]),
-                "yearpublished": fix_unsigned_negative(xml_subelement_attr(xml_el,
-                                                                           "yearpublished",
-                                                                           convert=int,
-                                                                           default=0,
-                                                                           quiet=True)),
-                "language": xml_subelement_attr_by_attr(xml_el, "link", "type", "language"),
-                "publisher": xml_subelement_attr_by_attr(xml_el, "link", "type", "boardgamepublisher"),
-                "artist": xml_subelement_attr_by_attr(xml_el, "link", "type", "boardgameartist"),
-                "thumbnail": xml_subelement_text(xml_el, "thumbnail"),
-                "image": xml_subelement_text(xml_el, "image"),
-                "name": xml_subelement_attr(xml_el, "name"),
-                "product_code": xml_subelement_attr(xml_el, "productcode")}
-
-        for item in ["width", "length", "depth", "weight"]:
-            data[item] = xml_subelement_attr(xml_el, item, convert=float, quiet=True, default=0.0)
-
-        return data
 
     def _get_game_id(self, name, game_type, choose):
         """
@@ -176,8 +155,10 @@ class BoardGameGeekNetworkAPI(object):
         except BoardGameGeekAPINonXMLError:
             return None
 
-        guild = create_guild_from_xml(xml_root, html_parser)
-        if guild is None:
+        try:
+            guild = create_guild_from_xml(xml_root, html_parser)
+        except BoardGameGeekError as e:
+            log.error("error getting guild data: {}".format(e))
             return None
 
         # Add the first page of members
@@ -200,11 +181,17 @@ class BoardGameGeekNetworkAPI(object):
                 log.debug("non-XML response while loading guild members")
                 break
 
-            added_member = add_guild_members_from_xml(guild, xml_root)
-            call_progress_cb(progress, len(guild), guild.members_count)
+            try:
+                added_member = add_guild_members_from_xml(guild, xml_root)
+                call_progress_cb(progress, len(guild), guild.members_count)
+            except BoardGameGeekError as e:
+                log.error("error adding guild members: {}".format(e))
+                break
+                # TODO: decide if in this case we should return the guild object or None in case of error
 
         return guild
 
+    # TODO: refactor
     def user(self, name, progress=None, buddies=True, guilds=True, hot=True, top=True, domain="boardgame"):
         """
         Retrieves details about an user
@@ -411,11 +398,17 @@ class BoardGameGeekNetworkAPI(object):
             # if the api doesn't return XML, assume plays not found (BGG API does that sometimes)
             return None
 
-        plays = create_plays_from_xml(xml_root, game_id)
-        if plays is None:
+        try:
+            plays = create_plays_from_xml(xml_root, game_id)
+        except BoardGameGeekError as e:
+            log.error("error getting plays data: {}".format(e))
             return None
 
-        added_plays = add_plays_from_xml(plays, xml_root)
+        try:
+            added_plays = add_plays_from_xml(plays, xml_root)
+        except BoardGameGeekError as e:
+            log.error("error adding plays: {}".format(e))
+            return plays
 
         page = 1
 
@@ -438,8 +431,12 @@ class BoardGameGeekNetworkAPI(object):
             except BoardGameGeekAPINonXMLError:
                 break
 
-            added_plays = add_plays_from_xml(plays, xml_root)
-            call_progress_cb(progress, len(plays), plays.plays_count)
+            try:
+                added_plays = add_plays_from_xml(plays, xml_root)
+                call_progress_cb(progress, len(plays), plays.plays_count)
+            except BoardGameGeekError as e:
+                log.error("error adding plays: {}".format(e))
+                break
 
         return plays
 
@@ -465,30 +462,31 @@ class BoardGameGeekNetworkAPI(object):
         params = {"type": item_type}
 
         try:
-            root = get_parsed_xml_response(self.requests_session,
-                                           self._hot_api_url,
-                                           params=params,
-                                           timeout=self._timeout,
-                                           retries=self._retries,
-                                           retry_delay=self._retry_delay)
+            xml_root = get_parsed_xml_response(self.requests_session,
+                                               self._hot_api_url,
+                                               params=params,
+                                               timeout=self._timeout,
+                                               retries=self._retries,
+                                               retry_delay=self._retry_delay)
         except BoardGameGeekAPINonXMLError:
             # if the api doesn't return XML, assume hot items not found (BGG API does that sometimes)
             return None
 
-        hot_items = HotItems({})
+        try:
+            hot_items = create_hot_items_from_xml(xml_root)
+        except BoardGameGeekError as e:
+            log.error("error getting hot items data: {}".format(e))
+            return None
 
-        for item in root.findall("item"):
-            kwargs = {"name": xml_subelement_attr(item, "name"),
-                      "id": int(item.attrib["id"]),
-                      "rank": int(item.attrib["rank"]),
-                      "yearpublished": xml_subelement_attr(item, "yearpublished", convert=int, quiet=True),
-                      "thumbnail": xml_subelement_attr(item, "thumbnail")}
-            hot_items.add_hot_item(kwargs)
+        try:
+            add_hot_items_from_xml(hot_items, xml_root)
+        except BoardGameGeekError as e:
+            log.error("error adding hot items: {}".format(e))
 
         return hot_items
 
-    def collection(self, user_name, subtype="boardgame", exclude_subtype=None, ids=None, version=False, brief=False,
-                   stats=True, own=None, rated=None, played=None, commented=None, trade=None, want=None, wishlist=None,
+    def collection(self, user_name, subtype="boardgame", exclude_subtype=None, ids=None, versions=False,
+                   own=None, rated=None, played=None, commented=None, trade=None, want=None, wishlist=None,
                    wishlist_prio=None, preordered=None, want_to_play=None, want_to_buy=None, prev_owned=None,
                    has_parts=None, want_parts=None, min_rating=None, rating=None, min_bgg_rating=None, bgg_rating=None,
                    min_plays=None, max_plays=None, collection_id=None, modified_since=None):
@@ -501,9 +499,7 @@ class BoardGameGeekNetworkAPI(object):
         :param str exclude_subtype: if not ``None`` (default), exclude the specified subtype. One of: boardgame,
                                     boardgameexpansion, boardgameaccessory, rpgitem, rpgissue, or videogame
         :param list ids: if not ``None`` (default), limit the results to the specified ids.
-        :param bool version: include item version information
-        :param bool brief: return more abbreviated results
-        :param bool stats: fetch statistics for each collection item
+        :param bool versions: include item version information
         :param bool own: include (if ``True``) or exclude (if ``False``) owned items
         :param bool rated: include (if ``True``) or exclude (if ``False``) rated items
         :param bool played: include (if ``True``) or exclude (if ``False``) played items
@@ -546,7 +542,9 @@ class BoardGameGeekNetworkAPI(object):
         if subtype not in COLLECTION_SUBTYPES:
             raise BoardGameGeekError("invalid 'subtype': {}".format(subtype))
 
-        params={"username": user_name, "subtype": subtype}
+        params={"username": user_name,
+                "subtype": subtype,
+                "stats": 1}
 
         if exclude_subtype is not None:
             if exclude_subtype not in COLLECTION_SUBTYPES:
@@ -560,7 +558,7 @@ class BoardGameGeekNetworkAPI(object):
         if ids is not None:
             params["id"] = ",".join(["{}".format(id_) for id_ in ids])
 
-        for param in ["version", "brief", "stats", "own", "rated", "played", "trade", "want", "wishlist", "preordered"]:
+        for param in ["versions", "own", "rated", "played", "trade", "want", "wishlist", "preordered"]:
             p = locals()[param]
             if p is not None:
                 params[param] = 1 if p else 0
@@ -624,64 +622,27 @@ class BoardGameGeekNetworkAPI(object):
         # Make the request to BGG
         #
         try:
-            root = get_parsed_xml_response(self.requests_session,
-                                           self._collection_api_url,
-                                           params=params,
-                                           timeout=self._timeout,
-                                           retries=self._retries,
-                                           retry_delay=self._retry_delay)
+            xml_root = get_parsed_xml_response(self.requests_session,
+                                               self._collection_api_url,
+                                               params=params,
+                                               timeout=self._timeout,
+                                               retries=self._retries,
+                                               retry_delay=self._retry_delay)
         except BoardGameGeekAPINonXMLError:
+            # TODO: log this for all
             # if the api doesn't return XML, assume collection not found (BGG API does that sometimes)
             return None
 
-        # check if there's an error (e.g. invalid username)
-        error = root.find(".//error")
-        if error is not None:
-            message = xml_subelement_text(error, "message")
-            log.error("error fetching collection for {}: {}".format(user_name, message))
+        try:
+            collection = create_collection_from_xml(xml_root, user_name)
+        except BoardGameGeekError as e:
+            log.error("error getting collection data: {}".format(e))
             return None
 
-        collection = Collection({"owner": user_name, "items": []})
-
-        # search for all boardgames in the collection, add them to the list
-        for xml_el in root.findall(".//item[@subtype='{}']".format(subtype)):
-            # get the user's rating for this game in his collection
-            stats = xml_el.find("stats")
-            rating = xml_subelement_attr(stats, "rating", convert=float, quiet=True)
-
-            # initial data for this collection item
-            coll_item = {"name": xml_subelement_text(xml_el, "name"),
-                         "id": int(xml_el.attrib.get("objectid")),
-                         "numplays": xml_subelement_text(xml_el, "numplays", convert=int, default=0),
-                         "rating": rating}
-
-            # TODO: Test with stats=False
-            status = xml_el.find("status")
-            coll_item.update({stat: status.attrib.get(stat) for stat in ["lastmodified",
-                                                                         "own",
-                                                                         "preordered",
-                                                                         "prevowned",
-                                                                         "want",
-                                                                         "wanttobuy",
-                                                                         "wanttoplay",
-                                                                         "fortrade",
-                                                                         "wishlist",
-                                                                         "wishlistpriority"]})
-
-            # get the version, if any
-            version = xml_el.find("version")
-            if version:
-                # This collection item has version information
-                for ver in version.findall(".//item[@type='boardgameversion']"):
-                    try:
-                        coll_item["version"] = self._get_board_game_version_from_element(ver)
-                    except KeyError:
-                        raise BoardGameGeekAPIError("malformed XML element ('version')")
-
-                    # There should be only 1 version anyway
-                    break
-
-            collection.add_game(coll_item)
+        try:
+            add_collection_items_from_xml(collection, xml_root, subtype)
+        except BoardGameGeekError as e:
+            log.error("error adding collection items: {}".format(e))
 
         return collection
 
@@ -752,11 +713,11 @@ class BoardGameGeekNetworkAPI(object):
         for item in root.findall("item"):
             kwargs = {"id": item.attrib["id"],
                       "name": xml_subelement_attr(item, "name"),
-                      "yearpublished": fix_unsigned_negative(xml_subelement_attr(item,
-                                                                                 "yearpublished",
-                                                                                 default=0,
-                                                                                 convert=int,
-                                                                                 quiet=True)),
+                      "yearpublished": xml_subelement_attr(item,
+                                                           "yearpublished",
+                                                           default=0,
+                                                           convert=int,
+                                                           quiet=True),
                       "type": item.attrib["type"]}
 
             # TODO: move this inside the object
@@ -815,7 +776,7 @@ class BoardGameGeek(BoardGameGeekNetworkAPI):
         """
         return self._get_game_id(name, game_type="boardgame", choose=choose)
 
-    def game(self, name=None, game_id=None, choose="first", versions=False, videos=False, stats=True, historical=False,
+    def game(self, name=None, game_id=None, choose="first", versions=False, videos=False, historical=False,
              marketplace=False, comments=False, rating_comments=False, progress=None):
         """
         Get information about a game.
@@ -826,7 +787,6 @@ class BoardGameGeek(BoardGameGeekNetworkAPI):
                            Valid values are : "first", "recent" or "best-rank"
         :param bool versions: include versions information
         :param bool videos: include videos
-        :param bool stats: include statistics data
         :param bool historical: include historical data
         :param bool marketplace: include marketplace data
         :param bool comments: include comments
@@ -861,7 +821,7 @@ class BoardGameGeek(BoardGameGeekNetworkAPI):
                   "comments": 1 if comments else 0,
                   "ratingcomments": 1 if rating_comments else 0,
                   "pagesize": 100,
-                  "stats": 1 if stats else 0}
+                  "stats": 1}
 
         try:
             root = get_parsed_xml_response(self.requests_session,
@@ -949,7 +909,7 @@ class BoardGameGeek(BoardGameGeekNetworkAPI):
 
             for version in versions.findall("item[@type='boardgameversion']"):
                 try:
-                    vd = self._get_board_game_version_from_element(version)
+                    vd = get_board_game_version_from_element(version)
                     ver_list.append(vd)
                 except KeyError:
                     raise BoardGameGeekAPIError("malformed XML element ('versions')")
@@ -971,20 +931,22 @@ class BoardGameGeek(BoardGameGeekNetworkAPI):
                 "wishing": xml_subelement_attr(stats, "wishing", convert=int, quiet=True),
                 "numcomments": xml_subelement_attr(stats, "numcomments", convert=int, quiet=True),
                 "numweights": xml_subelement_attr(stats, "numweights", convert=int, quiet=True),
-                "averageweight": xml_subelement_attr(stats, "averageweight", convert=float, quiet=True)
+                "averageweight": xml_subelement_attr(stats, "averageweight", convert=float, quiet=True),
+                "ranks": []
             }
-            data.update(sd)
 
-            data["ranks"] = []
             ranks = stats.findall("ranks/rank")
             for rank in ranks:
                 try:
                     rank_value = int(rank.attrib.get("value"))
                 except:
                     rank_value = None
-                data["ranks"].append({"name": rank.attrib.get("name"),
-                                      "friendlyname": rank.attrib.get("friendlyname"),
-                                      "value": rank_value})
+                sd["ranks"].append({"id": rank.attrib["id"],
+                                    "name": rank.attrib["name"],
+                                    "friendlyname": rank.attrib.get("friendlyname"),
+                                    "value": rank_value})
+
+            data["stats"] = sd
 
         items_to_paginate = {}
 

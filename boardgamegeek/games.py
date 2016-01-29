@@ -16,149 +16,157 @@ import datetime
 
 from .things import Thing
 from .exceptions import BoardGameGeekError
-from .utils import fix_url, DictObject
+from .utils import fix_url, DictObject, fix_unsigned_negative
 
 
-class CollectionBoardGame(Thing):
+
+class BoardGameRank(Thing):
+    @property
+    def type(self):
+        return self._data.get("type")
+
+    @property
+    def friendly_name(self):
+        return self._data.get("friendlyname")
+
+    @property
+    def value(self):
+        return self._data.get("value")
+
+    @property
+    def rating_bayes_average(self):
+        return self._data.get("bayesaverage")
+
+
+class BoardGameStats(DictObject):
     """
-    A boardgame retrieved from the collection information, which has less information than the one retrieved
-    via the /thing api and which also contains some user-specific information.
+    Statistics about a board game
     """
-
     def __init__(self, data):
+        self._ranks = []
 
-        kw = copy(data)
-        self._version = None
+        for rank in data.get("ranks", []):
+            if rank.get("name") == "boardgame":
+                self._bgg_rank = int(rank["value"]) if "value" in rank else None
+            self._ranks.append(BoardGameRank(rank))
 
-        if "version" in data:
-            version = kw.pop("version")
-            self._version = BoardGameVersion(version)
-
-        super(CollectionBoardGame, self).__init__(kw)
-
-    def __repr__(self):
-        return "CollectionBoardGame (id: {})".format(self.id)
-
-    def _format(self, log):
-        log.info("boardgame id      : {}".format(self.id))
-        log.info("boardgame name    : {}".format(self.name))
-        log.info("number of plays   : {}".format(self.numplays))
-        log.info("last modified     : {}".format(self.lastmodified))
-        log.info("rating            : {}".format(self.rating))
-        log.info("own               : {}".format(self.owned))
-        log.info("preordered        : {}".format(self.preordered))
-        log.info("previously owned  : {}".format(self.prev_owned))
-        log.info("want              : {}".format(self.want))
-        log.info("want to buy       : {}".format(self.want_to_buy))
-        log.info("want to play      : {}".format(self.want_to_play))
-        log.info("wishlist          : {}".format(self.wishlist))
-        log.info("wishlist priority : {}".format(self.wishlist_priority))
-        log.info("for trade         : {}".format(self.for_trade))
-        if self._version is not None:
-            self._version._format(log)
+        super(BoardGameStats, self).__init__(data)
 
     @property
-    def lastmodified(self):
-        return self._data.get("lastmodified")
+    def bgg_rank(self):
+        return self._bgg_rank
 
     @property
-    def last_modified(self):
+    def ranks(self):
+        return self._ranks
+
+    @property
+    def users_rated(self):
         """
-        :return: last modified date
-        :rtype: str
+        :return: how many users rated the game
+        :rtype: integer
+        :return: ``None`` if n/a
         """
-        return self._data.get("lastmodified")
+        return self._data.get("usersrated")
 
     @property
-    def numplays(self):
-        return self._data.get("numplays", 0)
-
-    @property
-    def rating(self):
+    def rating_average(self):
         """
-        :return: game rating
+        :return: average rating
         :rtype: float
         :return: ``None`` if n/a
         """
-        return self._data.get("rating")
+        return self._data.get("average")
 
     @property
-    def owned(self):
+    def rating_bayes_average(self):
         """
-        :return: game owned
-        :rtype: bool
-        """
-        return bool(int(self._data.get("own", 0)))
-
-    @property
-    def preordered(self):
-        """
-        :return: game preordered
-        :rtype: bool
-        """
-        return bool(int(self._data.get("preordered", 0)))
-
-    @property
-    def prev_owned(self):
-        """
-        :return: game previously owned
-        :rtype: bool
-        """
-        return bool(int(self._data.get("prevowned", 0)))
-
-    @property
-    def version(self):
-        """
-
+        :return: bayes average rating
+        :rtype: float
         :return: ``None`` if n/a
-        :rtype: :pyclass:`boardgamegeek.BoardGameVersion`
         """
-        return self._version
+        return self._data.get("bayesaverage")
 
     @property
-    def want(self):
+    def rating_stddev(self):
         """
-        :return: game wanted
-        :rtype: bool
+        :return: standard deviation
+        :rtype: float
+        :return: ``None`` if n/a
         """
-        return bool(int(self._data.get("want", 0)))
+        return self._data.get("stddev")
 
     @property
-    def want_to_buy(self):
+    def rating_median(self):
         """
-        :return: want to buy
-        :rtype: bool
+        :return:
+        :rtype: float
+        :return: ``None`` if n/a
         """
-        return bool(int(self._data.get("wanttobuy", 0)))
+        return self._data.get("median")
 
     @property
-    def want_to_play(self):
+    def users_owned(self):
         """
-        :return: want to play
-        :rtype: bool
+        :return: number of users owning this game
+        :rtype: integer
+        :return: ``None`` if n/a
         """
-        return bool(int(self._data.get("wanttoplay", 0)))
+        return self._data.get("owned")
 
     @property
-    def for_trade(self):
+    def users_trading(self):
         """
-        :return: game for trading
-        :rtype: bool
+        :return: number of users trading this game
+        :rtype: integer
+        :return: ``None`` if n/a
         """
-        return bool(int(self._data.get("fortrade", 0)))
+        return self._data.get("trading")
 
     @property
-    def wishlist(self):
+    def users_wanting(self):
         """
-        :return: game on wishlist
-        :rtype: bool
+        :return: number of users wanting this game
+        :rtype: integer
+        :return: ``None`` if n/a
         """
-        return bool(int(self._data.get("wishlist", 0)))
+        return self._data.get("wanting")
 
     @property
-    def wishlist_priority(self):
-        # TODO: convert to int (it's str)
-        return self._data.get("wishlistpriority")
+    def users_wishing(self):
+        """
+        :return: number of users wishing for this game
+        :rtype: integer
+        :return: ``None`` if n/a
+        """
+        return self._data.get("wishing")
+
+    @property
+    def users_commented(self):
+        """
+        :return: number of user comments
+        :rtype: integer
+        :return: ``None`` if n/a
+        """
+        return self._data.get("numcomments")
+
+    @property
+    def rating_num_weights(self):
+        """
+        :return:
+        :rtype: integer
+        :return: ``None`` if n/a
+        """
+        return self._data.get("numweights")
+
+    @property
+    def rating_average_weight(self):
+        """
+        :return: average weight
+        :rtype: float
+        :return: ``None`` if n/a
+        """
+        return self._data.get("averageweight")
 
 
 class BoardGameComment(DictObject):
@@ -384,53 +392,341 @@ class BoardGameVersion(Thing):
         return self._data.get("yearpublished")
 
 
-class BoardGame(Thing):
+class BaseGame(Thing):
+
+    def __init__(self, data):
+
+        self._thumbnail = fix_url(data["thumbnail"]) if "thumbnail" in data else None
+        self._image = fix_url(data["image"]) if "image" in data else None
+        if "stats" not in data:
+            raise BoardGameGeekError("invalid data")
+
+        self._stats = BoardGameStats(data["stats"])
+
+        self._versions = []
+        self._versions_set = set()
+
+        try:
+            self._year_published = fix_unsigned_negative(data["yearpublished"])
+        except:
+            self._year_published = None
+
+        for version in data.get("versions", []):
+            try:
+                if version["id"] not in self._versions_set:
+                    self._versions.append(BoardGameVersion(version))
+                    self._versions_set.add(version["id"])
+            except KeyError:
+                raise BoardGameGeekError("invalid version data")
+
+        super(BaseGame, self).__init__(data)
+
+    @property
+    def thumbnail(self):
+        """
+        :return: thumbnail URL
+        :rtype: str
+        :return: ``None`` if n/a
+        """
+        return self._thumbnail
+
+    @property
+    def image(self):
+        """
+        :return: image URL
+        :rtype: str
+        :return: ``None`` if n/a
+        """
+        return self._image
+
+    @property
+    def year(self):
+        """
+        :return: publishing year
+        :rtype: integer
+        :return: ``None`` if n/a
+        """
+        return self._year_published
+
+    @property
+    def min_players(self):
+        """
+        :return: minimum number of players
+        :rtype: integer
+        :return: ``None`` if n/a
+        """
+        return self._data.get("minplayers")
+
+    @property
+    def max_players(self):
+        """
+        :return: maximum number of players
+        :rtype: integer
+        :return: ``None`` if n/a
+        """
+        return self._data.get("maxplayers")
+
+    @property
+    def min_playing_time(self):
+        """
+        Minimum playing time
+        :return: ``None if n/a
+        :rtype: integer
+        """
+        return self._data.get("minplaytime")
+
+    @property
+    def max_playing_time(self):
+        """
+        Maximum playing time
+        :return: ``None if n/a
+        :rtype: integer
+        """
+        return self._data.get("maxplaytime")
+
+    @property
+    def playing_time(self):
+        """
+        :return: playing time
+        :rtype: integer
+        :return: ``None`` if n/a
+        """
+        return self._data.get("playingtime")
+
+    # TODO: create properties to access the stats
+
+    @property
+    def users_rated(self):
+        """
+        :return: how many users rated the game
+        :rtype: integer
+        :return: ``None`` if n/a
+        """
+        return self._stats.users_rated
+
+    @property
+    def rating_average(self):
+        """
+        :return: average rating
+        :rtype: float
+        :return: ``None`` if n/a
+        """
+        return self._stats.rating_average
+
+    @property
+    def rating_bayes_average(self):
+        """
+        :return: bayes average rating
+        :rtype: float
+        :return: ``None`` if n/a
+        """
+        return self._stats.rating_bayes_average
+
+    @property
+    def rating_stddev(self):
+        """
+        :return: standard deviation
+        :rtype: float
+        :return: ``None`` if n/a
+        """
+        return self._stats.rating_stddev
+
+    @property
+    def rating_median(self):
+        """
+        :return:
+        :rtype: float
+        :return: ``None`` if n/a
+        """
+        return self._stats.rating_median
+
+    @property
+    def ranks(self):
+        #TODO: document this change. It's not returning list of dicts anymore, but BoardGameRank objects
+        """
+        :return: rankings of this game
+        :rtype: list of dicts, keys: ``friendlyname`` (the friendly name of the rank, e.g. "Board Game Rank"), ``name``
+                (name of the rank, e.g "boardgame"), ``value`` (the rank)
+        :return: ``None`` if n/a
+        """
+        return self._stats.ranks
+
+    @property
+    def bgg_rank(self):
+        """
+        :return: The board game geek rank of this game
+        """
+        # TODO: document this
+        return self._stats.bgg_rank
+
+    @property
+    def boardgame_rank(self):
+        # TODO: mark as deprecated (use bgg_rank instead)
+        return self.bgg_rank
+
+
+class CollectionBoardGame(BaseGame):
+    """
+    A boardgame retrieved from the collection information, which has less information than the one retrieved
+    via the /thing api and which also contains some user-specific information.
+    """
+
+    def __init__(self, data):
+        super(CollectionBoardGame, self).__init__(data)
+
+    def __repr__(self):
+        return "CollectionBoardGame (id: {})".format(self.id)
+
+    def _format(self, log):
+        log.info("boardgame id      : {}".format(self.id))
+        log.info("boardgame name    : {}".format(self.name))
+        log.info("number of plays   : {}".format(self.numplays))
+        log.info("last modified     : {}".format(self.lastmodified))
+        log.info("rating            : {}".format(self.rating))
+        log.info("own               : {}".format(self.owned))
+        log.info("preordered        : {}".format(self.preordered))
+        log.info("previously owned  : {}".format(self.prev_owned))
+        log.info("want              : {}".format(self.want))
+        log.info("want to buy       : {}".format(self.want_to_buy))
+        log.info("want to play      : {}".format(self.want_to_play))
+        log.info("wishlist          : {}".format(self.wishlist))
+        log.info("wishlist priority : {}".format(self.wishlist_priority))
+        log.info("for trade         : {}".format(self.for_trade))
+        for v in self._versions:
+            v._format(log)
+
+    @property
+    def lastmodified(self):
+        # TODO: deprecate this
+        return self._data.get("lastmodified")
+
+    @property
+    def last_modified(self):
+        """
+        :return: last modified date
+        :rtype: str
+        """
+        return self._data.get("lastmodified")
+
+    @property
+    def version(self):
+        if len(self._versions):
+            return self._versions[0]
+        else:
+            return None
+
+    @property
+    def numplays(self):
+        return self._data.get("numplays", 0)
+
+    @property
+    def rating(self):
+        """
+        :return: user's rating of the game
+        :rtype: float
+        :return: ``None`` if n/a
+        """
+        return self._data.get("rating")
+
+    @property
+    def owned(self):
+        """
+        :return: game owned
+        :rtype: bool
+        """
+        return bool(int(self._data.get("own", 0)))
+
+    @property
+    def preordered(self):
+        """
+        :return: game preordered
+        :rtype: bool
+        """
+        return bool(int(self._data.get("preordered", 0)))
+
+    @property
+    def prev_owned(self):
+        """
+        :return: game previously owned
+        :rtype: bool
+        """
+        return bool(int(self._data.get("prevowned", 0)))
+
+    @property
+    def want(self):
+        """
+        :return: game wanted
+        :rtype: bool
+        """
+        return bool(int(self._data.get("want", 0)))
+
+    @property
+    def want_to_buy(self):
+        """
+        :return: want to buy
+        :rtype: bool
+        """
+        return bool(int(self._data.get("wanttobuy", 0)))
+
+    @property
+    def want_to_play(self):
+        """
+        :return: want to play
+        :rtype: bool
+        """
+        return bool(int(self._data.get("wanttoplay", 0)))
+
+    @property
+    def for_trade(self):
+        """
+        :return: game for trading
+        :rtype: bool
+        """
+        return bool(int(self._data.get("fortrade", 0)))
+
+    @property
+    def wishlist(self):
+        """
+        :return: game on wishlist
+        :rtype: bool
+        """
+        return bool(int(self._data.get("wishlist", 0)))
+
+    @property
+    def wishlist_priority(self):
+        # TODO: convert to int (it's str)
+        return self._data.get("wishlistpriority")
+
+
+class BoardGame(BaseGame):
     """
     Object containing information about a board game
     """
     def __init__(self, data):
 
-        kw = copy(data)
-
-        # Fix thumbnail/image links
-        for to_fix in ["thumbnail", "image"]:
-            if to_fix in kw:
-                kw[to_fix] = fix_url(kw[to_fix])
-
-        # if we have any "expansions" for this item..
-        if "expansions" not in kw:
-            kw["expansions"] = []
-
-        self._expansions = []           # list of Thing for the expansions
-        self._expansions_set = set()    # set for making sure things are unique
-        for data in kw["expansions"]:
+        self._expansions = []                      # list of Thing for the expansions
+        self._expansions_set = set()               # set for making sure things are unique
+        for exp in data.get("expansions", []):
             try:
-                if data["id"] not in self._expansions_set:
-                    self._expansions_set.add(data["id"])
-                    self._expansions.append(Thing(data))
+                if exp["id"] not in self._expansions_set:
+                    self._expansions_set.add(exp["id"])
+                    self._expansions.append(Thing(exp))
             except KeyError:
                 raise BoardGameGeekError("invalid expansion data")
 
-        # if this item expands something...
-        if "expands" not in kw:
-            kw["expands"] = []
-
-        self._expands = []              # list of Thing which this item expands
-        self._expands_set = set()       # set for keeping things unique
-        for data in kw["expands"]:         # for all the items this game expands, create a Thing
+        self._expands = []                         # list of Thing which this item expands
+        self._expands_set = set()                  # set for keeping things unique
+        for exp in data.get("expands", []):        # for all the items this game expands, create a Thing
             try:
-                if data["id"] not in self._expands_set:
-                    self._expands_set.add(data["id"])
-                    self._expands.append(Thing(data))
+                if exp["id"] not in self._expands_set:
+                    self._expands_set.add(exp["id"])
+                    self._expands.append(Thing(exp))
             except KeyError:
                 raise BoardGameGeekError("invalid expanded game data")
 
-        if "videos" not in kw:
-            kw["videos"] = []
-
         self._videos = []
         self._videos_ids = set()
-        for video in kw["videos"]:
+        for video in data.get("videos", []):
             try:
                 if video["id"] not in self._videos_ids:
                     self._videos.append(BoardGameVideo(video))
@@ -438,38 +734,11 @@ class BoardGame(Thing):
             except KeyError:
                 raise BoardGameGeekError("invalid video data")
 
-        if "versions" not in kw:
-            kw["versions"] = []
-
-        self._versions = []
-        self._versions_set = set()
-        for data in kw["versions"]:
-            try:
-                if data["id"] not in self._versions_set:
-                    self._versions.append(BoardGameVersion(data))
-                    self._versions_set.add(data["id"])
-            except KeyError:
-                raise BoardGameGeekError("invalid version data")
-
-        self.boardgame_rank = None
-
-        if "ranks" in kw:
-            # try to search for the boardgame rank of this game
-            for rank in kw["ranks"]:
-                if rank.get("name") == "boardgame":
-                    value = rank.get("value")
-                    if value is None:
-                        self.boardgame_rank = None
-                    else:
-                        self.boardgame_rank = int(value)
-                    break
-
         self._comments = []
-        if "comments" in kw:
-            for comment in kw["comments"]:
-                self._comments.append(BoardGameComment(comment))
+        for comment in data.get("comments", []):
+            self._comments.append(BoardGameComment(comment))
 
-        super(BoardGame, self).__init__(kw)
+        super(BoardGame, self).__init__(data)
 
     def __repr__(self):
         return "BoardGame (id: {})".format(self.id)
@@ -507,7 +776,7 @@ class BoardGame(Thing):
     def _format(self, log):
         log.info("boardgame id      : {}".format(self.id))
         log.info("boardgame name    : {}".format(self.name))
-        log.info("boardgame rank    : {}".format(self.boardgame_rank))
+        log.info("boardgame rank    : {}".format(self.bgg_rank))
         if self.alternative_names:
             for i in self.alternative_names:
                 log.info("alternative name  : {}".format(i))
@@ -599,24 +868,6 @@ class BoardGame(Thing):
         :rtype: list of str
         """
         return self._data.get("alternative_names", [])
-
-    @property
-    def thumbnail(self):
-        """
-        :return: thumbnail URL
-        :rtype: str
-        :return: ``None`` if n/a
-        """
-        return self._data.get("thumbnail")
-
-    @property
-    def image(self):
-        """
-        :return: image URL
-        :rtype: str
-        :return: ``None`` if n/a
-        """
-        return self._data.get("image")
 
     @property
     def description(self):
@@ -711,60 +962,6 @@ class BoardGame(Thing):
         return self._data.get("expansion", False)
 
     @property
-    def year(self):
-        """
-        :return: publishing year
-        :rtype: integer
-        :return: ``None`` if n/a
-        """
-        return self._data.get("yearpublished")
-
-    @property
-    def min_players(self):
-        """
-        :return: minimum number of players
-        :rtype: integer
-        :return: ``None`` if n/a
-        """
-        return self._data.get("minplayers")
-
-    @property
-    def max_players(self):
-        """
-        :return: maximum number of players
-        :rtype: integer
-        :return: ``None`` if n/a
-        """
-        return self._data.get("maxplayers")
-
-    @property
-    def playing_time(self):
-        """
-        :return: playing time
-        :rtype: integer
-        :return: ``None`` if n/a
-        """
-        return self._data.get("playingtime")
-
-    @property
-    def min_playing_time(self):
-        """
-        Minimum playing time
-        :return: ``None if n/a
-        :rtype: integer
-        """
-        return self._data.get("minplaytime")
-
-    @property
-    def max_playing_time(self):
-        """
-        Maximum playing time
-        :return: ``None if n/a
-        :rtype: integer
-        """
-        return self._data.get("maxplaytime")
-
-    @property
     def min_age(self):
         """
         :return: minimum recommended age
@@ -774,58 +971,13 @@ class BoardGame(Thing):
         return self._data.get("minage")
 
     @property
-    def users_rated(self):
-        """
-        :return: how many users rated the game
-        :rtype: integer
-        :return: ``None`` if n/a
-        """
-        return self._data.get("usersrated")
-
-    @property
-    def rating_average(self):
-        """
-        :return: average rating
-        :rtype: float
-        :return: ``None`` if n/a
-        """
-        return self._data.get("average")
-
-    @property
-    def rating_bayes_average(self):
-        """
-        :return: bayes average rating
-        :rtype: float
-        :return: ``None`` if n/a
-        """
-        return self._data.get("bayesaverage")
-
-    @property
-    def rating_stddev(self):
-        """
-        :return: standard deviation
-        :rtype: float
-        :return: ``None`` if n/a
-        """
-        return self._data.get("stddev")
-
-    @property
-    def rating_median(self):
-        """
-        :return:
-        :rtype: float
-        :return: ``None`` if n/a
-        """
-        return self._data.get("median")
-
-    @property
     def users_owned(self):
         """
         :return: number of users owning this game
         :rtype: integer
         :return: ``None`` if n/a
         """
-        return self._data.get("owned")
+        return self._stats.users_owned
 
     @property
     def users_trading(self):
@@ -834,7 +986,7 @@ class BoardGame(Thing):
         :rtype: integer
         :return: ``None`` if n/a
         """
-        return self._data.get("trading")
+        return self._stats.users_trading
 
     @property
     def users_wanting(self):
@@ -880,16 +1032,6 @@ class BoardGame(Thing):
         :return: ``None`` if n/a
         """
         return self._data.get("averageweight")
-
-    @property
-    def ranks(self):
-        """
-        :return: rankings of this game
-        :rtype: list of dicts, keys: ``friendlyname`` (the friendly name of the rank, e.g. "Board Game Rank"), ``name``
-                (name of the rank, e.g "boardgame"), ``value`` (the rank)
-        :return: ``None`` if n/a
-        """
-        return self._data.get("ranks")
 
     @property
     def videos(self):

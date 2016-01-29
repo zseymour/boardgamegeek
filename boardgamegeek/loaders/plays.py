@@ -3,6 +3,7 @@ import logging
 
 from ..plays import UserPlays, GamePlays
 from ..utils import xml_subelement_text, xml_subelement_attr
+from ..exceptions import BoardGameGeekAPIError
 
 
 log = logging.getLogger("boardgamegeek.loaders.plays")
@@ -14,7 +15,7 @@ def create_plays_from_xml(xml_root, game_id=None):
         # in case of error, the root node doesn't have a 'total' attribute
         count = int(xml_root.attrib["total"])   # how many plays
     except:
-        return None
+        raise BoardGameGeekAPIError("missing 'total' from the response")
 
     if game_id is None:
         # User's plays
@@ -27,11 +28,9 @@ def create_plays_from_xml(xml_root, game_id=None):
 
 def add_plays_from_xml(plays, xml_root):
 
-    added_plays = False
+    added_items = False
 
     for play in xml_root.findall("play"):
-
-        added_plays = True
 
         player_list = []
         for player in play.findall("players/player"):
@@ -61,5 +60,6 @@ def add_plays_from_xml(plays, xml_root):
                 "players": player_list}
 
         plays.add_play(data)
+        added_items = True
 
-    return added_plays
+    return added_items
