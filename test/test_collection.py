@@ -46,7 +46,7 @@ def test_get_valid_users_collection(bgg, null_logger):
 
     collection = bgg.collection(TEST_VALID_USER, versions=False)
     for g in collection:
-        assert len(g.version) is None
+        assert g.version is None
 
     # TODO: test the filters for the collection
 

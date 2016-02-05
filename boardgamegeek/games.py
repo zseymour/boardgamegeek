@@ -47,7 +47,10 @@ class BoardGameStats(DictObject):
 
         for rank in data.get("ranks", []):
             if rank.get("name") == "boardgame":
-                self._bgg_rank = int(rank["value"]) if "value" in rank else None
+                try:
+                    self._bgg_rank = int(rank["value"])
+                except (KeyError, TypeError):
+                    self._bgg_rank = None
             self._ranks.append(BoardGameRank(rank))
 
         super(BoardGameStats, self).__init__(data)
@@ -1022,7 +1025,7 @@ class BoardGame(BaseGame):
         :rtype: integer
         :return: ``None`` if n/a
         """
-        return self._data.get("numweights")
+        return self._stats.rating_num_weights
 
     @property
     def rating_average_weight(self):
@@ -1031,7 +1034,7 @@ class BoardGame(BaseGame):
         :rtype: float
         :return: ``None`` if n/a
         """
-        return self._data.get("averageweight")
+        return self._stats.rating_average_weight
 
     @property
     def videos(self):
