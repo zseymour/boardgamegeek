@@ -739,12 +739,15 @@ class BoardGame(BaseGame):
 
         self._comments = []
         for comment in data.get("comments", []):
-            self._comments.append(BoardGameComment(comment))
+            self.add_comment(comment)
 
         super(BoardGame, self).__init__(data)
 
     def __repr__(self):
         return "BoardGame (id: {})".format(self.id)
+
+    def add_comment(self, data):
+        self._comments.append(BoardGameComment(data))
 
     def add_expanded_game(self, data):
         """

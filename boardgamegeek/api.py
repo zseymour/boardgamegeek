@@ -31,15 +31,15 @@ else:
 from .games import BoardGame
 from .user import User
 from .exceptions import BoardGameGeekAPIError, BoardGameGeekError, BoardGameGeekAPINonXMLError
-from .utils import xml_subelement_attr, xml_subelement_text, xml_subelement_attr_list, get_parsed_xml_response
+from .utils import xml_subelement_attr, get_parsed_xml_response
 from .search import SearchResult
 from .utils import get_cache_session_from_uri, RateLimitingAdapter, DEFAULT_REQUESTS_PER_MINUTE
-from .utils import get_board_game_version_from_element
 
 from .loaders import create_guild_from_xml, add_guild_members_from_xml
 from .loaders import create_plays_from_xml, add_plays_from_xml
 from .loaders import create_hot_items_from_xml, add_hot_items_from_xml
 from .loaders import create_collection_from_xml, add_collection_items_from_xml
+from .loaders import create_game_from_xml, add_game_items_from_xml
 
 
 log = logging.getLogger("boardgamegeek.api")
@@ -162,8 +162,12 @@ class BoardGameGeekNetworkAPI(object):
             return None
 
         # Add the first page of members
-        added_member = add_guild_members_from_xml(guild, xml_root)
-        call_progress_cb(progress, len(guild), guild.members_count)
+        try:
+            added_member = add_guild_members_from_xml(guild, xml_root)
+            call_progress_cb(progress, len(guild), guild.members_count)
+        except BoardGameGeekError as e:
+            log.error("error adding guild members: {}".format(e))
+            return guild
 
         # Fetch the other pages of members
         page = 1
@@ -406,6 +410,7 @@ class BoardGameGeekNetworkAPI(object):
 
         try:
             added_plays = add_plays_from_xml(plays, xml_root)
+            call_progress_cb(progress, len(plays), plays.plays_count)
         except BoardGameGeekError as e:
             log.error("error adding plays: {}".format(e))
             return plays
@@ -617,10 +622,6 @@ class BoardGameGeekNetworkAPI(object):
         if modified_since is not None:
             params["modifiedsince"] = modified_since
 
-
-        #
-        # Make the request to BGG
-        #
         try:
             xml_root = get_parsed_xml_response(self.requests_session,
                                                self._collection_api_url,
@@ -821,220 +822,60 @@ class BoardGameGeek(BoardGameGeekNetworkAPI):
                   "comments": 1 if comments else 0,
                   "ratingcomments": 1 if rating_comments else 0,
                   "pagesize": 100,
+                  "page": 1,
                   "stats": 1}
 
         try:
-            root = get_parsed_xml_response(self.requests_session,
-                                           self._thing_api_url,
-                                           params=params,
-                                           timeout=self._timeout,
-                                           retries=self._retries,
-                                           retry_delay=self._retry_delay)
+            xml_root = get_parsed_xml_response(self.requests_session,
+                                               self._thing_api_url,
+                                               params=params,
+                                               timeout=self._timeout,
+                                               retries=self._retries,
+                                               retry_delay=self._retry_delay)
         except BoardGameGeekAPINonXMLError:
             # if the api doesn't return XML, assume game not found (BGG API does that sometimes)
             return None
 
-        root = root.find("item")
-        if root is None:
+        xml_root = xml_root.find("item")
+        if xml_root is None:
             msg = "invalid data for game id: {}{}".format(game_id, "" if name is None else " ({})".format(name))
             raise BoardGameGeekAPIError(msg)
 
-        game_type = root.attrib["type"]
-        if game_type not in ["boardgame", "boardgameexpansion"]:
-            log.debug("unsupported type {} for item id {}".format(game_type, game_id))
-            raise BoardGameGeekError("item has an unsupported type")
+        try:
+            game = create_game_from_xml(xml_root,
+                                        game_id=game_id,
+                                        html_parser=html_parser)
+        except BoardGameGeekError as e:
+            log.error("error getting game data: {}".format(e))
+            return None
 
-        data = {"id": game_id,
-                "name": xml_subelement_attr(root, "name[@type='primary']"),
-                "alternative_names": xml_subelement_attr_list(root, "name[@type='alternate']"),
-                "thumbnail": xml_subelement_text(root, "thumbnail"),
-                "image": xml_subelement_text(root, "image"),
-                "expansion": game_type == "boardgameexpansion",       # is this game an expansion?
-                "families": xml_subelement_attr_list(root, "link[@type='boardgamefamily']"),
-                "categories": xml_subelement_attr_list(root, "link[@type='boardgamecategory']"),
-                "implementations": xml_subelement_attr_list(root, "link[@type='boardgameimplementation']"),
-                "mechanics": xml_subelement_attr_list(root, "link[@type='boardgamemechanic']"),
-                "designers": xml_subelement_attr_list(root, "link[@type='boardgamedesigner']"),
-                "artists": xml_subelement_attr_list(root, "link[@type='boardgameartist']"),
-                "publishers": xml_subelement_attr_list(root, "link[@type='boardgamepublisher']"),
-                "description": xml_subelement_text(root, "description", convert=html_parser.unescape, quiet=True)}
+        try:
+            added_items, total = add_game_items_from_xml(game, xml_root, comments=comments)
+            call_progress_cb(progress, len(game.comments), total)
+        except BoardGameGeekError as e:
+            log.error("error adding game items: {}".format(e))
+            return game
 
-        expands = []        # list of items this game expands
-        expansions = []     # list of expansions this game has
-        for e in root.findall("link[@type='boardgameexpansion']"):
+        page = 1
+        while added_items and len(game.comments) < total:
+            page += 1
             try:
-                item = {"id": e.attrib["id"], "name": e.attrib["value"]}
-            except KeyError:
-                raise BoardGameGeekAPIError("malformed XML element ('link type=boardgameexpansion')")
+                xml_root = get_parsed_xml_response(self.requests_session,
+                                                   self._thing_api_url,
+                                                   params={"id": game_id,
+                                                           "pagesize": 100,
+                                                           "comments": 1,
+                                                           "page": page})
+            except BoardGameGeekAPINonXMLError:
+                break
 
-            if e.attrib.get("inbound", "false").lower()[0] == 't':
-                # this is an item expanded by game_id
-                expands.append(item)
-            else:
-                expansions.append(item)
+            try:
+                added_items = add_game_items_from_xml(game, xml_root, comments=comments)
+                call_progress_cb(progress, len(plays), plays.plays_count)
+            except BoardGameGeekError as e:
+                log.error("error adding game items: {}".format(e))
 
-        data["expansions"] = expansions
-        data["expands"] = expands
-
-        # These XML elements have a numberic value, attempt to convert them to integers
-        for i in ["yearpublished", "minplayers", "maxplayers", "playingtime", "minplaytime", "maxplaytime", "minage"]:
-            data[i] = xml_subelement_attr(root, i, convert=int, quiet=True)
-
-        # Look for the videos
-        # TODO: The BGG API doesn't take the page=NNN parameter into account for videos; when it does, paginate them too
-        videos = root.find("videos")
-        if videos is not None:
-            vid_list = []
-            for vid in videos.findall("video"):
-                try:
-                    vd = {"id": vid.attrib["id"],
-                          "name": vid.attrib["title"],
-                          "category": vid.attrib.get("category"),
-                          "language": vid.attrib.get("language"),
-                          "link": vid.attrib["link"],
-                          "uploader": vid.attrib.get("username"),
-                          "uploader_id": vid.attrib.get("userid"),
-                          "post_date": vid.attrib.get("postdate")
-                          }
-                    vid_list.append(vd)
-                except KeyError:
-                    raise BoardGameGeekAPIError("malformed XML element ('video')")
-
-            data["videos"] = vid_list
-
-        # look for the versions
-        versions = root.find("versions")
-        if versions is not None:
-            ver_list = []
-
-            for version in versions.findall("item[@type='boardgameversion']"):
-                try:
-                    vd = get_board_game_version_from_element(version)
-                    ver_list.append(vd)
-                except KeyError:
-                    raise BoardGameGeekAPIError("malformed XML element ('versions')")
-
-            data["versions"] = ver_list
-
-        # look for the statistics
-        stats = root.find("statistics/ratings")
-        if stats is not None:
-            sd = {
-                "usersrated": xml_subelement_attr(stats, "usersrated", convert=int, quiet=True),
-                "average": xml_subelement_attr(stats, "average", convert=float, quiet=True),
-                "bayesaverage": xml_subelement_attr(stats, "bayesaverage", convert=float, quiet=True),
-                "stddev": xml_subelement_attr(stats, "stddev", convert=float, quiet=True),
-                "median": xml_subelement_attr(stats, "median", convert=float, quiet=True),
-                "owned": xml_subelement_attr(stats, "owned", convert=int, quiet=True),
-                "trading": xml_subelement_attr(stats, "trading", convert=int, quiet=True),
-                "wanting": xml_subelement_attr(stats, "wanting", convert=int, quiet=True),
-                "wishing": xml_subelement_attr(stats, "wishing", convert=int, quiet=True),
-                "numcomments": xml_subelement_attr(stats, "numcomments", convert=int, quiet=True),
-                "numweights": xml_subelement_attr(stats, "numweights", convert=int, quiet=True),
-                "averageweight": xml_subelement_attr(stats, "averageweight", convert=float, quiet=True),
-                "ranks": []
-            }
-
-            ranks = stats.findall("ranks/rank")
-            for rank in ranks:
-                try:
-                    rank_value = int(rank.attrib.get("value"))
-                except:
-                    rank_value = None
-                sd["ranks"].append({"id": rank.attrib["id"],
-                                    "name": rank.attrib["name"],
-                                    "friendlyname": rank.attrib.get("friendlyname"),
-                                    "value": rank_value})
-
-            data["stats"] = sd
-
-        items_to_paginate = {}
-
-        if comments:
-            data["comments"] = []
-
-            # TODO: this crap is not working (API PROBLEM??)
-
-            comments = root.find("comments")
-            if comments is not None:
-                total_comments = int(comments.attrib["totalitems"])
-                items_to_paginate["comments"] = total_comments
-
-                for comm in root.findall("comments/comment"):
-                    comment = {
-                        "username": comm.attrib["username"],
-                        "rating": comm.attrib.get("rating", "n/a").lower(),
-                        "comment": comm.attrib.get("value", "n/a")
-                    }
-                    data["comments"].append(comment)
-
-                page = 1
-
-                def _call_progress_cb():
-                    if progress is not None:
-                        progress(len(data["comments"]), total_comments)
-
-                while len(data["comments"]) < total_comments:
-                    added_comment = False
-                    page += 1
-                    new_root = get_parsed_xml_response(self.requests_session,
-                                                       self._thing_api_url,
-                                                       params={"id": game_id,
-                                                               "pagesize": 100,
-                                                               "comments": 1,
-                                                               "page": page})
-
-                    for comm in new_root.findall("comments/comment"):
-                        comment = {
-                            "username": comm.attrib["username"],
-                            "rating": comm.attrib.get("rating", "n/a").lower(),
-                            "comment": comm.attrib.get("value", "n/a")
-                        }
-                        data["comments"].append(comment)
-                        added_comment = True
-
-                    _call_progress_cb()
-
-                    if not added_comment:
-                        break
-
-
-        # max_items_to_fetch = max(total_buddies, total_guilds)
-        #
-        # def _call_progress_cb():
-        #     if progress is not None:
-        #         progress(max(user.total_buddies, user.total_guilds), max_items_to_fetch)
-        #
-        # _call_progress_cb()
-        #
-        # page = 2
-        # while max(user.total_buddies, user.total_guilds) < max_items_to_fetch:
-        #     added_buddy = False
-        #     added_guild = False
-        #     params["page"] = page
-        #     root = get_parsed_xml_response(self.requests_session,
-        #                                    self._user_api_url,
-        #                                    params=params,
-        #                                    timeout=self._timeout)
-        #
-        #     for buddy in root.findall(".//buddy"):
-        #         user.add_buddy({"name": buddy.attrib["name"],
-        #                         "id": buddy.attrib["id"]})
-        #         added_buddy = True
-        #
-        #     for guild in root.findall(".//guild"):
-        #         user.add_guild({"name": guild.attrib["name"],
-        #                         "id": guild.attrib["id"]})
-        #         added_guild = True
-        #
-        #     _call_progress_cb()
-        #     page += 1
-        #
-        #     if not added_buddy and not added_guild:
-        #         log.debug("didn't add any buddy/guild after fetching page {}, stopping here".format(page))
-        #         break
-
-        return BoardGame(data)
+        return game
 
     def games(self, name):
         """
