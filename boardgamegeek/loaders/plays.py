@@ -11,11 +11,16 @@ log = logging.getLogger("boardgamegeek.loaders.plays")
 
 def create_plays_from_xml(xml_root, game_id=None):
 
+    count = 0
     try:
         # in case of error, the root node doesn't have a 'total' attribute
-        count = int(xml_root.attrib["total"])   # how many plays
-    except:
-        raise BoardGameGeekAPIError("missing 'total' from the response")
+        count = int(xml_root.attrib["total"])             # how many plays
+    except (KeyError, ValueError):
+        pass
+
+    if not count:
+        # count is zero when passed an invalid game id
+        raise BoardGameGeekAPIError("probably invalid user name or game id")
 
     if game_id is None:
         # User's plays
