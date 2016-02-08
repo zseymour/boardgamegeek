@@ -7,7 +7,7 @@ from boardgamegeek.collection import CollectionBoardGame, Collection
 from boardgamegeek.games import BoardGameVersion
 
 
-from common import *
+from _common import *
 
 
 def test_get_collection_with_invalid_parameters(bgg):

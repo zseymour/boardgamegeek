@@ -3,7 +3,7 @@ import sys
 import datetime
 from boardgamegeek import BoardGameGeekError
 from boardgamegeek.games import BoardGameVideo, BoardGameVersion
-from common import *
+from _common import *
 
 
 if sys.version_info >= (3,):

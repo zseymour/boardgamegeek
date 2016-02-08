@@ -2,7 +2,7 @@ import datetime
 
 from boardgamegeek import BoardGameGeekError
 
-from common import *
+from _common import *
 
 
 progress_called = False
