@@ -88,8 +88,7 @@ def main():
 
     if args.user:
         user = bgg.user(args.user, progress=progress_cb)
-        if user:
-            user._format(log)
+        user._format(log)
 
     # query by game id
     if args.id:

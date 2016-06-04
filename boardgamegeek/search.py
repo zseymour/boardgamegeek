@@ -12,7 +12,7 @@
 """
 from __future__ import unicode_literals
 
-from .exceptions import BoardGameGeekError
+from .exceptions import BGGError
 from .things import Thing
 from .utils import fix_unsigned_negative
 
@@ -26,7 +26,7 @@ class SearchResult(Thing):
         self._yearpublished = None
         if "yearpublished" in data:
             if type(data["yearpublished"]) not in [int, type(None)]:
-                raise BoardGameGeekError("yearpublished is not valid")
+                raise BGGError("yearpublished is not valid")
 
             self._yearpublished = fix_unsigned_negative(data["yearpublished"])
 

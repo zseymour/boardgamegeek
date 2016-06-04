@@ -1,11 +1,11 @@
 from _common import *
 
-from boardgamegeek import BoardGameGeekError
+from boardgamegeek import BGGError
 from boardgamegeek.hotitems import HotItems, HotItem
 
 
 def test_get_hot_items_invalid_type(bgg):
-    with pytest.raises(BoardGameGeekError):
+    with pytest.raises(BGGError):
         bgg.hot_items("invalid type")
 
 
@@ -34,11 +34,11 @@ def test_get_hot_items_boardgamepersons(bgg, null_logger):
 def test_hot_items_initial_data():
 
     # test that exception is raised if invalid initial data is given when trying to create a HotItems object
-    with pytest.raises(BoardGameGeekError):
+    with pytest.raises(BGGError):
         HotItems({"items": [{"id": 100, "name": "hotitem"}]})
 
     h = HotItems({"items": [{"id": 100, "name": "hotitem", "rank": 10}]})
-    with pytest.raises(BoardGameGeekError):
+    with pytest.raises(BGGError):
         h.add_hot_item({"id": 100, "name": "hotitem"})
 
     assert type(h[0]) == HotItem

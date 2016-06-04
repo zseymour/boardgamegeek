@@ -11,7 +11,7 @@ import time
 import sys
 import datetime
 
-from boardgamegeek import BoardGameGeek, BoardGameGeekError
+from boardgamegeek import BoardGameGeek, BGGError
 from boardgamegeek.api import BoardGameGeekNetworkAPI
 from boardgamegeek.games import CollectionBoardGame, BoardGameVersion, BoardGameVideo
 from boardgamegeek.hotitems import HotItems, HotItem
@@ -53,11 +53,11 @@ def test_sqlite_caching():
 
     assert not os.path.isfile(name)
 
-    with pytest.raises(BoardGameGeekError):
+    with pytest.raises(BGGError):
         # invalid value for the ttl parameter
         BoardGameGeek(cache="sqlite://{}?ttl=blabla&fast_save=0".format(name))
 
-    with pytest.raises(BoardGameGeekError):
+    with pytest.raises(BGGError):
         BoardGameGeek(cache="invalid://cache")
 
     bgg = BoardGameGeek(cache="sqlite://{}?ttl=1000".format(name))
@@ -88,7 +88,7 @@ def test_search(bgg):
     res = bgg.search("Agricola", search_type=["boardgame"])
     assert type(res[0].id) == int
 
-    with pytest.raises(BoardGameGeekError):
+    with pytest.raises(BGGError):
         bgg.search("Agricola", search_type=["invalid-search-type"])
 #endregion
 
@@ -100,13 +100,13 @@ def test_search(bgg):
 
 #region Thing testing
 def test_thing_creation():
-    with pytest.raises(BoardGameGeekError):
+    with pytest.raises(BGGError):
         Thing({"id": 100})  # missing name
 
-    with pytest.raises(BoardGameGeekError):
+    with pytest.raises(BGGError):
         Thing({"name": "foobar"})  # missing id
 
-    with pytest.raises(BoardGameGeekError):
+    with pytest.raises(BGGError):
         Thing({"id": "asd", "name": "fubăr"})  # id not string
 
     t = Thing({"id": "10", "name": "fubăr"})

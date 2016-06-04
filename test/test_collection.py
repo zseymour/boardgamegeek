@@ -2,7 +2,7 @@ from __future__ import unicode_literals
 
 import pytest
 
-from boardgamegeek import BoardGameGeek, BoardGameGeekError
+from boardgamegeek import BoardGameGeek, BGGError
 from boardgamegeek.collection import CollectionBoardGame, Collection
 from boardgamegeek.games import BoardGameVersion
 
@@ -12,7 +12,7 @@ from _common import *
 
 def test_get_collection_with_invalid_parameters(bgg):
     for invalid in [None, ""]:
-        with pytest.raises(BoardGameGeekError):
+        with pytest.raises(BGGError):
             bgg.collection(invalid)
 
 
@@ -53,7 +53,7 @@ def test_get_valid_users_collection(bgg, null_logger):
 
 def test_creating_collection_out_of_raw_data():
     # test raise exception if invalid items given
-    with pytest.raises(BoardGameGeekError):
+    with pytest.raises(BGGError):
         Collection({"items": [{"id": 102}]})
 
     # test that items are added to the collection from the constructor
@@ -96,6 +96,6 @@ def test_creating_collection_out_of_raw_data():
     assert ci.users_rated == 123
     assert ci.rating_bayes_average is None
 
-    with pytest.raises(BoardGameGeekError):
+    with pytest.raises(BGGError):
         # raises exception on invalid game data
         c.add_game({"bla": "bla"})

@@ -1,6 +1,6 @@
 import logging
 
-from ..exceptions import BoardGameGeekError, BoardGameGeekAPIError
+from ..exceptions import BGGError, BoardGameGeekAPIError
 from ..games import BoardGame
 from ..utils import xml_subelement_attr_list, xml_subelement_text, xml_subelement_attr, get_board_game_version_from_element
 
@@ -13,7 +13,7 @@ def create_game_from_xml(xml_root, game_id, html_parser):
     game_type = xml_root.attrib["type"]
     if game_type not in ["boardgame", "boardgameexpansion"]:
         log.debug("unsupported type {} for item id {}".format(game_type, game_id))
-        raise BoardGameGeekError("item has an unsupported type")
+        raise BGGError("item has an unsupported type")
 
     data = {"id": game_id,
             "name": xml_subelement_attr(xml_root, "name[@type='primary']"),

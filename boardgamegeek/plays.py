@@ -14,7 +14,7 @@ from __future__ import unicode_literals
 from copy import copy
 import datetime
 
-from .exceptions import BoardGameGeekError
+from .exceptions import BGGError
 from .utils import DictObject
 
 
@@ -112,7 +112,7 @@ class PlaySession(DictObject):
 
     def __init__(self, data):
         if "id" not in data:
-            raise BoardGameGeekError("missing id of PlaySession")
+            raise BGGError("missing id of PlaySession")
 
         kw = copy(data)
 

@@ -27,8 +27,7 @@ try:
 except:
     import urlparse
 
-from .exceptions import BoardGameGeekAPIError, BoardGameGeekAPIRetryError, BoardGameGeekError
-from .exceptions import BoardGameGeekAPINonXMLError, BoardGameGeekTimeoutError
+from .exceptions import BGGApiError, BGGApiRetryError, BGGError, BGGApiTimeoutError
 
 log = logging.getLogger("boardgamegeek.utils")
 
@@ -297,7 +296,6 @@ def get_parsed_xml_response(requests_session, url, params=None, timeout=15, retr
     :param retries: number of retries to perform in case of timeout
     :param retry_delay: the amount of seconds to sleep when retrying an API call that returned 202
     :return: :py:func:`xml.etree.ElementTree` corresponding to the XML
-    :raises: :py:class:`BoardGameGeekAPINonXMLError` if the API response wasn't XML
     :raises: :py:class:`BoardGameGeekAPIRetryError` if this request should be retried after a short delay
     :raises: :py:class:`BoardGameGeekAPIError` if the response couldn't be parsed
     :raises: :py:class:`BoardGameGeekTimeoutError` if there was a timeout
@@ -316,10 +314,10 @@ def get_parsed_xml_response(requests_session, url, params=None, timeout=15, retr
                     # no retries have been requested, therefore raise exception to signal the application that it
                     # needs to retry
                     # (BoardGameGeek API says that on status code 202 the call should be retried after a delay)
-                    raise BoardGameGeekAPIRetryError()
+                    raise BGGApiRetryError
                 elif retr == 0:
                     # retries were requested, but we reached 0. Signal the application that it needs to retry itself.
-                    raise BoardGameGeekAPIRetryError("failed to retrieve data after {} retries".format(retries))
+                    raise BGGApiRetryError("failed to retrieve data after {} retries".format(retries))
                 else:
                     # sleep for the specified delay and retry
                     log.debug("API call will be retried in {} seconds ({} more retries)".format(retry_delay, retr))
@@ -336,8 +334,8 @@ def get_parsed_xml_response(requests_session, url, params=None, timeout=15, retr
                     retry_delay *= 3
                 continue
 
-            if not r.headers.get("content-type").startswith("text/xml"):
-                raise BoardGameGeekAPINonXMLError("non-XML reply")
+            if not r.headers.get("content-type").lower().startswith("text/xml"):
+                raise BGGApiError("non-XML reply")
 
             xml = r.text
 
@@ -351,25 +349,25 @@ def get_parsed_xml_response(requests_session, url, params=None, timeout=15, retr
 
         except requests.exceptions.Timeout:
             if retries == 0:
-                raise BoardGameGeekTimeoutError()
+                raise BGGApiTimeoutError
             elif retr == 0:
                 # ... reached 0 retries
-                raise BoardGameGeekTimeoutError("failed to retrieve data after {} retries".format(retries))
+                raise BGGApiTimeoutError("failed to retrieve data after {} retries".format(retries))
             else:
                 log.debug("API request timeout, retrying {} more times w/timeout {}".format(retr, timeout))
                 timeout *= 2.5
                 continue
 
         except ETParseError as e:
-            raise BoardGameGeekAPIError("error decoding BGG API response: {}".format(e))
+            raise BGGApiError("error decoding BGG API response: {}".format(e))
 
-        except (BoardGameGeekAPIRetryError, BoardGameGeekAPINonXMLError, BoardGameGeekTimeoutError):
+        except (BGGApiRetryError, BGGApiTimeoutError):
             raise
 
         except Exception as e:
-            raise BoardGameGeekAPIError("error fetching BGG API response: {}".format(e))
+            raise BGGApiError("error fetching BGG API response: {}".format(e))
 
-    raise BoardGameGeekAPIError("couldn't fetch data within the configured number of retries")
+    raise BGGApiError("couldn't fetch data within the configured number of retries")
 
 
 def get_cache_session_from_uri(uri):
@@ -416,9 +414,9 @@ def get_cache_session_from_uri(uri):
         # TODO: add the mongo backend
 
     except Exception as e:
-        raise BoardGameGeekError("error trying to create a CachedSession from '{}': {}".format(uri, e))
+        raise BGGError("error trying to create a CachedSession from '{}': {}".format(uri, e))
 
-    raise BoardGameGeekError("invalid cache URI: {}".format(uri))
+    raise BGGError("invalid cache URI: {}".format(uri))
 
 
 def fix_url(url):

@@ -14,7 +14,7 @@ from __future__ import unicode_literals
 
 from copy import copy
 
-from .exceptions import BoardGameGeekError
+from .exceptions import BGGError
 from .things import Thing
 from .utils import DictObject, fix_url
 
@@ -28,7 +28,7 @@ class HotItem(Thing):
 
     def __init__(self, data):
         if "rank" not in data:
-            raise BoardGameGeekError("missing rank of HotItem")
+            raise BGGError("missing rank of HotItem")
 
         if "thumbnail" in data:
             data["thumbnail"] = fix_url(data["thumbnail"])

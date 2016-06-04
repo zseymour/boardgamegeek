@@ -1,6 +1,6 @@
 from ..collection import Collection
 from ..utils import xml_subelement_text, xml_subelement_attr
-from ..exceptions import BoardGameGeekAPIError, BoardGameGeekError
+from ..exceptions import BoardGameGeekAPIError, BGGError
 from ..utils import get_board_game_version_from_element
 
 
@@ -10,7 +10,7 @@ def create_collection_from_xml(xml_root, user_name):
     error = xml_root.find(".//error")
     if error is not None:
         msg = xml_subelement_text(error, "message")
-        raise BoardGameGeekError("message: {}".format(msg))
+        raise BGGError("message: {}".format(msg))
 
     return Collection({"owner": user_name})
 

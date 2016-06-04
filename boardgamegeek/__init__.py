@@ -7,8 +7,8 @@
 .. moduleauthor:: Cosmin Luță <q4break@gmail.com>
 """
 from .api import BoardGameGeek
-from .exceptions import BoardGameGeekError, BoardGameGeekAPIRetryError, BoardGameGeekAPIError, BoardGameGeekTimeoutError
+from .exceptions import BGGError, BGGApiRetryError, BoardGameGeekAPIError, BGGApiTimeoutError
 from .version import __version__
 
-__all__ = [BoardGameGeek, BoardGameGeekAPIRetryError, BoardGameGeekError, BoardGameGeekAPIError, BoardGameGeekTimeoutError]
+__all__ = [BoardGameGeek, BGGApiRetryError, BGGError, BoardGameGeekAPIError, BGGApiTimeoutError]
 __import__('pkg_resources').declare_namespace(__name__)

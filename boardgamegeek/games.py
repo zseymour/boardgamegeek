@@ -15,7 +15,7 @@ from copy import copy
 import datetime
 
 from .things import Thing
-from .exceptions import BoardGameGeekError
+from .exceptions import BGGError
 from .utils import fix_url, DictObject, fix_unsigned_negative
 
 
@@ -402,7 +402,7 @@ class BaseGame(Thing):
         self._thumbnail = fix_url(data["thumbnail"]) if "thumbnail" in data else None
         self._image = fix_url(data["image"]) if "image" in data else None
         if "stats" not in data:
-            raise BoardGameGeekError("invalid data")
+            raise BGGError("invalid data")
 
         self._stats = BoardGameStats(data["stats"])
 
@@ -420,7 +420,7 @@ class BaseGame(Thing):
                     self._versions.append(BoardGameVersion(version))
                     self._versions_set.add(version["id"])
             except KeyError:
-                raise BoardGameGeekError("invalid version data")
+                raise BGGError("invalid version data")
 
         super(BaseGame, self).__init__(data)
 
@@ -715,7 +715,7 @@ class BoardGame(BaseGame):
                     self._expansions_set.add(exp["id"])
                     self._expansions.append(Thing(exp))
             except KeyError:
-                raise BoardGameGeekError("invalid expansion data")
+                raise BGGError("invalid expansion data")
 
         self._expands = []                         # list of Thing which this item expands
         self._expands_set = set()                  # set for keeping things unique
@@ -725,7 +725,7 @@ class BoardGame(BaseGame):
                     self._expands_set.add(exp["id"])
                     self._expands.append(Thing(exp))
             except KeyError:
-                raise BoardGameGeekError("invalid expanded game data")
+                raise BGGError("invalid expanded game data")
 
         self._videos = []
         self._videos_ids = set()
@@ -735,7 +735,7 @@ class BoardGame(BaseGame):
                     self._videos.append(BoardGameVideo(video))
                     self._videos_ids.add(video["id"])
             except KeyError:
-                raise BoardGameGeekError("invalid video data")
+                raise BGGError("invalid video data")
 
         self._comments = []
         for comment in data.get("comments", []):
@@ -762,7 +762,7 @@ class BoardGame(BaseGame):
                 self._expands_set.add(data["id"])
                 self._expands.append(Thing(data))
         except KeyError:
-            raise BoardGameGeekError("invalid expanded game data")
+            raise BGGError("invalid expanded game data")
 
     def add_expansion(self, data):
         """
@@ -777,7 +777,7 @@ class BoardGame(BaseGame):
                 self._expansions_set.add(data["id"])
                 self._expansions.append(Thing(data))
         except KeyError:
-            raise BoardGameGeekError("invalid expansion data")
+            raise BGGError("invalid expansion data")
 
     def _format(self, log):
         log.info("boardgame id      : {}".format(self.id))

@@ -13,7 +13,7 @@
 from __future__ import unicode_literals
 from copy import copy
 
-from .exceptions import BoardGameGeekError
+from .exceptions import BGGError
 from .games import CollectionBoardGame
 from .utils import DictObject
 
@@ -60,7 +60,7 @@ class Collection(DictObject):
                 self.__game_ids.add(game["id"])
                 self._items.append(CollectionBoardGame(game))
         except KeyError:
-            raise BoardGameGeekError("invalid game data")
+            raise BGGError("invalid game data")
 
     def __getitem__(self, item):
         return self._items.__getitem__(item)

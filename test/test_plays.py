@@ -1,7 +1,7 @@
 import datetime
 
 from _common import *
-from boardgamegeek import BoardGameGeekError
+from boardgamegeek import BGGError
 from boardgamegeek.plays import UserPlays, GamePlays, PlaySession, Plays
 
 
@@ -15,13 +15,13 @@ def progress_cb(items, total):
 
 
 def test_get_plays_with_invalid_parameters(bgg):
-    with pytest.raises(BoardGameGeekError):
+    with pytest.raises(BGGError):
         bgg.plays(name=None, game_id=None)
 
-    with pytest.raises(BoardGameGeekError):
+    with pytest.raises(BGGError):
         bgg.plays(name="", game_id=None)
 
-    with pytest.raises(BoardGameGeekError):
+    with pytest.raises(BGGError):
         bgg.plays(name=None, game_id="asd")
 
 
@@ -35,10 +35,10 @@ def test_get_plays_with_unknown_username_and_id(bgg):
 
 def test_get_plays_with_invalid_dates(bgg):
     # A string is invalid so should raise an error
-    with pytest.raises(BoardGameGeekError):
+    with pytest.raises(BGGError):
         bgg.plays(name=TEST_VALID_USER, min_date="2014-01-01")
 
-    with pytest.raises(BoardGameGeekError):
+    with pytest.raises(BGGError):
         bgg.plays(name=TEST_VALID_USER, max_date="2014-12-31")
 
 
@@ -110,7 +110,7 @@ def test_get_plays_of_game(bgg, null_logger):
 
 def test_create_plays_with_initial_data():
 
-    with pytest.raises(BoardGameGeekError):
+    with pytest.raises(BGGError):
         Plays({"plays": [{"user_id": 10}]})
 
     p = Plays({"plays": [{"id": 10, "user_id": 102, "date": "2014-01-02"}]})

@@ -1,7 +1,7 @@
 # coding: utf-8
 import sys
 import datetime
-from boardgamegeek import BoardGameGeekError
+from boardgamegeek import BGGError
 from boardgamegeek.games import BoardGameVideo, BoardGameVersion
 from _common import *
 
@@ -18,15 +18,15 @@ def test_get_unknown_game_info(bgg):
 
 
 def test_get_game_with_invalid_parameters(bgg):
-    with pytest.raises(BoardGameGeekError):
+    with pytest.raises(BGGError):
         bgg.game(name=None, game_id=None)
 
     for invalid in [None, ""]:
-        with pytest.raises(BoardGameGeekError):
+        with pytest.raises(BGGError):
             bgg.game(invalid)
 
     for invalid in [None, "", "asd"]:
-        with pytest.raises(BoardGameGeekError):
+        with pytest.raises(BGGError):
             bgg.game(None, game_id=invalid)
 
 

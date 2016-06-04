@@ -1,5 +1,5 @@
 from _common import *
-from boardgamegeek import BoardGameGeekError
+from boardgamegeek import BGGError
 
 
 def test_search(bgg):
@@ -13,5 +13,5 @@ def test_search(bgg):
     res = bgg.search("Agricola", search_type=["boardgame"])
     assert type(res[0].id) == int
 
-    with pytest.raises(BoardGameGeekError):
+    with pytest.raises(BGGError):
         bgg.search("Agricola", search_type=["invalid-search-type"])

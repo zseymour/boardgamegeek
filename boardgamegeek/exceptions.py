@@ -11,24 +11,31 @@
 """
 
 
-class BoardGameGeekError(Exception):
+class BGGError(Exception):
     pass
 
 
-class BoardGameGeekTimeoutError(BoardGameGeekError):
+class BGGItemNotFoundError(BGGError):
+    """ Requested item was not found """
     pass
 
 
-class BoardGameGeekAPIError(BoardGameGeekError):
+class BGGApiTimeoutError(BGGError):
+    """ Network timeout conditions """
+    pass
+
+
+class BGGApiError(BGGError):
     """ An error related to the BGG XML2 API """
     pass
 
 
-class BoardGameGeekAPIRetryError(BoardGameGeekAPIError):
+class BGGApiRetryError(BGGApiError):
     """ The request to the BGG XML2 API should be retried """
     pass
 
 
-class BoardGameGeekAPINonXMLError(BoardGameGeekAPIError):
-    """ The BGG XML2 API returned a non-XML response """
-    pass
+BoardGameGeekError = BGGError
+BoardGameGeekTimeoutError = BGGApiTimeoutError
+BoardGameGeekAPIError = BGGApiError
+BGGApiRetryError = BGGApiRetryError

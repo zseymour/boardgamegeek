@@ -12,7 +12,7 @@
 """
 from __future__ import unicode_literals
 
-from .exceptions import BoardGameGeekError
+from .exceptions import BGGError
 from .utils import DictObject
 
 
@@ -23,12 +23,12 @@ class Thing(DictObject):
     def __init__(self, data):
         for i in ["id", "name"]:
             if i not in data:
-                raise BoardGameGeekError("missing '{}' when trying to create a Thing".format(i))
+                raise BGGError("missing '{}' when trying to create a Thing".format(i))
 
         try:
             self._id = int(data["id"])
         except:
-            raise BoardGameGeekError("id ({}) is not an int when trying to create a Thing".format(data["id"]))
+            raise BGGError("id ({}) is not an int when trying to create a Thing".format(data["id"]))
 
         self._name = data["name"]
 

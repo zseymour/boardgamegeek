@@ -2,7 +2,7 @@ import os
 import tempfile
 
 from _common import *
-from boardgamegeek import BoardGameGeekError
+from boardgamegeek import BGGError
 
 
 #
@@ -29,11 +29,11 @@ def test_sqlite_caching():
 
     assert not os.path.isfile(name)
 
-    with pytest.raises(BoardGameGeekError):
+    with pytest.raises(BGGError):
         # invalid value for the ttl parameter
         BoardGameGeek(cache="sqlite://{}?ttl=blabla&fast_save=0".format(name))
 
-    with pytest.raises(BoardGameGeekError):
+    with pytest.raises(BGGError):
         BoardGameGeek(cache="invalid://cache")
 
     bgg = BoardGameGeek(cache="sqlite://{}?ttl=1000".format(name))

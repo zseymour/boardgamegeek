@@ -1,6 +1,6 @@
 import datetime
 
-from boardgamegeek import BoardGameGeekError
+from boardgamegeek import BGGError
 
 from _common import *
 
@@ -17,7 +17,7 @@ def progress_cb(items, total):
 def test_get_user_with_invalid_parameters(bgg):
     # test how the module reacts to unexpected parameters
     for invalid in [None, ""]:
-        with pytest.raises(BoardGameGeekError):
+        with pytest.raises(BGGError):
             bgg.user(invalid)
 
 

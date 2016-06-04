@@ -3,7 +3,7 @@ import logging
 
 from ..guild import Guild
 from ..utils import xml_subelement_text
-from ..exceptions import BoardGameGeekError
+from ..exceptions import BGGError
 
 
 log = logging.getLogger("boardgamegeek.loaders.guild")
@@ -12,7 +12,7 @@ log = logging.getLogger("boardgamegeek.loaders.guild")
 def create_guild_from_xml(xml_root, html_parser):
 
     if "name" not in xml_root.attrib:
-        raise BoardGameGeekError("name not found")
+        raise BGGError("name not found")
 
     data = {"name": xml_root.attrib["name"],
             "created": xml_root.attrib.get("created"),
