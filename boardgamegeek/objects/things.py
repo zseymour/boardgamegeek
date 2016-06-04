@@ -12,8 +12,8 @@
 """
 from __future__ import unicode_literals
 
-from .exceptions import BGGError
-from .utils import DictObject
+from boardgamegeek.exceptions import BGGError
+from boardgamegeek.utils import DictObject
 
 
 class Thing(DictObject):

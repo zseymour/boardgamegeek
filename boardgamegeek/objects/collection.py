@@ -13,9 +13,9 @@
 from __future__ import unicode_literals
 from copy import copy
 
-from .exceptions import BGGError
-from .games import CollectionBoardGame
-from .utils import DictObject
+from boardgamegeek.exceptions import BGGError
+from boardgamegeek.games import CollectionBoardGame
+from boardgamegeek.utils import DictObject
 
 
 class Collection(DictObject):

@@ -14,8 +14,8 @@ from __future__ import unicode_literals
 from copy import copy
 import datetime
 
-from .exceptions import BGGError
-from .utils import DictObject
+from boardgamegeek.exceptions import BGGError
+from boardgamegeek.utils import DictObject
 
 
 class PlaysessionPlayer(DictObject):

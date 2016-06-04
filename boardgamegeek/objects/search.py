@@ -12,9 +12,9 @@
 """
 from __future__ import unicode_literals
 
-from .exceptions import BGGError
-from .things import Thing
-from .utils import fix_unsigned_negative
+from boardgamegeek.objects.things import Thing
+from boardgamegeek.exceptions import BGGError
+from boardgamegeek.utils import fix_unsigned_negative
 
 
 class SearchResult(Thing):

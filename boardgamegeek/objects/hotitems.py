@@ -14,9 +14,9 @@ from __future__ import unicode_literals
 
 from copy import copy
 
-from .exceptions import BGGError
-from .things import Thing
-from .utils import DictObject, fix_url
+from boardgamegeek.objects.things import Thing
+from boardgamegeek.exceptions import BGGError
+from boardgamegeek.utils import DictObject, fix_url
 
 
 class HotItem(Thing):

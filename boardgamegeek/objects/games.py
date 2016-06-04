@@ -3,7 +3,7 @@
 :mod:`boardgamegeek.games` - Games information
 ==============================================
 
-.. module:: boardgamegeek.games
+.. module:: boardgamegeek.objects.games
    :platform: Unix, Windows
    :synopsis: classes for storing games information
 
@@ -14,10 +14,9 @@ from __future__ import unicode_literals
 from copy import copy
 import datetime
 
-from .things import Thing
-from .exceptions import BGGError
-from .utils import fix_url, DictObject, fix_unsigned_negative
-
+from boardgamegeek.things import Thing
+from boardgamegeek.exceptions import BGGError
+from boardgamegeek.utils import fix_url, DictObject, fix_unsigned_negative
 
 
 class BoardGameRank(Thing):

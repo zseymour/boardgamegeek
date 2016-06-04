@@ -1,4 +1,4 @@
-from ..hotitems import HotItems
+from boardgamegeek.objects.hotitems import HotItems
 from ..utils import xml_subelement_attr
 
 
