@@ -253,14 +253,19 @@ class BoardGameGeekNetworkAPI(object):
         user = User(data)
 
         # add top items
-        for top_item in root.findall(".//top/item"):
-            user.add_top_item({"id": int(top_item.attrib["id"]),
-                               "name": top_item.attrib["name"]})
+        if top:
+            for top_item in root.findall(".//top/item"):
+                user.add_top_item({"id": int(top_item.attrib["id"]),
+                                   "name": top_item.attrib["name"]})
 
         # add hot items
-        for hot_item in root.findall(".//hot/item"):
-            user.add_hot_item({"id": int(hot_item.attrib["id"]),
-                               "name": hot_item.attrib["name"]})
+        if hot:
+            for hot_item in root.findall(".//hot/item"):
+                user.add_hot_item({"id": int(hot_item.attrib["id"]),
+                                   "name": hot_item.attrib["name"]})
+
+        if not buddies and not guilds:
+            return user
 
         total_buddies = 0
         total_guilds = 0
