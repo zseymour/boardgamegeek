@@ -4,7 +4,11 @@ Changelog
 Massive refactoring.
 
 Splitting Plays into two classes, UserPlays and GamePlays.
+Refactored exceptions
+Most functions don't return ``None`` in case of item not found, but raise an exception
+
 TODO: allow breaking from fetching pages by raising an exception from the progress callback
+
 
 
 0.13.2

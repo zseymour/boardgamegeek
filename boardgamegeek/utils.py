@@ -285,7 +285,7 @@ def xml_subelement_text(xml_elem, subelement, convert=None, default=None, quiet=
     return text
 
 
-def get_parsed_xml_response(requests_session, url, params=None, timeout=15, retries=3, retry_delay=5):
+def request_and_parse_xml(requests_session, url, params=None, timeout=15, retries=3, retry_delay=5):
     """
     Downloads an XML from the specified url, parses it and returns the xml ElementTree.
 

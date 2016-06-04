@@ -31,7 +31,7 @@ else:
 from .games import BoardGame
 from .user import User
 from .exceptions import BGGApiError, BGGError, BGGItemNotFoundError
-from .utils import xml_subelement_attr, get_parsed_xml_response
+from .utils import xml_subelement_attr, request_and_parse_xml
 from .search import SearchResult
 from .utils import get_cache_session_from_uri, RateLimitingAdapter, DEFAULT_REQUESTS_PER_MINUTE
 
@@ -146,12 +146,12 @@ class BoardGameGeekNetworkAPI(object):
         except:
             raise BGGError("invalid guild id")
 
-        xml_root = get_parsed_xml_response(self.requests_session,
-                                           self._guild_api_url,
-                                           params={"id": guild_id, "members": 1},
-                                           timeout=self._timeout,
-                                           retries=self._retries,
-                                           retry_delay=self._retry_delay)
+        xml_root = request_and_parse_xml(self.requests_session,
+                                         self._guild_api_url,
+                                         params={"id": guild_id, "members": 1},
+                                         timeout=self._timeout,
+                                         retries=self._retries,
+                                         retry_delay=self._retry_delay)
 
 
         try:
@@ -176,12 +176,12 @@ class BoardGameGeekNetworkAPI(object):
             page += 1
             log.debug("fetching page {}".format(page))
             try:
-                xml_root = get_parsed_xml_response(self.requests_session,
-                                                   self._guild_api_url,
-                                                   params={"id": guild_id, "members": 1, "page": page},
-                                                   timeout=self._timeout,
-                                                   retries=self._retries,
-                                                   retry_delay=self._retry_delay)
+                xml_root = request_and_parse_xml(self.requests_session,
+                                                 self._guild_api_url,
+                                                 params={"id": guild_id, "members": 1, "page": page},
+                                                 timeout=self._timeout,
+                                                 retries=self._retries,
+                                                 retry_delay=self._retry_delay)
             except BGGApiError:
                 log.debug("non-XML response while loading guild members")
                 # TODO: flag error
@@ -233,12 +233,12 @@ class BoardGameGeekNetworkAPI(object):
                   "top": 1 if top else 0,
                   "domain": domain}
 
-        root = get_parsed_xml_response(self.requests_session,
-                                       self._user_api_url,
-                                       params=params,
-                                       timeout=self._timeout,
-                                       retries=self._retries,
-                                       retry_delay=self._retry_delay)
+        root = request_and_parse_xml(self.requests_session,
+                                     self._user_api_url,
+                                     params=params,
+                                     timeout=self._timeout,
+                                     retries=self._retries,
+                                     retry_delay=self._retry_delay)
 
         # when the user is not found, the API returns an response, but with most fields empty. id is empty too
         try:
@@ -310,10 +310,10 @@ class BoardGameGeekNetworkAPI(object):
             added_buddy = False
             added_guild = False
             params["page"] = page
-            root = get_parsed_xml_response(self.requests_session,
-                                           self._user_api_url,
-                                           params=params,
-                                           timeout=self._timeout)
+            root = request_and_parse_xml(self.requests_session,
+                                         self._user_api_url,
+                                         params=params,
+                                         timeout=self._timeout)
 
             for buddy in root.findall(".//buddy"):
                 user.add_buddy({"name": buddy.attrib["name"],
@@ -387,12 +387,12 @@ class BoardGameGeekNetworkAPI(object):
             except AttributeError:
                 raise BGGError("maxdate must be a datetime.date object")
 
-        xml_root = get_parsed_xml_response(self.requests_session,
-                                           self._plays_api_url,
-                                           params=params,
-                                           timeout=self._timeout,
-                                           retries=self._retries,
-                                           retry_delay=self._retry_delay)
+        xml_root = request_and_parse_xml(self.requests_session,
+                                         self._plays_api_url,
+                                         params=params,
+                                         timeout=self._timeout,
+                                         retries=self._retries,
+                                         retry_delay=self._retry_delay)
 
         plays = create_plays_from_xml(xml_root, game_id)
 
@@ -415,12 +415,12 @@ class BoardGameGeekNetworkAPI(object):
 
             try:
                 # fetch the next pages of plays
-                xml_root = get_parsed_xml_response(self.requests_session,
-                                                   self._plays_api_url,
-                                                   params=params,
-                                                   timeout=self._timeout,
-                                                   retries=self._retries,
-                                                   retry_delay=self._retry_delay)
+                xml_root = request_and_parse_xml(self.requests_session,
+                                                 self._plays_api_url,
+                                                 params=params,
+                                                 timeout=self._timeout,
+                                                 retries=self._retries,
+                                                 retry_delay=self._retry_delay)
             except BGGError:
                 break
 
@@ -455,12 +455,12 @@ class BoardGameGeekNetworkAPI(object):
 
         params = {"type": item_type}
 
-        xml_root = get_parsed_xml_response(self.requests_session,
-                                           self._hot_api_url,
-                                           params=params,
-                                           timeout=self._timeout,
-                                           retries=self._retries,
-                                           retry_delay=self._retry_delay)
+        xml_root = request_and_parse_xml(self.requests_session,
+                                         self._hot_api_url,
+                                         params=params,
+                                         timeout=self._timeout,
+                                         retries=self._retries,
+                                         retry_delay=self._retry_delay)
 
         try:
             hot_items = create_hot_items_from_xml(xml_root)
@@ -608,17 +608,12 @@ class BoardGameGeekNetworkAPI(object):
         if modified_since is not None:
             params["modifiedsince"] = modified_since
 
-        try:
-            xml_root = get_parsed_xml_response(self.requests_session,
-                                               self._collection_api_url,
-                                               params=params,
-                                               timeout=self._timeout,
-                                               retries=self._retries,
-                                               retry_delay=self._retry_delay)
-        except BoardGameGeekAPINonXMLError:
-            # TODO: log this for all
-            # if the api doesn't return XML, assume collection not found (BGG API does that sometimes)
-            return None
+        xml_root = request_and_parse_xml(self.requests_session,
+                                         self._collection_api_url,
+                                         params=params,
+                                         timeout=self._timeout,
+                                         retries=self._retries,
+                                         retry_delay=self._retry_delay)
 
         try:
             collection = create_collection_from_xml(xml_root, user_name)
@@ -686,12 +681,12 @@ class BoardGameGeekNetworkAPI(object):
             params["exact"] = 1
 
         try:
-            root = get_parsed_xml_response(self.requests_session,
-                                           self._search_api_url,
-                                           params=params,
-                                           timeout=self._timeout,
-                                           retries=self._retries,
-                                           retry_delay=self._retry_delay)
+            root = request_and_parse_xml(self.requests_session,
+                                         self._search_api_url,
+                                         params=params,
+                                         timeout=self._timeout,
+                                         retries=self._retries,
+                                         retry_delay=self._retry_delay)
         except BoardGameGeekAPINonXMLError:
             # if the api doesn't return XML, assume nothing was found (BGG API does that sometimes)
             return None
@@ -813,12 +808,12 @@ class BoardGameGeek(BoardGameGeekNetworkAPI):
                   "stats": 1}
 
         try:
-            xml_root = get_parsed_xml_response(self.requests_session,
-                                               self._thing_api_url,
-                                               params=params,
-                                               timeout=self._timeout,
-                                               retries=self._retries,
-                                               retry_delay=self._retry_delay)
+            xml_root = request_and_parse_xml(self.requests_session,
+                                             self._thing_api_url,
+                                             params=params,
+                                             timeout=self._timeout,
+                                             retries=self._retries,
+                                             retry_delay=self._retry_delay)
         except BoardGameGeekAPINonXMLError:
             # if the api doesn't return XML, assume game not found (BGG API does that sometimes)
             return None
@@ -847,9 +842,9 @@ class BoardGameGeek(BoardGameGeekNetworkAPI):
         while added_items and len(game.comments) < total:
             page += 1
             try:
-                xml_root = get_parsed_xml_response(self.requests_session,
-                                                   self._thing_api_url,
-                                                   params={"id": game_id,
+                xml_root = request_and_parse_xml(self.requests_session,
+                                                 self._thing_api_url,
+                                                 params={"id": game_id,
                                                            "pagesize": 100,
                                                            "comments": 1,
                                                            "page": page})
