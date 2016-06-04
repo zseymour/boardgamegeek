@@ -122,12 +122,13 @@ class BoardGameGeekNetworkAPI(object):
             # ...and selecting the one with the best ranking
             return min(game_data, key=lambda x: x.boardgame_rank if x.boardgame_rank is not None else 10000000000).id
 
-    def guild(self, guild_id, progress=None):
+    def guild(self, guild_id, progress=None, members=True):
         """
         Retrieves details about a guild
 
         :param integer guild_id: the id number of the guild
         :param callable progress: an optional callable for reporting progress, taking two integers (``current``, ``total``) as arguments
+        :param bool members: if ``True``, names of the guild members will be fetched
         :return: ``Guild`` object containing the data
         :return: ``None`` if the information couldn't be retrieved
         :rtype: :py:class:`boardgamegeek.guild.Guild`
@@ -146,12 +147,16 @@ class BoardGameGeekNetworkAPI(object):
 
         xml_root = request_and_parse_xml(self.requests_session,
                                          self._guild_api_url,
-                                         params={"id": guild_id, "members": 1},
+                                         params={"id": guild_id,
+                                                 "members": 1 if members else 0},
                                          timeout=self._timeout,
                                          retries=self._retries,
                                          retry_delay=self._retry_delay)
 
         guild = create_guild_from_xml(xml_root, html_parser)
+
+        if not members:
+            return guild
 
         # Add the first page of members
         added_member = add_guild_members_from_xml(guild, xml_root)
