@@ -1,7 +1,5 @@
-from _common import *
-
 from boardgamegeek import BGGError
-from boardgamegeek.hotitems import HotItems, HotItem
+from boardgamegeek.objects.hotitems import HotItems, HotItem
 
 
 def test_get_hot_items_invalid_type(bgg):

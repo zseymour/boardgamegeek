@@ -11,12 +11,13 @@
 
 """
 from __future__ import unicode_literals
-from copy import copy
-import datetime
 
-from boardgamegeek.things import Thing
-from boardgamegeek.exceptions import BGGError
-from boardgamegeek.utils import fix_url, DictObject, fix_unsigned_negative
+import datetime
+from copy import copy
+
+from .things import Thing
+from ..exceptions import BGGError
+from ..utils import fix_url, DictObject, fix_unsigned_negative
 
 
 class BoardGameRank(Thing):

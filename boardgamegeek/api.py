@@ -14,9 +14,8 @@ objects.
 """
 from __future__ import unicode_literals
 
-import logging
-import requests
 import datetime
+import logging
 import sys
 import warnings
 
@@ -28,18 +27,19 @@ else:
     import HTMLParser as hp
 
 
-from .games import BoardGame
-from .user import User
+from .objects.user import User
+from .objects.search import SearchResult
+
 from .exceptions import BGGApiError, BGGError, BGGItemNotFoundError
 from .utils import xml_subelement_attr, request_and_parse_xml
-from .search import SearchResult
-from .utils import get_cache_session_from_uri, RateLimitingAdapter, DEFAULT_REQUESTS_PER_MINUTE
+from .utils import RateLimitingAdapter, DEFAULT_REQUESTS_PER_MINUTE
+from .cache import CacheBackendMemory
 
 from .loaders import create_guild_from_xml, add_guild_members_from_xml
 from .loaders import create_plays_from_xml, add_plays_from_xml
 from .loaders import create_hot_items_from_xml, add_hot_items_from_xml
 from .loaders import create_collection_from_xml, add_collection_items_from_xml
-from .loaders import create_game_from_xml, add_game_items_from_xml
+from .loaders import create_game_from_xml, add_game_comments_from_xml
 
 
 log = logging.getLogger("boardgamegeek.api")
@@ -61,7 +61,7 @@ class BoardGameGeekNetworkAPI(object):
     Base class for the BoardGameGeek websites APIs. All site-specific clients are derived from this.
 
     :param str api_endpoint: URL of the API
-    :param str cache: URL indicating the cache to use, or ``None`` if caching should be disabled (not recommended)
+    :param str cache: instance of a :py:class:`boardgamegeek.cache.CacheBackend` class
     :param integer timeout: timeout for a request
     :param integer retries: how many retries to perform in special cases
     :param integer retry_delay: delay between retries (seconds)
@@ -82,11 +82,7 @@ class BoardGameGeekNetworkAPI(object):
         self._timeout = timeout
         self._retries = retries
         self._retry_delay = retry_delay
-
-        if cache:
-            self.requests_session = get_cache_session_from_uri(cache)
-        else:
-            self.requests_session = requests.Session()
+        self.requests_session = cache.cache
 
         # add the rate limiting adapter
         self.requests_session.mount(api_endpoint, RateLimitingAdapter(rpm=requests_per_minute))
@@ -113,12 +109,12 @@ class BoardGameGeekNetworkAPI(object):
         res = self.search(name, search_type=[game_type], exact=True)
 
         if not res:
-            # TODO: raise not found
-            return None
+            raise BGGItemNotFoundError("can't find '{}'".format(name))
 
         if choose == "first":
             return res[0].id
         elif choose == "recent":
+            # choose the result with the biggest year
             return max(res, key=lambda x: x.year if x.year is not None else -300000).id
         else:
             # getting the best rank requires fetching the data of all games returned
@@ -619,12 +615,13 @@ class BoardGameGeekNetworkAPI(object):
             collection = create_collection_from_xml(xml_root, user_name)
         except BGGError as e:
             log.error("error getting collection data: {}".format(e))
-            return None
+            raise
 
         try:
             add_collection_items_from_xml(collection, xml_root, subtype)
         except BGGError as e:
             log.error("error adding collection items: {}".format(e))
+            # TODO: add error/incomplete flag
 
         return collection
 
@@ -680,16 +677,12 @@ class BoardGameGeekNetworkAPI(object):
         if exact:
             params["exact"] = 1
 
-        try:
-            root = request_and_parse_xml(self.requests_session,
-                                         self._search_api_url,
-                                         params=params,
-                                         timeout=self._timeout,
-                                         retries=self._retries,
-                                         retry_delay=self._retry_delay)
-        except BoardGameGeekAPINonXMLError:
-            # if the api doesn't return XML, assume nothing was found (BGG API does that sometimes)
-            return None
+        root = request_and_parse_xml(self.requests_session,
+                                     self._search_api_url,
+                                     params=params,
+                                     timeout=self._timeout,
+                                     retries=self._retries,
+                                     retry_delay=self._retry_delay)
 
         results = []
         for item in root.findall("item"):
@@ -715,7 +708,7 @@ class BoardGameGeek(BoardGameGeekNetworkAPI):
         Caching for the requests can be used by specifying an URI for the ``cache`` parameter. By default, an in-memory
         cache is used, with sqlite being the other currently supported option.
 
-        :param cache: URL indicating the cache to use for HTTP requests, ``None`` if disabled
+        :param cache: A :py:class:`boardgamegeek.cache.CacheBackend` object to be used for caching the requests
         :param timeout: Timeout for network operations
         :param retries: Number of retries to perform in case the API returns HTTP 202 (retry) or in case of timeouts
         :param retry_delay: Time to sleep between retries when the API returns HTTP 202 (retry)
@@ -728,11 +721,11 @@ class BoardGameGeek(BoardGameGeekNetworkAPI):
             >>> game = bgg.game("Android: Netrunner")
             >>> game.id
             124742
-            >>> bgg_no_cache = BoardGameGeek(cache=None)
-            >>> bgg_sqlite_cache = BoardGameGeek(cache="sqlite:///path/to/cache.db?ttl=3600")
+            >>> bgg_no_cache = BoardGameGeek(cache=CacheBackendNone())
+            >>> bgg_sqlite_cache = BoardGameGeek(cache=CacheBackendSqlite(path="/path/to/cache.db", ttl=3600))
 
     """
-    def __init__(self, cache="memory:///?ttl=3600", timeout=15, retries=3, retry_delay=5, disable_ssl=False, requests_per_minute=DEFAULT_REQUESTS_PER_MINUTE):
+    def __init__(self, cache=CacheBackendMemory(ttl=3600), timeout=15, retries=3, retry_delay=5, disable_ssl=False, requests_per_minute=DEFAULT_REQUESTS_PER_MINUTE):
 
         api_endpoint = "http{}://www.boardgamegeek.com/xmlapi2".format("" if disable_ssl else "s")
         super(BoardGameGeek, self).__init__(api_endpoint=api_endpoint,
@@ -751,10 +744,10 @@ class BoardGameGeek(BoardGameGeekNetworkAPI):
         :return: the game's id
         :rtype: integer
         :return: ``None`` if game wasn't found
-        :raises: :py:exc:`boardgamegeek.exceptions.BoardGameGeekError` in case of invalid name
-        :raises: :py:exc:`boardgamegeek.exceptions.BoardGameGeekAPIRetryError` if this request should be retried after a short delay
-        :raises: :py:exc:`boardgamegeek.exceptions.BoardGameGeekAPIError` if the response couldn't be parsed
-        :raises: :py:exc:`boardgamegeek.exceptions.BoardGameGeekTimeoutError` if there was a timeout
+        :raises: :py:exc:`boardgamegeek.exceptions.BGGError` in case of invalid name
+        :raises: :py:exc:`boardgamegeek.exceptions.BGGApiRetryError` if this request should be retried after a short delay
+        :raises: :py:exc:`boardgamegeek.exceptions.BGGApiError` if the response couldn't be parsed
+        :raises: :py:exc:`boardgamegeek.exceptions.BGGApiTimeoutError` if there was a timeout
         """
         return self._get_game_id(name, game_type="boardgame", choose=choose)
 
@@ -791,8 +784,7 @@ class BoardGameGeek(BoardGameGeekNetworkAPI):
             game_id = self.get_game_id(name, choose=choose)
             if game_id is None:
                 log.error("couldn't find any game named '{}'".format(name))
-                raise Item
-            # todo: raise...
+                raise BGGItemNotFoundError
 
         log.debug("retrieving game id {}{}".format(game_id, " ({})".format(name) if name is not None else ""))
 
@@ -807,21 +799,17 @@ class BoardGameGeek(BoardGameGeekNetworkAPI):
                   "page": 1,
                   "stats": 1}
 
-        try:
-            xml_root = request_and_parse_xml(self.requests_session,
-                                             self._thing_api_url,
-                                             params=params,
-                                             timeout=self._timeout,
-                                             retries=self._retries,
-                                             retry_delay=self._retry_delay)
-        except BoardGameGeekAPINonXMLError:
-            # if the api doesn't return XML, assume game not found (BGG API does that sometimes)
-            return None
+        xml_root = request_and_parse_xml(self.requests_session,
+                                         self._thing_api_url,
+                                         params=params,
+                                         timeout=self._timeout,
+                                         retries=self._retries,
+                                         retry_delay=self._retry_delay)
 
         xml_root = xml_root.find("item")
         if xml_root is None:
             msg = "invalid data for game id: {}{}".format(game_id, "" if name is None else " ({})".format(name))
-            raise BoardGameGeekAPIError(msg)
+            raise BGGApiError(msg)
 
         try:
             game = create_game_from_xml(xml_root,
@@ -829,33 +817,34 @@ class BoardGameGeek(BoardGameGeekNetworkAPI):
                                         html_parser=html_parser)
         except BGGError as e:
             log.error("error getting game data: {}".format(e))
-            return None
+            raise
 
         try:
-            added_items, total = add_game_items_from_xml(game, xml_root, comments=comments)
+            added_items, total = add_game_comments_from_xml(game, xml_root, comments=comments)
             call_progress_cb(progress, len(game.comments), total)
         except BGGError as e:
-            log.error("error adding game items: {}".format(e))
+            log.error("error adding game comments: {}".format(e))
             return game
 
         page = 1
         while added_items and len(game.comments) < total:
             page += 1
+
             try:
                 xml_root = request_and_parse_xml(self.requests_session,
                                                  self._thing_api_url,
                                                  params={"id": game_id,
-                                                           "pagesize": 100,
-                                                           "comments": 1,
-                                                           "page": page})
-            except BoardGameGeekAPINonXMLError:
+                                                         "pagesize": 100,
+                                                         "comments": 1,
+                                                         "page": page})
+            except:
                 break
 
             try:
-                added_items = add_game_items_from_xml(game, xml_root, comments=comments)
-                call_progress_cb(progress, len(plays), plays.plays_count)
+                added_items = add_game_comments_from_xml(game, xml_root, comments=comments)
+                call_progress_cb(progress, len(game), game.comments)
             except BGGError as e:
-                log.error("error adding game items: {}".format(e))
+                log.error("error adding game comments: {}".format(e))
 
         return game
 

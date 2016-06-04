@@ -1,9 +1,8 @@
 import logging
 
-
-from ..guild import Guild
-from ..utils import xml_subelement_text
+from ..objects.guild import Guild
 from ..exceptions import BGGError
+from ..utils import xml_subelement_text
 
 
 log = logging.getLogger("boardgamegeek.loaders.guild")

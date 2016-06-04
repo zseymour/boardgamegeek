@@ -1,7 +1,7 @@
 import logging
 
-from ..exceptions import BGGError, BoardGameGeekAPIError
-from ..games import BoardGame
+from ..objects.games import BoardGame
+from ..exceptions import BGGApiError
 from ..utils import xml_subelement_attr_list, xml_subelement_text, xml_subelement_attr, get_board_game_version_from_element
 
 
@@ -13,7 +13,7 @@ def create_game_from_xml(xml_root, game_id, html_parser):
     game_type = xml_root.attrib["type"]
     if game_type not in ["boardgame", "boardgameexpansion"]:
         log.debug("unsupported type {} for item id {}".format(game_type, game_id))
-        raise BGGError("item has an unsupported type")
+        raise BGGApiError("item has an unsupported type")
 
     data = {"id": game_id,
             "name": xml_subelement_attr(xml_root, "name[@type='primary']"),
@@ -36,7 +36,7 @@ def create_game_from_xml(xml_root, game_id, html_parser):
         try:
             item = {"id": e.attrib["id"], "name": e.attrib["value"]}
         except KeyError:
-            raise BoardGameGeekAPIError("malformed XML element ('link type=boardgameexpansion')")
+            raise BGGApiError("malformed XML element ('link type=boardgameexpansion')")
 
         if e.attrib.get("inbound", "false").lower()[0] == 't':
             # this is an item expanded by game_id
@@ -69,7 +69,7 @@ def create_game_from_xml(xml_root, game_id, html_parser):
                       }
                 vid_list.append(vd)
             except KeyError:
-                raise BoardGameGeekAPIError("malformed XML element ('video')")
+                raise BGGApiError("malformed XML element ('video')")
 
         data["videos"] = vid_list
 
@@ -83,7 +83,7 @@ def create_game_from_xml(xml_root, game_id, html_parser):
                 vd = get_board_game_version_from_element(version)
                 ver_list.append(vd)
             except KeyError:
-                raise BoardGameGeekAPIError("malformed XML element ('versions')")
+                raise BGGApiError("malformed XML element ('versions')")
 
         data["versions"] = ver_list
 
@@ -122,13 +122,12 @@ def create_game_from_xml(xml_root, game_id, html_parser):
     return BoardGame(data)
 
 
-def add_game_items_from_xml(game, xml_root, comments):
+def add_game_comments_from_xml(game, xml_root, comments):
 
     added_items = False
     total_comments = 0
 
     if comments:
-
         # TODO: this crap is not working (API PROBLEM??)
         comments = xml_root.find("comments")
         if comments is not None:

@@ -1,9 +1,8 @@
 import logging
 
-
-from ..plays import UserPlays, GamePlays
+from ..objects.plays import UserPlays, GamePlays
+from ..exceptions import BGGItemNotFoundError
 from ..utils import xml_subelement_text, xml_subelement_attr
-from ..exceptions import BoardGameGeekAPIError
 
 
 log = logging.getLogger("boardgamegeek.loaders.plays")
@@ -19,8 +18,9 @@ def create_plays_from_xml(xml_root, game_id=None):
         pass
 
     if not count:
+        # TODO: test with something that has 0 plays.
         # count is zero when passed an invalid game id
-        raise BoardGameGeekAPIError("probably invalid user name or game id")
+        raise BGGItemNotFoundError("invalid user name or game id")
 
     if game_id is None:
         # User's plays

@@ -11,11 +11,12 @@
 
 """
 from __future__ import unicode_literals
+
 from copy import copy
 
-from boardgamegeek.exceptions import BGGError
-from boardgamegeek.games import CollectionBoardGame
-from boardgamegeek.utils import DictObject
+from ..exceptions import BGGError
+from ..utils import DictObject
+from .games import CollectionBoardGame
 
 
 class Collection(DictObject):

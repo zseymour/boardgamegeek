@@ -2,12 +2,10 @@ from __future__ import unicode_literals
 
 import pytest
 
-from boardgamegeek import BoardGameGeek, BGGError
-from boardgamegeek.collection import CollectionBoardGame, Collection
-from boardgamegeek.games import BoardGameVersion
-
-
 from _common import *
+from boardgamegeek import BGGError
+from boardgamegeek.objects.collection import CollectionBoardGame, Collection
+from boardgamegeek.objects.games import BoardGameVersion
 
 
 def test_get_collection_with_invalid_parameters(bgg):

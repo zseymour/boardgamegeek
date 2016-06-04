@@ -14,7 +14,7 @@ from __future__ import unicode_literals
 
 from copy import copy
 
-from boardgamegeek.objects.things import Thing
+from .things import Thing
 
 
 class User(Thing):

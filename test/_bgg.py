@@ -3,23 +3,17 @@ from __future__ import unicode_literals
 
 import logging
 import os
-import threading
-import tempfile
-import pytest
 import pickle
+import tempfile
+import threading
 import time
-import sys
-import datetime
 
-from boardgamegeek import BoardGameGeek, BGGError
-from boardgamegeek.api import BoardGameGeekNetworkAPI
-from boardgamegeek.games import CollectionBoardGame, BoardGameVersion, BoardGameVideo
-from boardgamegeek.hotitems import HotItems, HotItem
-from boardgamegeek.plays import PlaySession, GamePlays, UserPlays, Plays
-from boardgamegeek.things import Thing
-from boardgamegeek.utils import DictObject
+import pytest
 
 import boardgamegeek.utils as bggutil
+from boardgamegeek import BoardGameGeek, BGGError
+from boardgamegeek.api import BoardGameGeekNetworkAPI
+from boardgamegeek.objects.things import Thing
 
 
 

@@ -1,7 +1,7 @@
-from ..collection import Collection
-from ..utils import xml_subelement_text, xml_subelement_attr
+from ..objects.collection import Collection
 from ..exceptions import BoardGameGeekAPIError, BGGError
 from ..utils import get_board_game_version_from_element
+from ..utils import xml_subelement_text, xml_subelement_attr
 
 
 def create_collection_from_xml(xml_root, user_name):

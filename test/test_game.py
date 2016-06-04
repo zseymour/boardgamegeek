@@ -1,10 +1,10 @@
 # coding: utf-8
-import sys
 import datetime
-from boardgamegeek import BGGError
-from boardgamegeek.games import BoardGameVideo, BoardGameVersion
-from _common import *
+import sys
 
+from _common import *
+from boardgamegeek import BGGError
+from boardgamegeek.objects.games import BoardGameVideo, BoardGameVersion
 
 if sys.version_info >= (3,):
     STR_TYPES_OR_NONE = [str, type(None)]

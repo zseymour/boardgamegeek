@@ -14,7 +14,6 @@ from __future__ import unicode_literals
 import sys
 import xml.etree.ElementTree as ET
 from xml.etree.ElementTree import ParseError as ETParseError
-import requests_cache
 import requests
 import logging
 import time
@@ -368,55 +367,6 @@ def request_and_parse_xml(requests_session, url, params=None, timeout=15, retrie
             raise BGGApiError("error fetching BGG API response: {}".format(e))
 
     raise BGGApiError("couldn't fetch data within the configured number of retries")
-
-
-def get_cache_session_from_uri(uri):
-    """
-    Returns a requests-cache session using caching specified in the URI. Valid uris are:
-
-    * memory:///?ttl=<seconds>
-    * sqlite:///path/to/sqlite.db?ttl=<seconds>&fast_save=<0|1>
-
-    :param uri: URI specifying the type of cache to use and its parameters
-    :return: CachedSession instance, which can be used as a regular ``requests`` session.
-    :raises: :class:`BoardGameGeekError` in case of error
-    """
-
-    try:
-        r = urlparse.urlparse(uri)
-
-        args = urlparse.parse_qs(r.query)
-
-        # if not specified, default cache time is 3600 seconds
-        ttl = int(args.get("ttl", ['3600'])[0])
-
-        if r.scheme == "memory":
-            return requests_cache.core.CachedSession(backend="memory",
-                                                     expire_after=ttl,
-                                                     allowable_codes=(200,))
-
-        elif r.scheme == "sqlite":
-            fast_save = args.get("fast_save", ["0"])[0] != "0"
-            return requests_cache.core.CachedSession(cache_name=r.path,
-                                                     backend="sqlite",
-                                                     expire_after=ttl,
-                                                     extension="",
-                                                     fast_save=fast_save,
-                                                     allowable_codes=(200,))
-
-        # TODO: add the redis backend
-        # elif r.scheme == "redis":
-        #     return requests_cache.core.CachedSession(cache_name=args.get("prefix", ["cache"])[0],
-        #                                              backend="redis",
-        #                                              expire_after=ttl,
-        #                                              allowable_codes=(200,))
-
-        # TODO: add the mongo backend
-
-    except Exception as e:
-        raise BGGError("error trying to create a CachedSession from '{}': {}".format(uri, e))
-
-    raise BGGError("invalid cache URI: {}".format(uri))
 
 
 def fix_url(url):
