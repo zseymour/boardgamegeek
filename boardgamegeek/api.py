@@ -137,6 +137,8 @@ class BoardGameGeekNetworkAPI(object):
         :raises: :py:exc:`boardgamegeek.exceptions.BGGApiTimeoutError` if there was a timeout
         """
 
+        # TODO: permit skipping the download of extra data (members and stuff)
+
         try:
             guild_id = int(guild_id)
         except:
@@ -149,21 +151,14 @@ class BoardGameGeekNetworkAPI(object):
                                          retries=self._retries,
                                          retry_delay=self._retry_delay)
 
-
-        try:
-            guild = create_guild_from_xml(xml_root, html_parser)
-        except BGGError as e:
-            log.error("error getting guild data: {}".format(e))
-            # TODO: raise exception
-            return None
+        guild = create_guild_from_xml(xml_root, html_parser)
 
         # Add the first page of members
+        added_member = add_guild_members_from_xml(guild, xml_root)
+
         try:
-            added_member = add_guild_members_from_xml(guild, xml_root)
             call_progress_cb(progress, len(guild), guild.members_count)
-        except BGGError as e:
-            log.error("error adding guild members: {}".format(e))
-            # TODO: add flag about fetching guild members error
+        except Exception:
             return guild
 
         # Fetch the other pages of members
@@ -171,25 +166,20 @@ class BoardGameGeekNetworkAPI(object):
         while len(guild) < guild.members_count and added_member:
             page += 1
             log.debug("fetching page {}".format(page))
-            try:
-                xml_root = request_and_parse_xml(self.requests_session,
-                                                 self._guild_api_url,
-                                                 params={"id": guild_id, "members": 1, "page": page},
-                                                 timeout=self._timeout,
-                                                 retries=self._retries,
-                                                 retry_delay=self._retry_delay)
-            except BGGApiError:
-                log.debug("non-XML response while loading guild members")
-                # TODO: flag error
-                break
+
+            xml_root = request_and_parse_xml(self.requests_session,
+                                             self._guild_api_url,
+                                             params={"id": guild_id, "members": 1, "page": page},
+                                             timeout=self._timeout,
+                                             retries=self._retries,
+                                             retry_delay=self._retry_delay)
+
+            added_member = add_guild_members_from_xml(guild, xml_root)
 
             try:
-                added_member = add_guild_members_from_xml(guild, xml_root)
                 call_progress_cb(progress, len(guild), guild.members_count)
-            except BGGError as e:
-                log.error("error adding guild members: {}".format(e))
+            except:
                 break
-                # TODO: decide if in this case we should return the guild object or None in case of error
 
         return guild
 
@@ -299,7 +289,10 @@ class BoardGameGeekNetworkAPI(object):
             if progress is not None:
                 progress(max(user.total_buddies, user.total_guilds), max_items_to_fetch)
 
-        _call_progress_cb()
+        try:
+            _call_progress_cb()
+        except:
+            return user
 
         page = 2
         while max(user.total_buddies, user.total_guilds) < max_items_to_fetch:
@@ -321,7 +314,11 @@ class BoardGameGeekNetworkAPI(object):
                                 "id": guild.attrib["id"]})
                 added_guild = True
 
-            _call_progress_cb()
+            try:
+                _call_progress_cb()
+            except:
+                break
+
             page += 1
 
             if not added_buddy and not added_guild:
@@ -391,12 +388,11 @@ class BoardGameGeekNetworkAPI(object):
                                          retry_delay=self._retry_delay)
 
         plays = create_plays_from_xml(xml_root, game_id)
+        added_plays = add_plays_from_xml(plays, xml_root)
 
         try:
-            added_plays = add_plays_from_xml(plays, xml_root)
             call_progress_cb(progress, len(plays), plays.plays_count)
-        except BGGError as e:
-            log.error("error adding plays: {}".format(e))
+        except:
             return plays
 
         page = 1
@@ -409,23 +405,19 @@ class BoardGameGeekNetworkAPI(object):
 
             params["page"] = page
 
-            try:
-                # fetch the next pages of plays
-                xml_root = request_and_parse_xml(self.requests_session,
-                                                 self._plays_api_url,
-                                                 params=params,
-                                                 timeout=self._timeout,
-                                                 retries=self._retries,
-                                                 retry_delay=self._retry_delay)
-            except BGGError:
-                break
+            # fetch the next pages of plays
+            xml_root = request_and_parse_xml(self.requests_session,
+                                             self._plays_api_url,
+                                             params=params,
+                                             timeout=self._timeout,
+                                             retries=self._retries,
+                                             retry_delay=self._retry_delay)
+
+            added_plays = add_plays_from_xml(plays, xml_root)
 
             try:
-                added_plays = add_plays_from_xml(plays, xml_root)
                 call_progress_cb(progress, len(plays), plays.plays_count)
-            except BGGError as e:
-                log.error("error adding plays: {}".format(e))
-                # TODO: error flag?
+            except:
                 break
 
         return plays
@@ -458,17 +450,8 @@ class BoardGameGeekNetworkAPI(object):
                                          retries=self._retries,
                                          retry_delay=self._retry_delay)
 
-        try:
-            hot_items = create_hot_items_from_xml(xml_root)
-        except BGGError as e:
-            log.error("error getting hot items data: {}".format(e))
-            # TODO raise error
-            return None
-
-        try:
-            add_hot_items_from_xml(hot_items, xml_root)
-        except BGGError as e:
-            log.error("error adding hot items: {}".format(e))
+        hot_items = create_hot_items_from_xml(xml_root)
+        add_hot_items_from_xml(hot_items, xml_root)
 
         return hot_items
 
@@ -611,17 +594,8 @@ class BoardGameGeekNetworkAPI(object):
                                          retries=self._retries,
                                          retry_delay=self._retry_delay)
 
-        try:
-            collection = create_collection_from_xml(xml_root, user_name)
-        except BGGError as e:
-            log.error("error getting collection data: {}".format(e))
-            raise
-
-        try:
-            add_collection_items_from_xml(collection, xml_root, subtype)
-        except BGGError as e:
-            log.error("error adding collection items: {}".format(e))
-            # TODO: add error/incomplete flag
+        collection = create_collection_from_xml(xml_root, user_name)
+        add_collection_items_from_xml(collection, xml_root, subtype)
 
         return collection
 
@@ -811,40 +785,34 @@ class BoardGameGeek(BoardGameGeekNetworkAPI):
             msg = "invalid data for game id: {}{}".format(game_id, "" if name is None else " ({})".format(name))
             raise BGGApiError(msg)
 
-        try:
-            game = create_game_from_xml(xml_root,
-                                        game_id=game_id,
-                                        html_parser=html_parser)
-        except BGGError as e:
-            log.error("error getting game data: {}".format(e))
-            raise
+        game = create_game_from_xml(xml_root,
+                                    game_id=game_id,
+                                    html_parser=html_parser)
+
+        added_items, total = add_game_comments_from_xml(game, xml_root, comments=comments)
 
         try:
-            added_items, total = add_game_comments_from_xml(game, xml_root, comments=comments)
             call_progress_cb(progress, len(game.comments), total)
-        except BGGError as e:
-            log.error("error adding game comments: {}".format(e))
+        except:
             return game
 
         page = 1
         while added_items and len(game.comments) < total:
             page += 1
 
-            try:
-                xml_root = request_and_parse_xml(self.requests_session,
-                                                 self._thing_api_url,
-                                                 params={"id": game_id,
-                                                         "pagesize": 100,
-                                                         "comments": 1,
-                                                         "page": page})
-            except:
-                break
+            xml_root = request_and_parse_xml(self.requests_session,
+                                             self._thing_api_url,
+                                             params={"id": game_id,
+                                                     "pagesize": 100,
+                                                     "comments": 1,
+                                                     "page": page})
+
+            added_items = add_game_comments_from_xml(game, xml_root, comments=comments)
 
             try:
-                added_items = add_game_comments_from_xml(game, xml_root, comments=comments)
                 call_progress_cb(progress, len(game), game.comments)
-            except BGGError as e:
-                log.error("error adding game comments: {}".format(e))
+            except:
+                break
 
         return game
 
