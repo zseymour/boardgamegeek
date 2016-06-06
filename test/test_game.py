@@ -3,7 +3,7 @@ import datetime
 import sys
 
 from _common import *
-from boardgamegeek import BGGError
+from boardgamegeek import BGGError, BGGItemNotFoundError
 from boardgamegeek.objects.games import BoardGameVideo, BoardGameVersion
 
 if sys.version_info >= (3,):
@@ -13,8 +13,9 @@ else:
 
 
 def test_get_unknown_game_info(bgg):
-    game = bgg.game(TEST_INVALID_GAME_NAME)
-    assert game is None
+
+    with pytest.raises(BGGItemNotFoundError):
+        game = bgg.game(TEST_INVALID_GAME_NAME)
 
 
 def test_get_game_with_invalid_parameters(bgg):
@@ -46,7 +47,8 @@ def check_game(game):
     assert "Economic" in game.categories
     assert "Farming" in game.categories
 
-    assert game.families == ["Agricola", "Animals: Cattle", "Animals: Sheep", "Harvest Series", "Solitaire Games"]
+    assert game.families == ["Agricola", "Animals: Cattle", "Animals: Sheep", "Harvest Series",
+                             "Solitaire Games", "Tableau Building"]
     assert game.designers == ["Uwe Rosenberg"]
 
     assert "Lookout Games" in game.publishers

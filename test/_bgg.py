@@ -11,10 +11,11 @@ import time
 import pytest
 
 import boardgamegeek.utils as bggutil
-from boardgamegeek import BoardGameGeek, BGGError
+from boardgamegeek import *
 from boardgamegeek.api import BoardGameGeekNetworkAPI
 from boardgamegeek.objects.things import Thing
 
+from _common import *
 
 
 if os.getenv("TRAVIS"):
@@ -28,7 +29,7 @@ else:
 #
 def test_no_caching():
     # test that we can disable caching
-    bgg = BoardGameGeek(cache=None)
+    bgg = BoardGameGeek(cache=CacheBackendNone())
 
     user = bgg.user(TEST_VALID_USER)
 
@@ -47,14 +48,11 @@ def test_sqlite_caching():
 
     assert not os.path.isfile(name)
 
-    with pytest.raises(BGGError):
+    with pytest.raises(BGGValueError):
         # invalid value for the ttl parameter
-        BoardGameGeek(cache="sqlite://{}?ttl=blabla&fast_save=0".format(name))
+        BoardGameGeek(cache=CacheBackendSqlite(name, ttl="invalid", fast_save=False))
 
-    with pytest.raises(BGGError):
-        BoardGameGeek(cache="invalid://cache")
-
-    bgg = BoardGameGeek(cache="sqlite://{}?ttl=1000".format(name))
+    bgg = BoardGameGeek(cache=CacheBackendSqlite(name, ttl=1000))
 
     user = bgg.user(TEST_VALID_USER)
     assert user is not None
@@ -82,7 +80,7 @@ def test_search(bgg):
     res = bgg.search("Agricola", search_type=["boardgame"])
     assert type(res[0].id) == int
 
-    with pytest.raises(BGGError):
+    with pytest.raises(BGGValueError):
         bgg.search("Agricola", search_type=["invalid-search-type"])
 #endregion
 
@@ -236,7 +234,7 @@ def test_rate_limiting_for_requests():
                   53953] # thunderstone]
 
     def _worker_thread(games):
-        bgg = BoardGameGeek(cache=None, requests_per_minute=20)
+        bgg = BoardGameGeek(cache=CacheBackendNone(), requests_per_minute=20)
         for g in games:
             bgg.game(game_id=g)
 

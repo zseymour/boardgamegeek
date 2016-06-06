@@ -7,11 +7,12 @@
 .. moduleauthor:: Cosmin Luță <q4break@gmail.com>
 """
 from .api import BoardGameGeek
-from .exceptions import BGGError, BGGApiRetryError, BGGApiError, BGGApiTimeoutError
+from .exceptions import BGGError, BGGApiRetryError, BGGApiError, BGGApiTimeoutError, BGGValueError, BGGItemNotFoundError
 from .cache import CacheBackendNone, CacheBackendMemory, CacheBackendSqlite
 from .version import __version__
 
-__all__ = [BoardGameGeek, BGGError, BGGApiRetryError, BGGApiError, BGGApiTimeoutError]
+__all__ = ["BoardGameGeek", "BGGError", "BGGValueError", "BGGApiRetryError", "BGGApiError", "BGGApiTimeoutError",
+           "BGGItemNotFoundError", "CacheBackendNone", "CacheBackendSqlite", "CacheBackendMemory"]
 __import__('pkg_resources').declare_namespace(__name__)
 
 

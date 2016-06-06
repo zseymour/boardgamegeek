@@ -3,7 +3,7 @@ import pytest
 import xml.etree.ElementTree as ET
 
 
-from boardgamegeek import BoardGameGeek
+from boardgamegeek import BoardGameGeek, CacheBackendNone
 
 
 # Kinda hard to test without having a "test" user
@@ -45,7 +45,7 @@ def xml():
 
 @pytest.fixture
 def bgg():
-    return BoardGameGeek(cache=None, retries=2, retry_delay=1)
+    return BoardGameGeek(cache=CacheBackendNone(), retries=2, retry_delay=1)
 
 
 @pytest.fixture

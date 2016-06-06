@@ -1,9 +1,11 @@
-from boardgamegeek import BGGError
+from boardgamegeek import BGGError, BGGValueError
 from boardgamegeek.objects.hotitems import HotItems, HotItem
+
+from _common import *
 
 
 def test_get_hot_items_invalid_type(bgg):
-    with pytest.raises(BGGError):
+    with pytest.raises(BGGValueError):
         bgg.hot_items("invalid type")
 
 

@@ -33,7 +33,7 @@ from .objects.search import SearchResult
 from .exceptions import BGGApiError, BGGError, BGGItemNotFoundError, BGGValueError
 from .utils import xml_subelement_attr, request_and_parse_xml
 from .utils import RateLimitingAdapter, DEFAULT_REQUESTS_PER_MINUTE
-from .cache import CacheBackendMemory
+from .cache import CacheBackendMemory, CacheBackendNone
 
 from .loaders import create_guild_from_xml, add_guild_members_from_xml
 from .loaders import create_plays_from_xml, add_plays_from_xml
@@ -79,9 +79,15 @@ class BoardGameGeekNetworkAPI(object):
         self._plays_api_url = api_endpoint + "/plays"
         self._hot_api_url = api_endpoint + "/hot"
         self._collection_api_url = api_endpoint + "/collection"
-        self._timeout = timeout
-        self._retries = retries
+        try:
+            self._timeout = int(timeout)
+            self._retries = int(retries)
+        except:
+            raise BGGValueError
+
         self._retry_delay = retry_delay
+        if cache is None:
+            cache = CacheBackendNone()
         self.requests_session = cache.cache
 
         # add the rate limiting adapter
