@@ -9,6 +9,8 @@ Most functions don't return ``None`` in case of item not found, but raise an exc
 
 TODO: allow breaking from fetching pages by raising an exception from the progress callback
 
+- guild : members to prevent retrieving the members
+
 
 
 0.13.2

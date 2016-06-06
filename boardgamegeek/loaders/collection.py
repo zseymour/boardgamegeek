@@ -1,5 +1,5 @@
 from ..objects.collection import Collection
-from ..exceptions import BoardGameGeekAPIError, BGGError
+from ..exceptions import BGGApiError, BGGItemNotFoundError
 from ..utils import get_board_game_version_from_element
 from ..utils import xml_subelement_text, xml_subelement_attr
 
@@ -10,7 +10,8 @@ def create_collection_from_xml(xml_root, user_name):
     error = xml_root.find(".//error")
     if error is not None:
         msg = xml_subelement_text(error, "message")
-        raise BGGError("message: {}".format(msg))
+        # TODO: this is probably the invalid user error, but need to find out if there are any other error cases
+        raise BGGItemNotFoundError(msg)
 
     return Collection({"owner": user_name})
 
@@ -36,7 +37,7 @@ def add_collection_items_from_xml(collection, xml_root, subtype):
         # Add item statistics
         stats = item.find("stats")
         if stats is None:
-            raise BoardGameGeekAPIError("missing 'stats'")
+            raise BGGApiError("missing 'stats'")
 
         stat_data = {"usersrated": xml_subelement_attr(stats, "usersrated", convert=int, quiet=True),
                      "average": xml_subelement_attr(stats, "average", convert=float, quiet=True),
@@ -84,7 +85,7 @@ def add_collection_items_from_xml(collection, xml_root, subtype):
                 try:
                     data["versions"] = [get_board_game_version_from_element(ver)]
                 except KeyError:
-                    raise BoardGameGeekAPIError("malformed XML element ('version')")
+                    raise BGGApiError("malformed XML element ('version')")
 
         collection.add_game(data)
         added_items = True

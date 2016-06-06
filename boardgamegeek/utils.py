@@ -295,9 +295,9 @@ def request_and_parse_xml(requests_session, url, params=None, timeout=15, retrie
     :param retries: number of retries to perform in case of timeout
     :param retry_delay: the amount of seconds to sleep when retrying an API call that returned 202
     :return: :py:func:`xml.etree.ElementTree` corresponding to the XML
-    :raises: :py:class:`BoardGameGeekAPIRetryError` if this request should be retried after a short delay
-    :raises: :py:class:`BoardGameGeekAPIError` if the response couldn't be parsed
-    :raises: :py:class:`BoardGameGeekTimeoutError` if there was a timeout
+    :raises: :py:class:`BGGApiRetryError` if this request should be retried after a short delay
+    :raises: :py:class:`BGGApiError` if the response was invalid or couldn't be parsed
+    :raises: :py:class:`BGGApiTimeoutError` if there was a timeout
     """
 
     retr = retries

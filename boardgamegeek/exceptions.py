@@ -11,6 +11,11 @@
 """
 
 
+class BGGValueError(ValueError):
+    """ invalid parameters """
+    pass
+
+
 class BGGError(Exception):
     pass
 

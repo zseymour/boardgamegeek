@@ -30,7 +30,7 @@ else:
 from .objects.user import User
 from .objects.search import SearchResult
 
-from .exceptions import BGGApiError, BGGError, BGGItemNotFoundError
+from .exceptions import BGGApiError, BGGError, BGGItemNotFoundError, BGGValueError
 from .utils import xml_subelement_attr, request_and_parse_xml
 from .utils import RateLimitingAdapter, DEFAULT_REQUESTS_PER_MINUTE
 from .cache import CacheBackendMemory
@@ -96,14 +96,15 @@ class BoardGameGeekNetworkAPI(object):
         :param str choose: method of selecting the game by name, when dealing with multiple results. Valid values are "first", "recent" or "best-rank"
         :return: ``None`` if game wasn't found
         :return: game's id
-        :raises: :py:exc:`boardgamegeek.exceptions.BoardGameGeekError` in case of invalid name
-        :raises: :py:exc:`boardgamegeek.exceptions.BoardGameGeekAPIRetryError` if this request should be retried after a short delay
-        :raises: :py:exc:`boardgamegeek.exceptions.BoardGameGeekAPIError` if the response couldn't be parsed
-        :raises: :py:exc:`boardgamegeek.exceptions.BoardGameGeekTimeoutError` if there was a timeout
+        :raises: :py:exc:`boardgamegeek.exceptions.BGGValueError` in case of invalid parameter(s)
+        :raises: :py:exc:`boardgamegeek.exceptions.BGGItemNotFoundError` if the game hasn't been found
+        :raises: :py:exc:`boardgamegeek.exceptions.BGGApiRetryError` if this request should be retried after a short delay
+        :raises: :py:exc:`boardgamegeek.exceptions.BGGApiError` if the API response was invalid or couldn't be parsed
+        :raises: :py:exc:`boardgamegeek.exceptions.BGGApiTimeoutError` if there was a timeout
         """
 
         if choose not in ["first", "recent", "best-rank"]:
-            raise BGGError("invalid value for parameter 'choose': {}".format(choose))
+            raise BGGValueError("invalid value for parameter 'choose': {}".format(choose))
 
         log.debug("getting game id for '{}'".format(name))
         res = self.search(name, search_type=[game_type], exact=True)
@@ -132,18 +133,16 @@ class BoardGameGeekNetworkAPI(object):
         :return: ``Guild`` object containing the data
         :return: ``None`` if the information couldn't be retrieved
         :rtype: :py:class:`boardgamegeek.guild.Guild`
-        :raises: :py:exc:`BGGError` in case of an invalid guild id
+        :raises: :py:exc:`BGGValueError` in case of an invalid parameter(s)
         :raises: :py:exc:`boardgamegeek.exceptions.BGGApiRetryError` if this request should be retried after a short delay
         :raises: :py:exc:`boardgamegeek.exceptions.BGGApiError` if the response couldn't be parsed
         :raises: :py:exc:`boardgamegeek.exceptions.BGGApiTimeoutError` if there was a timeout
         """
 
-        # TODO: permit skipping the download of extra data (members and stuff)
-
         try:
             guild_id = int(guild_id)
         except:
-            raise BGGError("invalid guild id")
+            raise BGGValueError("invalid guild id")
 
         xml_root = request_and_parse_xml(self.requests_session,
                                          self._guild_api_url,
@@ -163,14 +162,14 @@ class BoardGameGeekNetworkAPI(object):
 
         try:
             call_progress_cb(progress, len(guild), guild.members_count)
-        except Exception:
+        except:
             return guild
 
         # Fetch the other pages of members
         page = 1
         while len(guild) < guild.members_count and added_member:
             page += 1
-            log.debug("fetching page {}".format(page))
+            log.debug("fetching guild members page {}".format(page))
 
             xml_root = request_and_parse_xml(self.requests_session,
                                              self._guild_api_url,
@@ -205,17 +204,19 @@ class BoardGameGeekNetworkAPI(object):
         :rtype: :py:class:`boardgamegeek.user.User`
         :return: ``None`` if the user couldn't be found
 
-        :raises: :py:exc:`boardgamegeek.exceptions.BGGError` in case of invalid user name
+        :raises: `ValueError` in case of invalid parameters
+        :raises: :py:exc:`boardgamegeek.exceptions.BGGValueError` in case of invalid parameter(s)
+        :raises: :py:exc:`boardgamegeek.exceptions.BGGItemNotFoundError` if the user wasn't found
         :raises: :py:exc:`boardgamegeek.exceptions.BGGApiRetryError` if this request should be retried after a short delay
         :raises: :py:exc:`boardgamegeek.exceptions.BGGApiError` if the response couldn't be parsed
         :raises: :py:exc:`boardgamegeek.exceptions.BGGApiTimeoutError` if there was a timeout
         """
 
         if not name:
-            raise BGGError("no user name specified")
+            raise BGGValueError("no user name specified")
 
         if domain not in ["boardgame", "rpg", "videogame"]:
-            raise BGGError("invalid 'domain'")
+            raise BGGValueError("invalid domain")
 
         params = {"name": name,
                   "buddies": 1 if buddies else 0,
@@ -352,20 +353,20 @@ class BoardGameGeekNetworkAPI(object):
         :return: object containing all the plays
         :rtype: :py:class:`boardgamegeek.plays.Plays`
         :return: ``None`` if the user/game couldn't be found
-        :raises: :py:exc:`boardgamegeek.exceptions.BGGError` on errors
+        :raises: :py:exc:`boardgamegeek.exceptions.BGGValueError` in case of invalid parameter(s)
         :raises: :py:exc:`boardgamegeek.exceptions.BGGApiRetryError` if this request should be retried after a short delay
         :raises: :py:exc:`boardgamegeek.exceptions.BGGApiError` if the response couldn't be parsed
         :raises: :py:exc:`boardgamegeek.exceptions.BGGApiTimeoutError` if there was a timeout
 
         """
         if not name and not game_id:
-            raise BGGError("no user name specified")
+            raise BGGValueError("no user name specified")
 
         if name and game_id:
-            raise BGGError("can't retrieve by user and by game at the same time")
+            raise BGGValueError("can't retrieve by user and by game at the same time")
 
         if subtype not in ["boardgame", "boardgameexpansion", "boardgameaccessory", "rpgitem", "videogame"]:
-            raise BGGError("invalid 'subtype'")
+            raise BGGValueError("invalid subtype")
 
         params = {"subtype": subtype}
 
@@ -375,20 +376,20 @@ class BoardGameGeekNetworkAPI(object):
         else:
             try:
                 params["id"] = int(game_id)
-            except BGGError:
-                raise BGGError("invalid game id")
+            except ValueError:
+                raise BGGValueError("invalid game id")
 
         if min_date:
             try:
                 params["mindate"] = min_date.isoformat()
             except AttributeError:
-                raise BGGError("mindate must be a datetime.date object")
+                raise BGGValueError("mindate must be a datetime.date object")
 
         if max_date:
             try:
                 params["maxdate"] = max_date.isoformat()
             except AttributeError:
-                raise BGGError("maxdate must be a datetime.date object")
+                raise BGGValueError("maxdate must be a datetime.date object")
 
         xml_root = request_and_parse_xml(self.requests_session,
                                          self._plays_api_url,
@@ -442,14 +443,14 @@ class BoardGameGeekNetworkAPI(object):
         :rtype: :py:class:`boardgamegeek.hotitems.HotItems`
         :return: ``None`` in case the hot items couldn't be retrieved
 
-        :raises: :py:exc:`boardgamegeek.exceptions.BoardGameGeekError` if the parameter is invalid
-        :raises: :py:exc:`boardgamegeek.exceptions.BoardGameGeekAPIRetryError` if this request should be retried after
+        :raises: :py:exc:`boardgamegeek.exceptions.BGGValueError` in case of invalid parameter(s)
+        :raises: :py:exc:`boardgamegeek.exceptions.BGGApiRetryError` if this request should be retried after
                   a short delay
-        :raises: :py:exc:`boardgamegeek.exceptions.BoardGameGeekAPIError` if the response couldn't be parsed
-        :raises: :py:exc:`boardgamegeek.exceptions.BoardGameGeekTimeoutError` if there was a timeout
+        :raises: :py:exc:`boardgamegeek.exceptions.BGGApiError` if the response couldn't be parsed
+        :raises: :py:exc:`boardgamegeek.exceptions.BGGApiTimeoutError` if there was a timeout
         """
         if item_type not in HOT_ITEM_CHOICES:
-            raise BGGError("invalid type specified")
+            raise BGGValueError("invalid type specified")
 
         params = {"type": item_type}
 
@@ -508,19 +509,19 @@ class BoardGameGeekNetworkAPI(object):
         :rtype: :py:class:`boardgamegeek.collection.Collection`
         :return: ``None`` if user not found
 
-        :raises: :py:exc:`boardgamegeek.exceptions.BoardGameGeekError` in case of invalid parameters
-        :raises: :py:exc:`boardgamegeek.exceptions.BoardGameGeekAPIRetryError` if this request should be retried after a short delay
-        :raises: :py:exc:`boardgamegeek.exceptions.BoardGameGeekAPIError` if the response couldn't be parsed
-        :raises: :py:exc:`boardgamegeek.exceptions.BoardGameGeekTimeoutError` if there was a timeout
+        :raises: :py:exc:`boardgamegeek.exceptions.BGGValueError` in case of invalid parameter(s)
+        :raises: :py:exc:`boardgamegeek.exceptions.BGGApiRetryError` if this request should be retried after a short delay
+        :raises: :py:exc:`boardgamegeek.exceptions.BGGApiError` if the response couldn't be parsed
+        :raises: :py:exc:`boardgamegeek.exceptions.BGGApiTimeoutError` if there was a timeout
         """
 
         # Parameter validation
 
         if not user_name:
-            raise BGGError("no user name specified")
+            raise BGGValueError("no user name specified")
 
         if subtype not in COLLECTION_SUBTYPES:
-            raise BGGError("invalid 'subtype': {}".format(subtype))
+            raise BGGValueError("invalid 'subtype'")
 
         params={"username": user_name,
                 "subtype": subtype,
@@ -528,10 +529,10 @@ class BoardGameGeekNetworkAPI(object):
 
         if exclude_subtype is not None:
             if exclude_subtype not in COLLECTION_SUBTYPES:
-                raise BGGError("invalid 'exclude_subtype': {}".format(exclude_subtype))
+                raise BGGValueError("invalid 'exclude_subtype'")
 
             if subtype == exclude_subtype:
-                raise BGGError("incompatible 'subtype' and 'exclude_subtype'")
+                raise BGGValueError("incompatible 'subtype' and 'exclude_subtype'")
 
             params["excludesubtype"] = exclude_subtype
 
@@ -550,7 +551,7 @@ class BoardGameGeekNetworkAPI(object):
             if 1 <= wishlist_prio <= 5:
                 params["wishlishpriority"] = wishlist_prio
             else:
-                raise BGGError("invalid 'wishlist_prio'")
+                raise BGGValueError("invalid 'wishlist_prio'")
 
         if want_to_play is not None:
             params["wanttoplay"] = 1 if want_to_play else 0
@@ -571,25 +572,25 @@ class BoardGameGeekNetworkAPI(object):
             if 1.0 <= min_rating <= 10.0:
                 params["minrating"] = min_rating
             else:
-                raise BGGError("invalid 'min_rating'")
+                raise BGGValueError("invalid 'min_rating'")
 
         if rating is not None:
             if 1.0 <= rating <= 10.0:
                 params["rating"] = rating
             else:
-                raise BGGError("invalid 'rating'")
+                raise BGGValueError("invalid 'rating'")
 
         if min_bgg_rating is not None:
             if 1.0 <= min_bgg_rating <= 10.0:
                 params["minbggrating"] = min_bgg_rating
             else:
-                raise BGGError("invalid 'bgg_min_rating'")
+                raise BGGValueError("invalid 'bgg_min_rating'")
 
         if bgg_rating is not None:
             if 1.0 <= bgg_rating <= 10.0:
                 params["bggrating"] = bgg_rating
             else:
-                raise BGGError("invalid 'bgg_rating'")
+                raise BGGValueError("invalid 'bgg_rating'")
 
         if collection_id is not None:
             params["collid"] = collection_id
@@ -619,13 +620,13 @@ class BoardGameGeekNetworkAPI(object):
         :return: list of ``SearchResult``
         :rtype: list of :py:class:`boardgamegeek.search.SearchResult`
 
-        :raises: :py:exc:`boardgamegeek.exceptions.BoardGameGeekError` in case of invalid query
-        :raises: :py:exc:`boardgamegeek.exceptions.BoardGameGeekAPIRetryError` if this request should be retried after a short delay
-        :raises: :py:exc:`boardgamegeek.exceptions.BoardGameGeekAPIError` if the response couldn't be parsed
-        :raises: :py:exc:`boardgamegeek.exceptions.BoardGameGeekTimeoutError` if there was a timeout
+        :raises: :py:exc:`boardgamegeek.exceptions.BGGValueError` in case of invalid parameter(s)
+        :raises: :py:exc:`boardgamegeek.exceptions.BGGApiRetryError` if this request should be retried after a short delay
+        :raises: :py:exc:`boardgamegeek.exceptions.BGGApiError` if the API response was invalid or couldn't be parsed
+        :raises: :py:exc:`boardgamegeek.exceptions.BGGApiTimeoutError` if there was a timeout
         """
         if not query:
-            raise BGGError("invalid query string")
+            raise BGGValueError("invalid query string")
 
         if search_type is None:
             search_type = ["boardgame"]
@@ -654,7 +655,7 @@ class BoardGameGeekNetworkAPI(object):
             if search_type:
                 for s in search_type:
                     if s not in ["rpgitem", "videogame", "boardgame", "boardgameexpansion"]:
-                        raise BGGError("invalid search type: {}".format(search_type))
+                        raise BGGValueError("invalid search type: {}".format(search_type))
 
                 params["type"] = ",".join(search_type)
 
