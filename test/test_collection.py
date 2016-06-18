@@ -3,20 +3,20 @@ from __future__ import unicode_literals
 import pytest
 
 from _common import *
-from boardgamegeek import BGGError
+from boardgamegeek import BGGError, BGGValueError, BGGItemNotFoundError
 from boardgamegeek.objects.collection import CollectionBoardGame, Collection
 from boardgamegeek.objects.games import BoardGameVersion
 
 
 def test_get_collection_with_invalid_parameters(bgg):
     for invalid in [None, ""]:
-        with pytest.raises(BGGError):
+        with pytest.raises(BGGValueError):
             bgg.collection(invalid)
 
 
 def test_get_invalid_users_collection(bgg):
-    collection = bgg.collection(TEST_INVALID_USER)
-    assert collection is None
+    with pytest.raises(BGGItemNotFoundError):
+        bgg.collection(TEST_INVALID_USER)
 
 
 def test_get_valid_users_collection(bgg, null_logger):

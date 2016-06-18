@@ -12,7 +12,7 @@ import pytest
 
 import boardgamegeek.utils as bggutil
 from boardgamegeek import *
-from boardgamegeek.api import BoardGameGeekNetworkAPI
+from boardgamegeek.api import BGGCommon
 from boardgamegeek.objects.things import Thing
 
 from _common import *
@@ -73,7 +73,7 @@ def test_search(bgg):
     assert len(res)
 
     # test that numeric searching still works
-    res = bgg.search("Agricola", search_type=BoardGameGeekNetworkAPI.SEARCH_BOARD_GAME)
+    res = bgg.search("Agricola", search_type=BGGCommon.SEARCH_BOARD_GAME)
     assert type(res[0].id) == int
 
     # test that the new type of search works
