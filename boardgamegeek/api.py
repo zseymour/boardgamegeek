@@ -120,12 +120,12 @@ class BGGCommon(object):
         self._hot_api_url = api_endpoint + "/hot"
         self._collection_api_url = api_endpoint + "/collection"
         try:
-            self._timeout = int(timeout)
+            self._timeout = float(timeout)
             self._retries = int(retries)
+            self._retry_delay = float(retry_delay)
         except:
             raise BGGValueError
 
-        self._retry_delay = retry_delay
         if cache is None:
             cache = CacheBackendNone()
         self.requests_session = cache.cache
