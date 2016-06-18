@@ -1,6 +1,6 @@
 import datetime
 
-from boardgamegeek import BGGError
+from boardgamegeek import BGGValueError, BGGItemNotFoundError
 
 from _common import *
 
@@ -17,19 +17,14 @@ def progress_cb(items, total):
 def test_get_user_with_invalid_parameters(bgg):
     # test how the module reacts to unexpected parameters
     for invalid in [None, ""]:
-        with pytest.raises(BGGError):
+        with pytest.raises(BGGValueError):
             bgg.user(invalid)
 
 
 def test_get_invalid_user_info(bgg):
 
-    global progress_called
-
-    progress_called = False
-    user = bgg.user(TEST_INVALID_USER, progress=progress_cb)
-
-    assert user is None
-    assert not progress_called
+    with pytest.raises(BGGItemNotFoundError):
+        bgg.user(TEST_INVALID_USER, progress=progress_cb)
 
 
 def test_get_valid_user_info(bgg, null_logger):

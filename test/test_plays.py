@@ -1,7 +1,7 @@
 import datetime
 
 from _common import *
-from boardgamegeek import BGGError
+from boardgamegeek import BGGError, BGGValueError, BGGItemNotFoundError
 from boardgamegeek.objects.plays import UserPlays, GamePlays, PlaySession, Plays
 
 
@@ -15,30 +15,30 @@ def progress_cb(items, total):
 
 
 def test_get_plays_with_invalid_parameters(bgg):
-    with pytest.raises(BGGError):
+    with pytest.raises(BGGValueError):
         bgg.plays(name=None, game_id=None)
 
-    with pytest.raises(BGGError):
+    with pytest.raises(BGGValueError):
         bgg.plays(name="", game_id=None)
 
-    with pytest.raises(BGGError):
+    with pytest.raises(BGGValueError):
         bgg.plays(name=None, game_id="asd")
 
 
 def test_get_plays_with_unknown_username_and_id(bgg):
-    plays = bgg.plays(name=TEST_INVALID_USER)
-    assert plays is None
+    with pytest.raises(BGGItemNotFoundError):
+        bgg.plays(name=TEST_INVALID_USER)
 
-    plays = bgg.plays(name=None, game_id=1928391829)
-    assert plays is None
+    with pytest.raises(BGGItemNotFoundError):
+        bgg.plays(name=None, game_id=1928391829)
 
 
 def test_get_plays_with_invalid_dates(bgg):
     # A string is invalid so should raise an error
-    with pytest.raises(BGGError):
+    with pytest.raises(BGGValueError):
         bgg.plays(name=TEST_VALID_USER, min_date="2014-01-01")
 
-    with pytest.raises(BGGError):
+    with pytest.raises(BGGValueError):
         bgg.plays(name=TEST_VALID_USER, max_date="2014-12-31")
 
 

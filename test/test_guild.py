@@ -1,4 +1,4 @@
-from boardgamegeek import BGGError
+from boardgamegeek import BGGItemNotFoundError, BGGValueError
 
 from _common import *
 
@@ -15,7 +15,7 @@ def progress_cb(items, total):
 def test_get_guild_with_invalid_parameters(bgg):
     # test how the module reacts to unexpected parameters
     for invalid in [None, [], {}]:
-        with pytest.raises(BGGError):
+        with pytest.raises(BGGValueError):
             bgg.guild(invalid)
 
 
@@ -55,10 +55,6 @@ def test_get_valid_guild_info(bgg, null_logger):
 
 
 def test_get_invalid_guild_info(bgg):
-    global progress_called
 
-    progress_called = False
-    guild = bgg.guild(0, progress=progress_cb)
-
-    assert guild is None
-    assert not progress_called
+    with pytest.raises(BGGItemNotFoundError):
+        bgg.guild(0, progress=progress_cb)

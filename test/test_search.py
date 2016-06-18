@@ -1,5 +1,5 @@
 from _common import *
-from boardgamegeek import BGGError
+from boardgamegeek import BGGValueError, BGGRestrictSearchResultsTo
 
 
 def test_search(bgg):
@@ -10,8 +10,10 @@ def test_search(bgg):
     assert len(res)
 
     # test that the new type of search works
-    res = bgg.search("Agricola", search_type=["boardgame"])
+    res = bgg.search("Agricola", search_type=[BGGRestrictSearchResultsTo.BOARD_GAME])
     assert type(res[0].id) == int
 
-    with pytest.raises(BGGError):
+    with pytest.raises(BGGValueError):
         bgg.search("Agricola", search_type=["invalid-search-type"])
+
+

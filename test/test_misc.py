@@ -2,7 +2,7 @@ import os
 import tempfile
 
 from _common import *
-from boardgamegeek import BGGError
+from boardgamegeek import BGGValueError, CacheBackendNone, CacheBackendSqlite
 
 
 #
@@ -10,7 +10,7 @@ from boardgamegeek import BGGError
 #
 def test_no_caching():
     # test that we can disable caching
-    bgg = BGGClient(cache=None)
+    bgg = BGGClient(cache=CacheBackendNone())
 
     user = bgg.user(TEST_VALID_USER)
 
@@ -29,14 +29,11 @@ def test_sqlite_caching():
 
     assert not os.path.isfile(name)
 
-    with pytest.raises(BGGError):
+    with pytest.raises(BGGValueError):
         # invalid value for the ttl parameter
-        BGGClient(cache="sqlite://{}?ttl=blabla&fast_save=0".format(name))
+        BGGClient(cache=CacheBackendSqlite(name, ttl="blabla", fast_save=False))
 
-    with pytest.raises(BGGError):
-        BGGClient(cache="invalid://cache")
-
-    bgg = BGGClient(cache="sqlite://{}?ttl=1000".format(name))
+    bgg = BGGClient(cache=CacheBackendSqlite(name, ttl=1000))
 
     user = bgg.user(TEST_VALID_USER)
     assert user is not None
