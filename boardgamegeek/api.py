@@ -60,7 +60,7 @@ class BGGChoose(object):
     BEST_RANK = "best-rank"
 
 
-class BGGRestrictItemTypeTo(object):
+class BGGRestrictSearchResultsTo(object):
     """
     Item types that should be included in search results
     """
@@ -673,13 +673,13 @@ class BGGCommon(object):
             raise BGGValueError("invalid query string")
 
         if search_type is None:
-            search_type = [BGGRestrictItemTypeTo.BOARD_GAME]
+            search_type = [BGGRestrictSearchResultsTo.BOARD_GAME]
 
         params = {"query": query}
 
         for s in search_type:
-            if s not in [BGGRestrictItemTypeTo.RPG, BGGRestrictItemTypeTo.VIDEO_GAME,
-                         BGGRestrictItemTypeTo.BOARD_GAME, BGGRestrictItemTypeTo.BOARD_GAME_EXPANSION]:
+            if s not in [BGGRestrictSearchResultsTo.RPG, BGGRestrictSearchResultsTo.VIDEO_GAME,
+                         BGGRestrictSearchResultsTo.BOARD_GAME, BGGRestrictSearchResultsTo.BOARD_GAME_EXPANSION]:
                 raise BGGValueError("invalid search type: {}".format(search_type))
 
         params["type"] = ",".join(search_type)
@@ -758,7 +758,7 @@ class BGGClient(BGGCommon):
         :raises: :py:exc:`boardgamegeek.exceptions.BGGApiError` if the response couldn't be parsed
         :raises: :py:exc:`boardgamegeek.exceptions.BGGApiTimeoutError` if there was a timeout
         """
-        return self._get_game_id(name, game_type=BGGRestrictItemTypeTo.BOARD_GAME, choose=choose)
+        return self._get_game_id(name, game_type=BGGRestrictSearchResultsTo.BOARD_GAME, choose=choose)
 
     def game(self, name=None, game_id=None, choose=BGGChoose.FIRST, versions=False, videos=False, historical=False,
              marketplace=False, comments=False, rating_comments=False, progress=None):
@@ -866,5 +866,5 @@ class BGGClient(BGGCommon):
         """
         return [self.game(game_id=s.id)
                 for s in self.search(name,
-                                     search_type=[BGGRestrictItemTypeTo.BOARD_GAME, BGGRestrictItemTypeTo.BOARD_GAME_EXPANSION],
+                                     search_type=[BGGRestrictSearchResultsTo.BOARD_GAME, BGGRestrictSearchResultsTo.BOARD_GAME_EXPANSION],
                                      exact=True)]
