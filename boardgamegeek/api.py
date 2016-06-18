@@ -827,7 +827,10 @@ class BoardGameGeek(BoardGameGeekNetworkAPI):
                                     game_id=game_id,
                                     html_parser=html_parser)
 
-        added_items, total = add_game_comments_from_xml(game, xml_root, comments=comments)
+        if not comments:
+            return game
+
+        added_items, total = add_game_comments_from_xml(game, xml_root)
 
         try:
             call_progress_cb(progress, len(game.comments), total)
@@ -845,7 +848,7 @@ class BoardGameGeek(BoardGameGeekNetworkAPI):
                                                      "comments": 1,
                                                      "page": page})
 
-            added_items = add_game_comments_from_xml(game, xml_root, comments=comments)
+            added_items = add_game_comments_from_xml(game, xml_root)
 
             try:
                 call_progress_cb(progress, len(game), game.comments)

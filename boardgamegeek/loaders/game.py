@@ -122,24 +122,23 @@ def create_game_from_xml(xml_root, game_id, html_parser):
     return BoardGame(data)
 
 
-def add_game_comments_from_xml(game, xml_root, comments):
+def add_game_comments_from_xml(game, xml_root):
 
     added_items = False
     total_comments = 0
 
-    if comments:
-        # TODO: this crap is not working (API PROBLEM??)
-        comments = xml_root.find("comments")
-        if comments is not None:
-            total_comments = int(comments.attrib["totalitems"])
+    # TODO: this is not working (API PROBLEM??)
+    comments = xml_root.find("comments")
+    if comments is not None:
+        total_comments = int(comments.attrib["totalitems"])
 
-            for comm in xml_root.findall("comments/comment"):
-                comment = {
-                    "username": comm.attrib["username"],
-                    "rating": comm.attrib.get("rating", "n/a").lower(),
-                    "comment": comm.attrib.get("value", "n/a")
-                }
-                added_items = True
-                game.add_comment(comment)
+        for comm in xml_root.findall("comments/comment"):
+            comment = {
+                "username": comm.attrib["username"],
+                "rating": comm.attrib.get("rating", "n/a").lower(),
+                "comment": comm.attrib.get("value", "n/a")
+            }
+            added_items = True
+            game.add_comment(comment)
 
     return added_items, total_comments
