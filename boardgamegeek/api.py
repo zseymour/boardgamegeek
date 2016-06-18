@@ -111,11 +111,6 @@ class BGGCommon(object):
     :param integer retries: how many retries to perform in special cases
     :param integer retry_delay: delay between retries (seconds)
     """
-    SEARCH_RPG_ITEM = 1
-    SEARCH_VIDEO_GAME = 2
-    SEARCH_BOARD_GAME = 4
-    SEARCH_BOARD_GAME_EXPANSION = 8
-
     def __init__(self, api_endpoint, cache, timeout, retries, retry_delay, requests_per_minute):
         self._search_api_url = api_endpoint + "/search"
         self._thing_api_url = api_endpoint + "/thing"
@@ -682,32 +677,12 @@ class BGGCommon(object):
 
         params = {"query": query}
 
-        if type(search_type) != list:
-            warnings.warn("numeric values for the `search_type` parameter will no longer be supported in future versions. See the documentation for details",
-                          UserWarning)
+        for s in search_type:
+            if s not in [BGGRestrictItemTypeTo.RPG, BGGRestrictItemTypeTo.VIDEO_GAME,
+                         BGGRestrictItemTypeTo.BOARD_GAME, BGGRestrictItemTypeTo.BOARD_GAME_EXPANSION]:
+                raise BGGValueError("invalid search type: {}".format(search_type))
 
-            s_type = []
-
-            if search_type:
-                if search_type & BGGCommon.SEARCH_BOARD_GAME:
-                    s_type.append("boardgame")
-                if search_type & BGGCommon.SEARCH_BOARD_GAME_EXPANSION:
-                    s_type.append("boardgameexpansion")
-                if search_type & BGGCommon.SEARCH_RPG_ITEM:
-                    s_type.append("rpgitem")
-                if search_type & BGGCommon.SEARCH_VIDEO_GAME:
-                    s_type.append("videogame")
-
-            if s_type:
-                params["type"] = ",".join(s_type)
-        else:
-            if search_type:
-                for s in search_type:
-                    if s not in [BGGItemType.RPG, BGGItemType.VIDEO_GAME,
-                                 BGGItemType.BOARD_GAME, BGGItemType.BOARD_GAME_EXPANSION]:
-                        raise BGGValueError("invalid search type: {}".format(search_type))
-
-                params["type"] = ",".join(search_type)
+        params["type"] = ",".join(search_type)
 
         if exact:
             params["exact"] = 1
