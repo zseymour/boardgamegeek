@@ -33,7 +33,8 @@ def create_guild_from_xml(xml_root, html_parser):
                      "stateorprovince": xml_subelement_text(location, "stateorprovince")})
 
     members = xml_root.find("members")
-    data["member_count"] = int(members.attrib["count"])
+    if members is not None:
+        data["member_count"] = int(members.attrib["count"])
 
     return Guild(data)
 
