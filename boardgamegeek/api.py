@@ -75,7 +75,7 @@ def call_progress_cb(progress_cb, current, total):
         progress_cb(current, total)
 
 
-class BoardGameGeekNetworkAPI(object):
+class BGGCommon(object):
     """
     Base class for the BoardGameGeek websites APIs. All site-specific clients are derived from this.
 
@@ -666,13 +666,13 @@ class BoardGameGeekNetworkAPI(object):
             s_type = []
 
             if search_type:
-                if search_type & BoardGameGeekNetworkAPI.SEARCH_BOARD_GAME:
+                if search_type & BGGCommon.SEARCH_BOARD_GAME:
                     s_type.append("boardgame")
-                if search_type & BoardGameGeekNetworkAPI.SEARCH_BOARD_GAME_EXPANSION:
+                if search_type & BGGCommon.SEARCH_BOARD_GAME_EXPANSION:
                     s_type.append("boardgameexpansion")
-                if search_type & BoardGameGeekNetworkAPI.SEARCH_RPG_ITEM:
+                if search_type & BGGCommon.SEARCH_RPG_ITEM:
                     s_type.append("rpgitem")
-                if search_type & BoardGameGeekNetworkAPI.SEARCH_VIDEO_GAME:
+                if search_type & BGGCommon.SEARCH_VIDEO_GAME:
                     s_type.append("videogame")
 
             if s_type:
@@ -713,7 +713,7 @@ class BoardGameGeekNetworkAPI(object):
         return results
 
 
-class BoardGameGeek(BoardGameGeekNetworkAPI):
+class BoardGameGeek(BGGCommon):
     """
         Python interface for www.boardgamegeek.com's XML API 2.
 
@@ -778,9 +778,9 @@ class BoardGameGeek(BoardGameGeekNetworkAPI):
         :param bool marketplace: include marketplace data
         :param bool comments: include comments
         :param bool rating_comments: include comments with rating (ignored in favor of ``comments``, if that is true)
+        :param callable progress: callable for reporting progress if fetching comments
         :return: ``BoardGame`` object
         :rtype: :py:class:`boardgamegeek.games.BoardGame`
-        :return: ``None`` if the game wasn't found
 
         :raises: :py:exc:`boardgamegeek.exceptions.BoardGameGeekError` in case of invalid name or game_id
         :raises: :py:exc:`boardgamegeek.exceptions.BoardGameGeekAPIRetryError` if this request should be retried after a
