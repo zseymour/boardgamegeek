@@ -20,6 +20,9 @@ def test_get_user_with_invalid_parameters(bgg):
         with pytest.raises(BGGValueError):
             bgg.user(invalid)
 
+    with pytest.raises(BGGValueError):
+        bgg.user(TEST_VALID_USER, domain="voodoo")
+
 
 def test_get_invalid_user_info(bgg):
 

@@ -53,6 +53,12 @@ def test_get_valid_guild_info(bgg, null_logger):
     assert guild.addr2 is not None
     assert guild.address == "{} {}".format(guild.addr1, guild.addr2)
 
+    # fetch guild, but without members this time
+    guild = bgg.guild(TEST_GUILD_ID, members=False)
+
+    assert guild.members_count == 0
+    assert guild.members
+
 
 def test_get_invalid_guild_info(bgg):
 

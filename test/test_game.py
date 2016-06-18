@@ -3,8 +3,8 @@ import datetime
 import sys
 
 from _common import *
-from boardgamegeek import BGGError, BGGItemNotFoundError
-from boardgamegeek.objects.games import BoardGameVideo, BoardGameVersion
+from boardgamegeek import BGGError, BGGItemNotFoundError, BGGValueError
+from boardgamegeek.objects.games import BoardGameVideo, BoardGameVersion, BoardGameRank
 
 if sys.version_info >= (3,):
     STR_TYPES_OR_NONE = [str, type(None)]
@@ -101,6 +101,12 @@ def check_game(game):
         assert type(ver.depth) == float
         assert type(ver.weight) == float
 
+    # check the ranks of the result, to make sure everything is returned properly
+    assert type(game.ranks) == list
+    for rank in game.ranks:
+        assert type(rank) == BoardGameRank
+        assert type(rank.type) in STR_TYPES_OR_NONE
+
     # make sure no exception gets thrown
     repr(game)
 
@@ -121,6 +127,11 @@ def test_get_known_game_info(bgg, null_logger):
 def test_get_known_game_info_by_id(bgg):
     game = bgg.game(None, game_id=TEST_GAME_ID, videos=True, versions=True)
     check_game(game)
+
+
+def test_game_id_with_invalid_params(bgg):
+    with pytest.raises(BGGValueError):
+        bgg.get_game_id(TEST_GAME_NAME, choose="voodoo")
 
 
 def test_get_game_id_by_name(bgg):

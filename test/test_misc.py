@@ -44,3 +44,13 @@ def test_sqlite_caching():
     # clean up..
     os.unlink(name)
 
+
+def test_invalid_parameter_values_for_bggclient():
+    with pytest.raises(BGGValueError):
+        BGGClient(retries="asd")
+
+    with pytest.raises(BGGValueError):
+        BGGClient(retry_delay="asd")
+
+    with pytest.raises(BGGValueError):
+        BGGClient(timeout="asd")
