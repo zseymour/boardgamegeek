@@ -93,8 +93,7 @@ def main():
     # query by game id
     if args.id:
         game = bgg.game(game_id=args.id, comments=True)
-        if game:
-            game._format(log)
+        game._format(log)
 
     # query by game name
     if args.game:
@@ -104,28 +103,23 @@ def main():
         else:
         # fetch the most recent one
             game = bgg.game(args.game, choose="recent", comments=True)
-        if game:
-            game._format(log)
+        game._format(log)
 
     if args.game_stats:
         game = bgg.game(args.game_stats)
-        if game:
-            brief_game_stats(game)
+        brief_game_stats(game)
 
     if args.guild:
         guild = bgg.guild(args.guild, progress=progress_cb)
-        if guild:
-            guild._format(log)
+        guild._format(log)
 
     if args.collection:
         collection = bgg.collection(args.collection, versions=True)
-        if collection:
-            collection._format(log)
+        collection._format(log)
 
     if args.plays:
         plays = bgg.plays(name=args.plays, progress=progress_cb)
-        if plays:
-            plays._format(log)
+        plays._format(log)
 
     if args.plays_by_game:
         try:
@@ -134,8 +128,7 @@ def main():
             game_id = bgg.get_game_id(args.plays_by_game)
 
         plays = bgg.plays(game_id=game_id, progress=progress_cb)
-        if plays:
-            plays._format(log)
+        plays._format(log)
 
     if args.hot_items:
         hot_items = bgg.hot_items(args.hot_items)
@@ -145,10 +138,9 @@ def main():
 
     if args.search:
         results = bgg.search(args.search)
-        if results:
-            for r in results:
-                r._format(log)
-                log.info("")
+        for r in results:
+            r._format(log)
+            log.info("")
 
 if __name__ == "__main__":
     main()
