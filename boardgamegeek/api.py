@@ -60,7 +60,7 @@ class BGGChoose(object):
     BEST_RANK = "best-rank"
 
 
-class BGGItemType(object):
+class BGGRestrictItemTypeTo(object):
     """
     Item types that should be included in search results
     """
@@ -68,6 +68,32 @@ class BGGItemType(object):
     VIDEO_GAME = "videogame"
     BOARD_GAME = "boardgame"
     BOARD_GAME_EXPANSION = "boardgameexpansion"
+
+
+class BGGRestrictDomainTo(object):
+    """
+    Constants used in BoardGameGeek.user() calls, for specifying what hot/top items should be restricted to
+    """
+    BOARD_GAME = "boardgame"
+    RPG = "rpg"
+    VIDEO_GAME = "videogame"
+
+
+class BGGRestrictPlaysTo(object):
+    BOARD_GAME = "boardgame"
+    BOARD_GAME_EXTENSION = "boardgameexpansion"
+    BOARD_GAME_ACCESSORY = "boardgameaccessory"
+    RPG = "rpgitem"
+    VIDEO_GAME = "videogame"
+
+
+class BGGRestrictCollectionTo(object):
+    BOARD_GAME = "boardgame"
+    BOARD_GAME_EXTENSION = "boardgameexpansion"
+    BOARD_GAME_ACCESSORY = "boardgameaccessory"
+    RPG = "rpgitem"
+    RPG_ISSUE = "rpgissue"
+    VIDEO_GAME = "videogame"
 
 
 def call_progress_cb(progress_cb, current, total):
@@ -214,7 +240,7 @@ class BGGCommon(object):
         return guild
 
     # TODO: refactor
-    def user(self, name, progress=None, buddies=True, guilds=True, hot=True, top=True, domain="boardgame"):
+    def user(self, name, progress=None, buddies=True, guilds=True, hot=True, top=True, domain=BGGRestrictDomainTo.BOARD_GAME):
         """
         Retrieves details about an user
 
@@ -225,7 +251,7 @@ class BGGCommon(object):
         :param bool guilds: if ``True``, get the user's guilds
         :param bool hot: if ``True``, get the user's "hot" list
         :param bool top: if ``True``, get the user's "top" list
-        :param str domain: restrict items on the "hot" and "top" lists to ``domain``. Valid values are "boardgame" (default), "rpg" and "videogame"
+        :param str domain: restrict items on the "hot" and "top" lists to ``domain``. One of the constants in :py:class:`boardgamegeek.BGGSelectDomain`
         :return: ``User`` object
         :rtype: :py:class:`boardgamegeek.user.User`
         :return: ``None`` if the user couldn't be found
@@ -241,7 +267,7 @@ class BGGCommon(object):
         if not name:
             raise BGGValueError("no user name specified")
 
-        if domain not in ["boardgame", "rpg", "videogame"]:
+        if domain not in [BGGRestrictDomainTo.BOARD_GAME, BGGRestrictDomainTo.RPG, BGGRestrictDomainTo.VIDEO_GAME]:
             raise BGGValueError("invalid domain")
 
         params = {"name": name,
@@ -364,7 +390,7 @@ class BGGCommon(object):
 
         return user
 
-    def plays(self, name=None, game_id=None, progress=None, min_date=None, max_date=None, subtype="boardgame"):
+    def plays(self, name=None, game_id=None, progress=None, min_date=None, max_date=None, subtype=BGGRestrictPlaysTo.BOARD_GAME):
         """
         Retrieves the plays for an user (if using ``name``) or for a game (if using ``game_id``)
 
@@ -374,8 +400,7 @@ class BGGCommon(object):
                                   ``total``) as arguments
         :param datetime.date min_date: return only plays of the specified date or later
         :param datetime.date max_date: return only plays of the specified date or earlier
-        :param str subtype: limit plays results to the specified subtype. Valid values: "boardgame", "boardgameexpansion",
-                            "boardgameaccessory", "rpgitem", "videogame"
+        :param str subtype: limit plays results to the specified subtype.
         :return: object containing all the plays
         :rtype: :py:class:`boardgamegeek.plays.Plays`
         :return: ``None`` if the user/game couldn't be found
@@ -492,7 +517,7 @@ class BGGCommon(object):
 
         return hot_items
 
-    def collection(self, user_name, subtype="boardgame", exclude_subtype=None, ids=None, versions=False,
+    def collection(self, user_name, subtype=BGGRestrictCollectionTo.BOARD_GAME, exclude_subtype=None, ids=None, versions=False,
                    own=None, rated=None, played=None, commented=None, trade=None, want=None, wishlist=None,
                    wishlist_prio=None, preordered=None, want_to_play=None, want_to_buy=None, prev_owned=None,
                    has_parts=None, want_parts=None, min_rating=None, rating=None, min_bgg_rating=None, bgg_rating=None,
@@ -501,10 +526,8 @@ class BGGCommon(object):
         Returns an user's game collection
 
         :param str user_name: user name to retrieve the collection for
-        :param str subtype: what type of items to return. One of: boardgame, boardgameexpansion, boardgameaccessory,
-                            rpgitem, rpgissue, or videogame
-        :param str exclude_subtype: if not ``None`` (default), exclude the specified subtype. One of: boardgame,
-                                    boardgameexpansion, boardgameaccessory, rpgitem, rpgissue, or videogame
+        :param str subtype: what type of items to return. One of the constants in :py:class:`boardgamegeek.api.BGGRestrictCollectionTo`
+        :param str exclude_subtype: if not ``None`` (default), exclude the specified subtype. Else, one of the constants in :py:class:`boardgamegeek.api.BGGRestrictCollectionTo`
         :param list ids: if not ``None`` (default), limit the results to the specified ids.
         :param bool versions: include item version information
         :param bool own: include (if ``True``) or exclude (if ``False``) owned items
@@ -641,7 +664,7 @@ class BGGCommon(object):
         Search for a game
 
         :param str query: the string to search for
-        :param list search_type: list of :py:class:`boardgamegeek.BGGItemType`, indicating what to include in the search results.
+        :param list search_type: list of :py:class:`boardgamegeek.api.BGGRestrictItemTypeTo`, indicating what to include in the search results.
         :param bool exact: if True, try to match the name exactly
         :return: list of ``SearchResult``
         :rtype: list of :py:class:`boardgamegeek.search.SearchResult`
@@ -655,7 +678,7 @@ class BGGCommon(object):
             raise BGGValueError("invalid query string")
 
         if search_type is None:
-            search_type = ["boardgame"]
+            search_type = [BGGRestrictItemTypeTo.BOARD_GAME]
 
         params = {"query": query}
 
@@ -761,7 +784,7 @@ class BoardGameGeek(BGGCommon):
         :raises: :py:exc:`boardgamegeek.exceptions.BGGApiError` if the response couldn't be parsed
         :raises: :py:exc:`boardgamegeek.exceptions.BGGApiTimeoutError` if there was a timeout
         """
-        return self._get_game_id(name, game_type=BGGItemType.BOARD_GAME, choose=choose)
+        return self._get_game_id(name, game_type=BGGRestrictItemTypeTo.BOARD_GAME, choose=choose)
 
     def game(self, name=None, game_id=None, choose=BGGChoose.FIRST, versions=False, videos=False, historical=False,
              marketplace=False, comments=False, rating_comments=False, progress=None):
@@ -869,5 +892,5 @@ class BoardGameGeek(BGGCommon):
         """
         return [self.game(game_id=s.id)
                 for s in self.search(name,
-                                     search_type=[BGGItemType.BOARD_GAME, BGGItemType.BOARD_GAME_EXPANSION],
+                                     search_type=[BGGRestrictItemTypeTo.BOARD_GAME, BGGRestrictItemTypeTo.BOARD_GAME_EXPANSION],
                                      exact=True)]
