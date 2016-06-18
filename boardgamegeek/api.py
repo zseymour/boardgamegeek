@@ -51,6 +51,25 @@ HOT_ITEM_CHOICES = ["boardgame", "rpg", "videogame", "boardgameperson", "rpgpers
 COLLECTION_SUBTYPES = ["boardgame", "boardgameexpansion", "boardgameaccessory", "rpgitem", "rpgissue", "videogame"]
 
 
+class BGGChoose(object):
+    """
+    Constants indicating how a game should be chosen when performing a search by name
+    """
+    FIRST = "first"
+    RECENT = "recent"
+    BEST_RANK = "best-rank"
+
+
+class BGGItemType(object):
+    """
+    Item types that should be included in search results
+    """
+    RPG = "rpgitem"
+    VIDEO_GAME = "videogame"
+    BOARD_GAME = "boardgame"
+    BOARD_GAME_EXPANSION = "boardgameexpansion"
+
+
 def call_progress_cb(progress_cb, current, total):
     if progress_cb is not None:
         progress_cb(current, total)
@@ -98,9 +117,10 @@ class BoardGameGeekNetworkAPI(object):
         Returns the BGG ID of a game, searching by name
 
         :param str name: the name of the game to search for
-        :param str game_type: the game type ("rpgitem", "videogame", "boardgame", "boardgameexpansion")
-        :param str choose: method of selecting the game by name, when dealing with multiple results. Valid values are "first", "recent" or "best-rank"
-        :return: ``None`` if game wasn't found
+        :param str game_type: searched game type (BGGItemType.RPG, BGGItemType.VIDEO_GAME, BGGItemType.BOARD_GAME,
+                                                  BGGItemType.BOARD_GAME_EXPANSION)
+        :param str choose: method of selecting the game by name, when having multiple results. Valid values are:
+                           `BGGChoose.FIRST`, `BGGChoose.RECENT`, `BGGChoose.BEST_RANK`
         :return: game's id
         :raises: :py:exc:`boardgamegeek.exceptions.BGGValueError` in case of invalid parameter(s)
         :raises: :py:exc:`boardgamegeek.exceptions.BGGItemNotFoundError` if the game hasn't been found
@@ -109,7 +129,7 @@ class BoardGameGeekNetworkAPI(object):
         :raises: :py:exc:`boardgamegeek.exceptions.BGGApiTimeoutError` if there was a timeout
         """
 
-        if choose not in ["first", "recent", "best-rank"]:
+        if choose not in [BGGChoose.FIRST, BGGChoose.RECENT, BGGChoose.BEST_RANK]:
             raise BGGValueError("invalid value for parameter 'choose': {}".format(choose))
 
         log.debug("getting game id for '{}'".format(name))
@@ -118,9 +138,9 @@ class BoardGameGeekNetworkAPI(object):
         if not res:
             raise BGGItemNotFoundError("can't find '{}'".format(name))
 
-        if choose == "first":
+        if choose == BGGChoose.FIRST:
             return res[0].id
-        elif choose == "recent":
+        elif choose == BGGChoose.RECENT:
             # choose the result with the biggest year
             return max(res, key=lambda x: x.year if x.year is not None else -300000).id
         else:
@@ -621,7 +641,7 @@ class BoardGameGeekNetworkAPI(object):
         Search for a game
 
         :param str query: the string to search for
-        :param str search_type: list of strings indicating what to search for. Valid contained values are: "rpgitem", "videogame", "boardgame" (default), "boardgameexpansion"
+        :param list search_type: list of :py:class:`boardgamegeek.BGGItemType`, indicating what to include in the search results.
         :param bool exact: if True, try to match the name exactly
         :return: list of ``SearchResult``
         :rtype: list of :py:class:`boardgamegeek.search.SearchResult`
@@ -660,7 +680,8 @@ class BoardGameGeekNetworkAPI(object):
         else:
             if search_type:
                 for s in search_type:
-                    if s not in ["rpgitem", "videogame", "boardgame", "boardgameexpansion"]:
+                    if s not in [BGGItemType.RPG, BGGItemType.VIDEO_GAME,
+                                 BGGItemType.BOARD_GAME, BGGItemType.BOARD_GAME_EXPANSION]:
                         raise BGGValueError("invalid search type: {}".format(search_type))
 
                 params["type"] = ",".join(search_type)
@@ -726,12 +747,12 @@ class BoardGameGeek(BoardGameGeekNetworkAPI):
                                             retry_delay=retry_delay,
                                             requests_per_minute=requests_per_minute)
 
-    def get_game_id(self, name, choose="first"):
+    def get_game_id(self, name, choose=BGGChoose.FIRST):
         """
         Returns the BGG ID of a game, searching by name
 
         :param str name: The name of the game to search for
-        :param str choose: method of selecting the game by name, when dealing with multiple results. Valid values: "first", "recent" or "best-rank"
+        :param boardgamegeek.BGGChoose choose: method of selecting the game by name, when dealing with multiple results.
         :return: the game's id
         :rtype: integer
         :return: ``None`` if game wasn't found
@@ -740,9 +761,9 @@ class BoardGameGeek(BoardGameGeekNetworkAPI):
         :raises: :py:exc:`boardgamegeek.exceptions.BGGApiError` if the response couldn't be parsed
         :raises: :py:exc:`boardgamegeek.exceptions.BGGApiTimeoutError` if there was a timeout
         """
-        return self._get_game_id(name, game_type="boardgame", choose=choose)
+        return self._get_game_id(name, game_type=BGGItemType.BOARD_GAME, choose=choose)
 
-    def game(self, name=None, game_id=None, choose="first", versions=False, videos=False, historical=False,
+    def game(self, name=None, game_id=None, choose=BGGChoose.FIRST, versions=False, videos=False, historical=False,
              marketplace=False, comments=False, rating_comments=False, progress=None):
         """
         Get information about a game.
@@ -845,5 +866,5 @@ class BoardGameGeek(BoardGameGeekNetworkAPI):
         """
         return [self.game(game_id=s.id)
                 for s in self.search(name,
-                                     search_type=["boardgame", "boardgameexpansion"],
+                                     search_type=[BGGItemType.BOARD_GAME, BGGItemType.BOARD_GAME_EXPANSION],
                                      exact=True)]
