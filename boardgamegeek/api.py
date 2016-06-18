@@ -106,10 +106,10 @@ class BGGCommon(object):
     Base class for the BoardGameGeek websites APIs. All site-specific clients are derived from this.
 
     :param str api_endpoint: URL of the API
-    :param str cache: instance of a :py:class:`boardgamegeek.cache.CacheBackend` class
-    :param integer timeout: timeout for a request
-    :param integer retries: how many retries to perform in special cases
-    :param integer retry_delay: delay between retries (seconds)
+    :param :py:class:`boardgamegeek.cache.CacheBackend` cache: object to be used for caching BGG API results
+    :param float timeout: timeout for a request, in seconds
+    :param int retries: how many retries to perform in special cases
+    :param float retry_delay: delay between retries, in seconds
     """
     def __init__(self, api_endpoint, cache, timeout, retries, retry_delay, requests_per_minute):
         self._search_api_url = api_endpoint + "/search"
@@ -297,7 +297,7 @@ class BGGCommon(object):
                                                 convert=lambda x: datetime.datetime.strptime(x, "%Y-%m-%d"),
                                                 quiet=True)
 
-        # TODO: get rid of the add_top/hot_item methods, move them in the
+        # TODO: move add_top_item add_hot_item to sepparated files
         user = User(data)
 
         # add top items
@@ -717,10 +717,10 @@ class BGGClient(BGGCommon):
         Caching for the requests can be used by specifying an URI for the ``cache`` parameter. By default, an in-memory
         cache is used, with sqlite being the other currently supported option.
 
-        :param cache: A :py:class:`boardgamegeek.cache.CacheBackend` object to be used for caching the requests
-        :param timeout: Timeout for network operations
-        :param retries: Number of retries to perform in case the API returns HTTP 202 (retry) or in case of timeouts
-        :param retry_delay: Time to sleep between retries when the API returns HTTP 202 (retry)
+        :param :py:class:`boardgamegeek.cache.CacheBackend` cache: An object to be used for caching the requests
+        :param float timeout: Timeout for network operations, in seconds
+        :param int retries: Number of retries to perform in case the API returns HTTP 202 (retry) or in case of timeouts
+        :param float retry_delay: Time to sleep, in seconds, between retries when the API returns HTTP 202 (retry)
         :param disable_ssl: If true, use HTTP instead of HTTPS for calling the BGG API
         :param requests_per_minute: how many requests per minute to allow to go out to BGG (throttle prevention)
 

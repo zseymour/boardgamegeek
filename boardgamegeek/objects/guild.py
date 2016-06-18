@@ -134,15 +134,13 @@ class Guild(Thing):
     def members(self):
         """
         :return: members of the guild
-        :rtype: list of str
-        :return: ``None`` if n/a
+        :rtype: set of str
         """
         return self._members
 
     @property
     def members_count(self):
         """
-
         :return: number of members, as reported by the server
         :rtype: int
         """
