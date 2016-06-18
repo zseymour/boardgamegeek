@@ -343,12 +343,8 @@ class BGGCommon(object):
 
         max_items_to_fetch = max(total_buddies, total_guilds)
 
-        def _call_progress_cb():
-            if progress is not None:
-                progress(max(user.total_buddies, user.total_guilds), max_items_to_fetch)
-
         try:
-            _call_progress_cb()
+            call_progress_cb(progress, max(user.total_buddies, user.total_guilds), max_items_to_fetch)
         except:
             return user
 
@@ -373,7 +369,7 @@ class BGGCommon(object):
                 added_guild = True
 
             try:
-                _call_progress_cb()
+                call_progress_cb(progress, max(user.total_buddies, user.total_guilds), max_items_to_fetch)
             except:
                 break
 
