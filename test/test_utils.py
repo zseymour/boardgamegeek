@@ -132,7 +132,7 @@ def test_rate_limiting_for_requests():
                   53953] # thunderstone]
 
     def _worker_thread(games):
-        bgg = BoardGameGeek(cache=None, requests_per_minute=20)
+        bgg = BGGClient(cache=None, requests_per_minute=20)
         for g in games:
             bgg.game(game_id=g)
 
@@ -154,7 +154,7 @@ def test_rate_limiting_for_requests():
     # second test, use caching and confirm it's working when combined with the rate limiting algorithm
     # do cached requests for the test set, then do them again. should take only half of the time
 
-    bgg = BoardGameGeek(requests_per_minute=20)
+    bgg = BGGClient(requests_per_minute=20)
 
     start_time = time.time()
     for g in test_set_1:

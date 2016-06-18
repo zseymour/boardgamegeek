@@ -705,15 +705,14 @@ class BGGCommon(object):
                                                            quiet=True),
                       "type": item.attrib["type"]}
 
-            # TODO: move this inside the object
             results.append(SearchResult(kwargs))
 
         return results
 
 
-class BoardGameGeek(BGGCommon):
+class BGGClient(BGGCommon):
     """
-        Python interface for www.boardgamegeek.com's XML API 2.
+        Python client for www.boardgamegeek.com's XML API 2.
 
         Caching for the requests can be used by specifying an URI for the ``cache`` parameter. By default, an in-memory
         cache is used, with sqlite being the other currently supported option.
@@ -727,23 +726,23 @@ class BoardGameGeek(BGGCommon):
 
         Example usage::
 
-            >>> bgg = BoardGameGeek()
+            >>> bgg = BGGClient()
             >>> game = bgg.game("Android: Netrunner")
             >>> game.id
             124742
-            >>> bgg_no_cache = BoardGameGeek(cache=CacheBackendNone())
-            >>> bgg_sqlite_cache = BoardGameGeek(cache=CacheBackendSqlite(path="/path/to/cache.db", ttl=3600))
+            >>> bgg_no_cache = BGGClient(cache=CacheBackendNone())
+            >>> bgg_sqlite_cache = BGGClient(cache=CacheBackendSqlite(path="/path/to/cache.db", ttl=3600))
 
     """
     def __init__(self, cache=CacheBackendMemory(ttl=3600), timeout=15, retries=3, retry_delay=5, disable_ssl=False, requests_per_minute=DEFAULT_REQUESTS_PER_MINUTE):
 
         api_endpoint = "http{}://www.boardgamegeek.com/xmlapi2".format("" if disable_ssl else "s")
-        super(BoardGameGeek, self).__init__(api_endpoint=api_endpoint,
-                                            cache=cache,
-                                            timeout=timeout,
-                                            retries=retries,
-                                            retry_delay=retry_delay,
-                                            requests_per_minute=requests_per_minute)
+        super(BGGClient, self).__init__(api_endpoint=api_endpoint,
+                                        cache=cache,
+                                        timeout=timeout,
+                                        retries=retries,
+                                        retry_delay=retry_delay,
+                                        requests_per_minute=requests_per_minute)
 
     def get_game_id(self, name, choose=BGGChoose.FIRST):
         """

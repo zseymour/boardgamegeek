@@ -59,8 +59,8 @@ Here's a quick usage example:
 
 .. code-block:: pycon
 
-    >>> from boardgamegeek import BoardGameGeek
-    >>> bgg = BoardGameGeek()
+    >>> from boardgamegeek import BGGClient
+    >>> bgg = BGGClient()
     >>> g = bgg.game("Android: Netrunner")
     >>> g.name
     'Android: Netrunner'

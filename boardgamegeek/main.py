@@ -3,7 +3,7 @@ import sys
 import argparse
 import logging
 
-from boardgamegeek.api import BoardGameGeek, HOT_ITEM_CHOICES
+from boardgamegeek.api import BGGClient, HOT_ITEM_CHOICES
 
 log = logging.getLogger("boardgamegeek")
 log_fmt = "[%(levelname)s] %(message)s"
@@ -84,7 +84,7 @@ def main():
                 args.plays, args.plays_by_game, args.hot_items, args.search]):
         p.error("no action specified!")
 
-    bgg = BoardGameGeek(timeout=args.timeout, retries=args.retries)
+    bgg = BGGClient(timeout=args.timeout, retries=args.retries)
 
     if args.user:
         user = bgg.user(args.user, progress=progress_cb)

@@ -29,7 +29,7 @@ else:
 #
 def test_no_caching():
     # test that we can disable caching
-    bgg = BoardGameGeek(cache=CacheBackendNone())
+    bgg = BGGClient(cache=CacheBackendNone())
 
     user = bgg.user(TEST_VALID_USER)
 
@@ -50,9 +50,9 @@ def test_sqlite_caching():
 
     with pytest.raises(BGGValueError):
         # invalid value for the ttl parameter
-        BoardGameGeek(cache=CacheBackendSqlite(name, ttl="invalid", fast_save=False))
+        BGGClient(cache=CacheBackendSqlite(name, ttl="invalid", fast_save=False))
 
-    bgg = BoardGameGeek(cache=CacheBackendSqlite(name, ttl=1000))
+    bgg = BGGClient(cache=CacheBackendSqlite(name, ttl=1000))
 
     user = bgg.user(TEST_VALID_USER)
     assert user is not None
@@ -234,7 +234,7 @@ def test_rate_limiting_for_requests():
                   53953] # thunderstone]
 
     def _worker_thread(games):
-        bgg = BoardGameGeek(cache=CacheBackendNone(), requests_per_minute=20)
+        bgg = BGGClient(cache=CacheBackendNone(), requests_per_minute=20)
         for g in games:
             bgg.game(game_id=g)
 
@@ -256,7 +256,7 @@ def test_rate_limiting_for_requests():
     # second test, use caching and confirm it's working when combined with the rate limiting algorithm
     # do cached requests for the test set, then do them again. should take only half of the time
 
-    bgg = BoardGameGeek(requests_per_minute=20)
+    bgg = BGGClient(requests_per_minute=20)
 
     start_time = time.time()
     for g in test_set_1:
