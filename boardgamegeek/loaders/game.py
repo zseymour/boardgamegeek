@@ -128,7 +128,7 @@ def create_game_from_xml(xml_root, game_id, html_parser):
                 data["suggested_players"]['results'] = {}
                 for result in results:
                     player_count = result.attrib.get("numplayers")
-                    if result.find(".//result[@value='Best']") is not None:
+                    if result.find("result[@value='Best']") is not None:
                         data["suggested_players"]['results'][player_count] = {
                             'best_rating': result.find("result[@value='Best']")
                             .attrib.get("numvotes"),

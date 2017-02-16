@@ -866,7 +866,9 @@ class BoardGame(BaseGame):
         if self.player_suggestion:
             log.info("Player Suggestions")
             for v in self.player_suggestion:
-                v._format(log)
+                log.info("- {} - Best: {}, Recommended: {}, Not Recommended: {}"
+                         .format(v.player_count, v.best,
+                                 v.recommended, v.not_recommended))
                 log.info("--------")
 
         log.info("users rated game  : {}".format(self.users_rated))
@@ -1072,7 +1074,7 @@ class BoardGame(BaseGame):
         return self._versions
 
     @property
-    def player_suggestion(self):
+    def player_suggestions(self):
         """
         :return player suggestion list with votes
         :rtype: list of dicts
