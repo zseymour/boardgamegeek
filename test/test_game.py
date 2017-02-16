@@ -5,6 +5,7 @@ import sys
 from _common import *
 from boardgamegeek import BGGError, BGGItemNotFoundError, BGGValueError
 from boardgamegeek.objects.games import BoardGameVideo, BoardGameVersion, BoardGameRank
+from boardgamegeek.objects.games import PlayerSuggestion
 
 if sys.version_info >= (3,):
     STR_TYPES_OR_NONE = [str, type(None)]
@@ -113,11 +114,11 @@ def check_game(game):
     # check player suggestions were retrieved
     assert type(game.player_suggestions) == list
     for suggestion in game.player_suggestions:
-        assert type(suggestion) == dict
-        assert type(suggestion['player_count']) == str
-        assert type(suggestion['best']) == int
-        assert type(suggestion['not_recommended']) == int
-        assert type(suggestion['recommended']) == int
+        assert type(suggestion) == PlayerSuggestion
+        assert type(suggestion.player_count) == str
+        assert type(suggestion.best) == int
+        assert type(suggestion.not_recommended) == int
+        assert type(suggestion.recommended) == int
 
 
     # make sure no exception gets thrown

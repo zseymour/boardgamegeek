@@ -38,6 +38,26 @@ class BoardGameRank(Thing):
         return self._data.get("bayesaverage")
 
 
+class PlayerSuggestion(DictObject):
+    """
+    Player Suggestion
+    """
+    def __init__(self, data):
+        super(PlayerSuggestion, self).__init__(data)
+
+    @property
+    def numeric_player_count(self):
+        """
+        Convert player count to a an int
+        If player count contains a + symbol
+        then add one to the player count
+        """
+        if '+' in self.player_count:
+            return int(self.player_count[:-1]) + 1
+        else:
+            return int(self.player_count)
+
+
 class BoardGameStats(DictObject):
     """
     Statistics about a board game
@@ -744,12 +764,13 @@ class BoardGame(BaseGame):
         self._player_suggestion = []
         if "suggested_players" in data:
             for count, result in data['suggested_players']['results'].items():
-                self._player_suggestion.append({
+                suggestion_data = {
                     'player_count': count,
                     'best': int(result['best_rating']),
                     'recommended': int(result['recommended_rating']),
                     'not_recommended': int(result['not_recommeded_rating']),
-                })
+                }
+                self._player_suggestion.append(PlayerSuggestion(suggestion_data))
 
         super(BoardGame, self).__init__(data)
 
@@ -867,8 +888,8 @@ class BoardGame(BaseGame):
             log.info("Player Suggestions")
             for v in self.player_suggestions:
                 log.info("- {} - Best: {}, Recommended: {}, Not Recommended: {}"
-                         .format(v['player_count'], v['best'],
-                                 v['recommended'], v['not_recommended']))
+                         .format(v.player_count, v.best,
+                                 v.recommended, v.not_recommended))
                 log.info("--------")
 
         log.info("users rated game  : {}".format(self.users_rated))
