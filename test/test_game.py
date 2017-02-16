@@ -144,7 +144,7 @@ def test_get_known_game_info_by_id(bgg):
 
 
 def test_get_known_game_info_by_id_list(bgg):
-    game_list = bgg.game_list(None, game_id_list=[TEST_GAME_ID, TEST_GAME_ID_2],
+    game_list = bgg.game_list(game_id_list=[TEST_GAME_ID, TEST_GAME_ID_2],
                               videos=True, versions=True)
     check_game(game_list[0])
 
