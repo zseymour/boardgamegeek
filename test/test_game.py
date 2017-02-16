@@ -114,10 +114,10 @@ def check_game(game):
     assert type(game.player_suggestions) == list
     for suggestion in game.player_suggestions:
         assert type(suggestion) == dict
-        assert type(suggestion.player_count) == str
-        assert type(suggestion.best) == int
-        assert type(not_recommended) == int
-        assert type(recommended) == int
+        assert type(suggestion['player_count']) == str
+        assert type(suggestion['best']) == int
+        assert type(suggestion['not_recommended']) == int
+        assert type(suggestion['recommended']) == int
 
 
     # make sure no exception gets thrown

@@ -863,9 +863,9 @@ class BoardGame(BaseGame):
                 v._format(log)
                 log.info("--------")
 
-        if self.player_suggestion:
+        if self.player_suggestions:
             log.info("Player Suggestions")
-            for v in self.player_suggestion:
+            for v in self.player_suggestions:
                 log.info("- {} - Best: {}, Recommended: {}, Not Recommended: {}"
                          .format(v.player_count, v.best,
                                  v.recommended, v.not_recommended))
