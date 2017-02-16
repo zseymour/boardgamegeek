@@ -143,6 +143,12 @@ def test_get_known_game_info_by_id(bgg):
     check_game(game)
 
 
+def test_get_known_game_info_by_id_list(bgg):
+    game_list = bgg.game_list(None, game_id_list=[TEST_GAME_ID, TEST_GAME_ID_2],
+                              videos=True, versions=True)
+    check_game(game_list[0])
+
+
 def test_game_id_with_invalid_params(bgg):
     with pytest.raises(BGGValueError):
         bgg.get_game_id(TEST_GAME_NAME, choose="voodoo")
