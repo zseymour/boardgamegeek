@@ -741,6 +741,16 @@ class BoardGame(BaseGame):
         for comment in data.get("comments", []):
             self.add_comment(comment)
 
+        self._player_suggestion = []
+        if "suggested_players" in data:
+            for count, result in data['suggested_players']['results'].items():
+                self._player_suggestion.append({
+                    'player_count': count,
+                    'best': int(result['best_rating']),
+                    'recommended': int(result['recommended_rating']),
+                    'not_recommended': int(result['not_recommeded_rating']),
+                })
+
         super(BoardGame, self).__init__(data)
 
     def __repr__(self):
@@ -850,6 +860,12 @@ class BoardGame(BaseGame):
         if self.versions:
             log.info("versions")
             for v in self.versions:
+                v._format(log)
+                log.info("--------")
+
+        if self.player_suggestion:
+            log.info("Player Suggestions")
+            for v in self.player_suggestion:
                 v._format(log)
                 log.info("--------")
 
@@ -1054,3 +1070,11 @@ class BoardGame(BaseGame):
         :rtype: list of :py:class:`boardgamegeek.game.BoardGameVersion`
         """
         return self._versions
+
+    @property
+    def player_suggestion(self):
+        """
+        :return player suggestion list with votes
+        :rtype: list of dicts
+        """
+        return self._player_suggestion

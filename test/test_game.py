@@ -110,6 +110,16 @@ def check_game(game):
         assert type(rank) == BoardGameRank
         assert type(rank.type) in STR_TYPES_OR_NONE
 
+    # check player suggestions were retrieved
+    assert type(game.player_suggestions) == list
+    for suggestion in game.player_suggestions:
+        assert type(suggestion) == dict
+        assert type(suggestion.player_count) == str
+        assert type(suggestion.best) == int
+        assert type(not_recommended) == int
+        assert type(recommended) == int
+
+
     # make sure no exception gets thrown
     repr(game)
 
