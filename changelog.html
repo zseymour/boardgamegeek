@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Changelog &mdash; boardgamegeek 0.13.2 documentation</title>
+    <title>Changelog &#8212; boardgamegeek 0.0.1 documentation</title>
     
     <link rel="stylesheet" href="_static/sphinxdoc.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -14,16 +14,18 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '0.13.2',
+        VERSION:     '0.0.1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
-        HAS_SOURCE:  true
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
       };
     </script>
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="boardgamegeek 0.13.2 documentation" href="index.html" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="Modules" href="modules.html" />
     <link rel="prev" title="boardgamegeek - A Python API for boardgamegeek.com" href="index.html" /> 
   </head>
@@ -43,7 +45,7 @@
         <li class="right" >
           <a href="index.html" title="boardgamegeek - A Python API for boardgamegeek.com"
              accesskey="P">previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="index.html">boardgamegeek 0.13.2 documentation</a> &raquo;</li> 
+        <li class="nav-item nav-item-0"><a href="index.html">boardgamegeek 0.0.1 documentation</a> &#187;</li> 
       </ul>
     </div>
       <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
@@ -51,35 +53,42 @@
   <h3><a href="index.html">Table Of Contents</a></h3>
   <ul>
 <li><a class="reference internal" href="#">Changelog</a><ul>
-<li><a class="reference internal" href="#id1">0.13.2</a></li>
-<li><a class="reference internal" href="#id2">0.13.1</a></li>
-<li><a class="reference internal" href="#id3">0.13.0</a></li>
-<li><a class="reference internal" href="#id4">0.12.1</a></li>
-<li><a class="reference internal" href="#id5">0.12.0</a></li>
-<li><a class="reference internal" href="#id6">0.11.2</a></li>
-<li><a class="reference internal" href="#id7">0.11.1</a></li>
-<li><a class="reference internal" href="#id8">0.11.0</a></li>
-<li><a class="reference internal" href="#id9">0.10.1</a></li>
-<li><a class="reference internal" href="#id10">0.10.0</a></li>
-<li><a class="reference internal" href="#id11">0.9.0</a></li>
-<li><a class="reference internal" href="#id12">0.8.1</a></li>
-<li><a class="reference internal" href="#id13">0.8.0</a></li>
-<li><a class="reference internal" href="#id14">0.7.1</a></li>
-<li><a class="reference internal" href="#id15">0.7.0</a></li>
-<li><a class="reference internal" href="#id16">0.6.0</a></li>
-<li><a class="reference internal" href="#id17">0.5.0</a></li>
-<li><a class="reference internal" href="#id18">0.4.3</a></li>
-<li><a class="reference internal" href="#id19">0.4.2</a></li>
-<li><a class="reference internal" href="#id20">0.4.0</a></li>
-<li><a class="reference internal" href="#id21">0.3.0</a></li>
+<li><a class="reference internal" href="#boardgamegeek2">boardgamegeek2</a><ul>
+<li><a class="reference internal" href="#id1">0.0.1</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#boardgamegeek">boardgamegeek</a><ul>
+<li><a class="reference internal" href="#id2">0.13.2</a></li>
+<li><a class="reference internal" href="#id3">0.13.1</a></li>
+<li><a class="reference internal" href="#id4">0.13.0</a></li>
+<li><a class="reference internal" href="#id5">0.12.1</a></li>
+<li><a class="reference internal" href="#id6">0.12.0</a></li>
+<li><a class="reference internal" href="#id7">0.11.2</a></li>
+<li><a class="reference internal" href="#id8">0.11.1</a></li>
+<li><a class="reference internal" href="#id9">0.11.0</a></li>
+<li><a class="reference internal" href="#id10">0.10.1</a></li>
+<li><a class="reference internal" href="#id11">0.10.0</a></li>
+<li><a class="reference internal" href="#id12">0.9.0</a></li>
+<li><a class="reference internal" href="#id13">0.8.1</a></li>
+<li><a class="reference internal" href="#id14">0.8.0</a></li>
+<li><a class="reference internal" href="#id15">0.7.1</a></li>
+<li><a class="reference internal" href="#id16">0.7.0</a></li>
+<li><a class="reference internal" href="#id17">0.6.0</a></li>
+<li><a class="reference internal" href="#id18">0.5.0</a></li>
+<li><a class="reference internal" href="#id19">0.4.3</a></li>
+<li><a class="reference internal" href="#id20">0.4.2</a></li>
+<li><a class="reference internal" href="#id21">0.4.0</a></li>
+<li><a class="reference internal" href="#id22">0.3.0</a></li>
 <li><a class="reference internal" href="#unreleased">0.2.0 (unreleased)</a></li>
-<li><a class="reference internal" href="#id22">0.1.0</a></li>
-<li><a class="reference internal" href="#id23">0.0.14</a></li>
-<li><a class="reference internal" href="#id24">0.0.13</a></li>
-<li><a class="reference internal" href="#id25">0.0.12</a></li>
-<li><a class="reference internal" href="#id26">0.0.11</a></li>
-<li><a class="reference internal" href="#id27">0.0.10</a></li>
-<li><a class="reference internal" href="#id28">0.0.9</a></li>
+<li><a class="reference internal" href="#id23">0.1.0</a></li>
+<li><a class="reference internal" href="#id24">0.0.14</a></li>
+<li><a class="reference internal" href="#id25">0.0.13</a></li>
+<li><a class="reference internal" href="#id26">0.0.12</a></li>
+<li><a class="reference internal" href="#id27">0.0.11</a></li>
+<li><a class="reference internal" href="#id28">0.0.10</a></li>
+<li><a class="reference internal" href="#id29">0.0.9</a></li>
+</ul>
+</li>
 </ul>
 </li>
 </ul>
@@ -93,21 +102,18 @@
   <div role="note" aria-label="source link">
     <h3>This Page</h3>
     <ul class="this-page-menu">
-      <li><a href="_sources/changelog.txt"
+      <li><a href="_sources/changelog.rst.txt"
             rel="nofollow">Show Source</a></li>
     </ul>
    </div>
 <div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
     <form class="search" action="search.html" method="get">
-      <input type="text" name="q" />
-      <input type="submit" value="Go" />
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
     </form>
-    <p class="searchtip" style="font-size: 90%">
-    Enter search terms or a module, class or function name.
-    </p>
 </div>
 <script type="text/javascript">$('#searchbox').show(0);</script>
         </div>
@@ -120,16 +126,37 @@
             
   <div class="section" id="changelog">
 <h1>Changelog<a class="headerlink" href="#changelog" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="boardgamegeek2">
+<h2>boardgamegeek2<a class="headerlink" href="#boardgamegeek2" title="Permalink to this headline">¶</a></h2>
 <div class="section" id="id1">
-<h2>0.13.2<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h2>
+<h3>0.0.1<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h3>
+<p>This is a pre-release of version of <code class="docutils literal"><span class="pre">boardgamegeek2</span></code>, which <strong>breaks compatibility</strong> with the previous API.</p>
+<blockquote>
+<div><ul class="simple">
+<li>The old <code class="docutils literal"><span class="pre">BoardGameGeek</span></code> class has been renamed to <code class="docutils literal"><span class="pre">BGGClient</span></code> because it&#8217;s shorter and it better reflects what
+the code does: it&#8217;s a client for the Board Game Geek XML API.</li>
+<li>Code refactoring for a better separation of the code which handles xml parsing from the one that&#8217;s taking care of
+storing data</li>
+<li>Refactored exceptions classes</li>
+<li>In the previous versions, in case something was not found (e.g. a game, an user, etc.), <code class="docutils literal"><span class="pre">None</span></code> was returned. Now,
+an exception is raised instead (<a class="reference internal" href="modules.html#boardgamegeek.exceptions.BGGItemNotFoundError" title="boardgamegeek.exceptions.BGGItemNotFoundError"><code class="xref py py-class docutils literal"><span class="pre">boardgamegeek.exceptions.BGGItemNotFoundError</span></code></a>)</li>
+<li>Improved documentation</li>
+</ul>
+</div></blockquote>
+</div>
+</div>
+<div class="section" id="boardgamegeek">
+<h2>boardgamegeek<a class="headerlink" href="#boardgamegeek" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id2">
+<h3>0.13.2<a class="headerlink" href="#id2" title="Permalink to this headline">¶</a></h3>
 <blockquote>
 <div><ul class="simple">
 <li>Forgot to bump up version with the previous release</li>
 </ul>
 </div></blockquote>
 </div>
-<div class="section" id="id2">
-<h2>0.13.1<a class="headerlink" href="#id2" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id3">
+<h3>0.13.1<a class="headerlink" href="#id3" title="Permalink to this headline">¶</a></h3>
 <p>Changes</p>
 <blockquote>
 <div><ul class="simple">
@@ -143,28 +170,28 @@
 </ul>
 </div></blockquote>
 </div>
-<div class="section" id="id3">
-<h2>0.13.0<a class="headerlink" href="#id3" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id4">
+<h3>0.13.0<a class="headerlink" href="#id4" title="Permalink to this headline">¶</a></h3>
 <p>Features</p>
 <blockquote>
 <div><ul class="simple">
-<li>Added the <code class="docutils literal"><span class="pre">choose</span></code> parameter to <a class="reference internal" href="modules.html#boardgamegeek.api.BoardGameGeek.game" title="boardgamegeek.api.BoardGameGeek.game"><code class="xref py py-meth docutils literal"><span class="pre">boardgamegeek.api.BoardGameGeek.game()</span></code></a> which lets you control how the &#8220;right&#8221; game is selected when searching by name. One of &#8220;first&#8221;, &#8220;recent&#8221; and &#8220;best-rank&#8221;
+<li>Added the <code class="docutils literal"><span class="pre">choose</span></code> parameter to <code class="xref py py-meth docutils literal"><span class="pre">boardgamegeek.api.BoardGameGeek.game()</span></code> which lets you control how the &#8220;right&#8221; game is selected when searching by name. One of &#8220;first&#8221;, &#8220;recent&#8221; and &#8220;best-rank&#8221;
 can be specified in order to select the first search result, the most recently published one or the best ranked.</li>
 </ul>
 </div></blockquote>
 </div>
-<div class="section" id="id4">
-<h2>0.12.1<a class="headerlink" href="#id4" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id5">
+<h3>0.12.1<a class="headerlink" href="#id5" title="Permalink to this headline">¶</a></h3>
 <p>Changes</p>
 <blockquote>
 <div><ul class="simple">
-<li>Properties which returned lists no longer return <code class="docutils literal"><span class="pre">None</span></code> in case data is missing, but an empty list (e.g. for <a class="reference internal" href="modules.html#boardgamegeek.games.BoardGame" title="boardgamegeek.games.BoardGame"><code class="xref py py-class docutils literal"><span class="pre">boardgamegeek.games.BoardGame</span></code></a>)</li>
+<li>Properties which returned lists no longer return <code class="docutils literal"><span class="pre">None</span></code> in case data is missing, but an empty list (e.g. for <code class="xref py py-class docutils literal"><span class="pre">boardgamegeek.games.BoardGame</span></code>)</li>
 <li>Updated documentation</li>
 </ul>
 </div></blockquote>
 </div>
-<div class="section" id="id5">
-<h2>0.12.0<a class="headerlink" href="#id5" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id6">
+<h3>0.12.0<a class="headerlink" href="#id6" title="Permalink to this headline">¶</a></h3>
 <p>Changes</p>
 <blockquote>
 <div><ul class="simple">
@@ -172,8 +199,8 @@ can be specified in order to select the first search result, the most recently p
 </ul>
 </div></blockquote>
 </div>
-<div class="section" id="id6">
-<h2>0.11.2<a class="headerlink" href="#id6" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id7">
+<h3>0.11.2<a class="headerlink" href="#id7" title="Permalink to this headline">¶</a></h3>
 <p>Fixes</p>
 <blockquote>
 <div><ul class="simple">
@@ -181,8 +208,8 @@ can be specified in order to select the first search result, the most recently p
 </ul>
 </div></blockquote>
 </div>
-<div class="section" id="id7">
-<h2>0.11.1<a class="headerlink" href="#id7" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id8">
+<h3>0.11.1<a class="headerlink" href="#id8" title="Permalink to this headline">¶</a></h3>
 <p>Changes</p>
 <blockquote>
 <div><ul class="simple">
@@ -190,8 +217,8 @@ can be specified in order to select the first search result, the most recently p
 </ul>
 </div></blockquote>
 </div>
-<div class="section" id="id8">
-<h2>0.11.0<a class="headerlink" href="#id8" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id9">
+<h3>0.11.0<a class="headerlink" href="#id9" title="Permalink to this headline">¶</a></h3>
 <p>Changes</p>
 <blockquote>
 <div><ul class="simple">
@@ -201,14 +228,14 @@ can be specified in order to select the first search result, the most recently p
 <p>Features</p>
 <blockquote>
 <div><ul class="simple">
-<li>The <a class="reference internal" href="modules.html#boardgamegeek.games.BoardGame" title="boardgamegeek.games.BoardGame"><code class="xref py py-class docutils literal"><span class="pre">boardgamegeek.games.BoardGame</span></code></a> has a new integer property (<cite>None</cite> if missing), <cite>boardgame_rank</cite></li>
+<li>The <code class="xref py py-class docutils literal"><span class="pre">boardgamegeek.games.BoardGame</span></code> has a new integer property (<cite>None</cite> if missing), <cite>boardgame_rank</cite></li>
 <li>The <cite>boardgamegeek</cite> tool: added <cite>-i</cite>, which allows querying by game id</li>
 <li>The <cite>boardgamegeek</cite> tool: added <cite>&#8211;most-recent</cite> (default) and <cite>&#8211;most-popular</cite> which allow the <cite>-g</cite> option to give information on a different game when the &#8220;search-by-name&#8221; returns multiple results.</li>
 </ul>
 </div></blockquote>
 </div>
-<div class="section" id="id9">
-<h2>0.10.1<a class="headerlink" href="#id9" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id10">
+<h3>0.10.1<a class="headerlink" href="#id10" title="Permalink to this headline">¶</a></h3>
 <p>Changes</p>
 <blockquote>
 <div><ul class="simple">
@@ -216,8 +243,8 @@ can be specified in order to select the first search result, the most recently p
 </ul>
 </div></blockquote>
 </div>
-<div class="section" id="id10">
-<h2>0.10.0<a class="headerlink" href="#id10" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id11">
+<h3>0.10.0<a class="headerlink" href="#id11" title="Permalink to this headline">¶</a></h3>
 <p>Features</p>
 <blockquote>
 <div><ul class="simple">
@@ -234,19 +261,19 @@ specified retires=0</li>
 </ul>
 </div></blockquote>
 </div>
-<div class="section" id="id11">
-<h2>0.9.0<a class="headerlink" href="#id11" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id12">
+<h3>0.9.0<a class="headerlink" href="#id12" title="Permalink to this headline">¶</a></h3>
 <p>Changes</p>
 <blockquote>
 <div><ul class="simple">
 <li>Since the BoardGameGeek API and site support HTTPS along with HTTP (and will be fully transitioned to HTTPS
 in the future), this library now uses HTTPS by default. To disable this behaviour, pass disable_ssl=True
-when creating a <a class="reference internal" href="modules.html#boardgamegeek.api.BoardGameGeek" title="boardgamegeek.api.BoardGameGeek"><code class="xref py py-class docutils literal"><span class="pre">boardgamegeek.api.BoardGameGeek</span></code></a></li>
+when creating a <code class="xref py py-class docutils literal"><span class="pre">boardgamegeek.api.BoardGameGeek</span></code></li>
 </ul>
 </div></blockquote>
 </div>
-<div class="section" id="id12">
-<h2>0.8.1<a class="headerlink" href="#id12" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id13">
+<h3>0.8.1<a class="headerlink" href="#id13" title="Permalink to this headline">¶</a></h3>
 <p>Fixes</p>
 <blockquote>
 <div><ul class="simple">
@@ -254,8 +281,8 @@ when creating a <a class="reference internal" href="modules.html#boardgamegeek.a
 </ul>
 </div></blockquote>
 </div>
-<div class="section" id="id13">
-<h2>0.8.0<a class="headerlink" href="#id13" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id14">
+<h3>0.8.0<a class="headerlink" href="#id14" title="Permalink to this headline">¶</a></h3>
 <p>Features</p>
 <blockquote>
 <div><ul class="simple">
@@ -263,8 +290,8 @@ when creating a <a class="reference internal" href="modules.html#boardgamegeek.a
 </ul>
 </div></blockquote>
 </div>
-<div class="section" id="id14">
-<h2>0.7.1<a class="headerlink" href="#id14" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id15">
+<h3>0.7.1<a class="headerlink" href="#id15" title="Permalink to this headline">¶</a></h3>
 <p>Fixes</p>
 <blockquote>
 <div><ul class="simple">
@@ -272,8 +299,8 @@ when creating a <a class="reference internal" href="modules.html#boardgamegeek.a
 </ul>
 </div></blockquote>
 </div>
-<div class="section" id="id15">
-<h2>0.7.0<a class="headerlink" href="#id15" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id16">
+<h3>0.7.0<a class="headerlink" href="#id16" title="Permalink to this headline">¶</a></h3>
 <p>Changes</p>
 <blockquote>
 <div><ul class="simple">
@@ -288,8 +315,8 @@ to deal with this</li>
 </ul>
 </div></blockquote>
 </div>
-<div class="section" id="id16">
-<h2>0.6.0<a class="headerlink" href="#id16" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id17">
+<h3>0.6.0<a class="headerlink" href="#id17" title="Permalink to this headline">¶</a></h3>
 <p>Changes</p>
 <blockquote>
 <div><ul class="simple">
@@ -303,27 +330,27 @@ to deal with this</li>
 </ul>
 </div></blockquote>
 </div>
-<div class="section" id="id17">
-<h2>0.5.0<a class="headerlink" href="#id17" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id18">
+<h3>0.5.0<a class="headerlink" href="#id18" title="Permalink to this headline">¶</a></h3>
 <p>Features</p>
 <blockquote>
 <div><ul class="simple">
-<li>Added a new function <a class="reference internal" href="modules.html#boardgamegeek.api.BoardGameGeek.games" title="boardgamegeek.api.BoardGameGeek.games"><code class="xref py py-func docutils literal"><span class="pre">boardgamegeek.api.BoardGameGeek.games()</span></code></a> which takes a name as argument and returns a list of <a class="reference internal" href="modules.html#boardgamegeek.games.BoardGame" title="boardgamegeek.games.BoardGame"><code class="xref py py-class docutils literal"><span class="pre">boardgamegeek.games.BoardGame</span></code></a> with
+<li>Added a new function <code class="xref py py-func docutils literal"><span class="pre">boardgamegeek.api.BoardGameGeek.games()</span></code> which takes a name as argument and returns a list of <code class="xref py py-class docutils literal"><span class="pre">boardgamegeek.games.BoardGame</span></code> with
 all the games with that name.</li>
 </ul>
 </div></blockquote>
 </div>
-<div class="section" id="id18">
-<h2>0.4.3<a class="headerlink" href="#id18" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id19">
+<h3>0.4.3<a class="headerlink" href="#id19" title="Permalink to this headline">¶</a></h3>
 <p>Changes</p>
 <blockquote>
 <div><ul class="simple">
-<li>When calling <a class="reference internal" href="modules.html#boardgamegeek.api.BoardGameGeek.game" title="boardgamegeek.api.BoardGameGeek.game"><code class="xref py py-func docutils literal"><span class="pre">boardgamegeek.api.BoardGameGeek.game()</span></code></a> with a name, return the most recently published result instead of the first one, in case of multiple results.</li>
+<li>When calling <code class="xref py py-func docutils literal"><span class="pre">boardgamegeek.api.BoardGameGeek.game()</span></code> with a name, return the most recently published result instead of the first one, in case of multiple results.</li>
 </ul>
 </div></blockquote>
 </div>
-<div class="section" id="id19">
-<h2>0.4.2<a class="headerlink" href="#id19" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id20">
+<h3>0.4.2<a class="headerlink" href="#id20" title="Permalink to this headline">¶</a></h3>
 <p>Changes</p>
 <blockquote>
 <div><ul class="simple">
@@ -331,8 +358,8 @@ all the games with that name.</li>
 </ul>
 </div></blockquote>
 </div>
-<div class="section" id="id20">
-<h2>0.4.0<a class="headerlink" href="#id20" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id21">
+<h3>0.4.0<a class="headerlink" href="#id21" title="Permalink to this headline">¶</a></h3>
 <p>Changes</p>
 <blockquote>
 <div><ul class="simple">
@@ -347,19 +374,19 @@ be controlled via the retries=, timeout= and retry_delay= parameters.</li>
 </ul>
 </div></blockquote>
 </div>
-<div class="section" id="id21">
-<h2>0.3.0<a class="headerlink" href="#id21" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id22">
+<h3>0.3.0<a class="headerlink" href="#id22" title="Permalink to this headline">¶</a></h3>
 <p>Changes</p>
 <blockquote>
 <div><ul class="simple">
-<li>Added a property to <a class="reference internal" href="modules.html#boardgamegeek.games.BoardGame" title="boardgamegeek.games.BoardGame"><code class="xref py py-class docutils literal"><span class="pre">boardgamegeek.games.BoardGame</span></code></a>, <code class="docutils literal"><span class="pre">expansion</span></code> which indicates if this item is an expansion or not</li>
-<li>Changed the <code class="docutils literal"><span class="pre">expansions</span></code> property of <a class="reference internal" href="modules.html#boardgamegeek.games.BoardGame" title="boardgamegeek.games.BoardGame"><code class="xref py py-class docutils literal"><span class="pre">boardgamegeek.games.BoardGame</span></code></a>, now it returns a list of <code class="xref py py-class docutils literal"><span class="pre">boardgamegeek.things.Thing</span></code> for each expansion the game has</li>
-<li>Added a property to <a class="reference internal" href="modules.html#boardgamegeek.games.BoardGame" title="boardgamegeek.games.BoardGame"><code class="xref py py-class docutils literal"><span class="pre">boardgamegeek.games.BoardGame</span></code></a>, <code class="docutils literal"><span class="pre">extends</span></code> which returns a list of <code class="xref py py-class docutils literal"><span class="pre">boardgamegeek.things.Thing</span></code> for each item this game is an extension to</li>
+<li>Added a property to <code class="xref py py-class docutils literal"><span class="pre">boardgamegeek.games.BoardGame</span></code>, <code class="docutils literal"><span class="pre">expansion</span></code> which indicates if this item is an expansion or not</li>
+<li>Changed the <code class="docutils literal"><span class="pre">expansions</span></code> property of <code class="xref py py-class docutils literal"><span class="pre">boardgamegeek.games.BoardGame</span></code>, now it returns a list of <code class="xref py py-class docutils literal"><span class="pre">boardgamegeek.things.Thing</span></code> for each expansion the game has</li>
+<li>Added a property to <code class="xref py py-class docutils literal"><span class="pre">boardgamegeek.games.BoardGame</span></code>, <code class="docutils literal"><span class="pre">extends</span></code> which returns a list of <code class="xref py py-class docutils literal"><span class="pre">boardgamegeek.things.Thing</span></code> for each item this game is an extension to</li>
 </ul>
 </div></blockquote>
 </div>
 <div class="section" id="unreleased">
-<h2>0.2.0 (unreleased)<a class="headerlink" href="#unreleased" title="Permalink to this headline">¶</a></h2>
+<h3>0.2.0 (unreleased)<a class="headerlink" href="#unreleased" title="Permalink to this headline">¶</a></h3>
 <p>Changes</p>
 <blockquote>
 <div><ul class="simple">
@@ -374,8 +401,8 @@ which has a name and an id</li>
 </ul>
 </div></blockquote>
 </div>
-<div class="section" id="id22">
-<h2>0.1.0<a class="headerlink" href="#id22" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id23">
+<h3>0.1.0<a class="headerlink" href="#id23" title="Permalink to this headline">¶</a></h3>
 <p>Features</p>
 <blockquote>
 <div><ul class="simple">
@@ -383,8 +410,8 @@ which has a name and an id</li>
 </ul>
 </div></blockquote>
 </div>
-<div class="section" id="id23">
-<h2>0.0.14<a class="headerlink" href="#id23" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id24">
+<h3>0.0.14<a class="headerlink" href="#id24" title="Permalink to this headline">¶</a></h3>
 <p>Changes</p>
 <blockquote>
 <div><ul class="simple">
@@ -404,8 +431,8 @@ which has a name and an id</li>
 </ul>
 </div></blockquote>
 </div>
-<div class="section" id="id24">
-<h2>0.0.13<a class="headerlink" href="#id24" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id25">
+<h3>0.0.13<a class="headerlink" href="#id25" title="Permalink to this headline">¶</a></h3>
 <p>Features</p>
 <blockquote>
 <div><ul class="simple">
@@ -415,8 +442,8 @@ which has a name and an id</li>
 </ul>
 </div></blockquote>
 </div>
-<div class="section" id="id25">
-<h2>0.0.12<a class="headerlink" href="#id25" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id26">
+<h3>0.0.12<a class="headerlink" href="#id26" title="Permalink to this headline">¶</a></h3>
 <p>Features</p>
 <blockquote>
 <div><ul class="simple">
@@ -425,8 +452,8 @@ which has a name and an id</li>
 </ul>
 </div></blockquote>
 </div>
-<div class="section" id="id26">
-<h2>0.0.11<a class="headerlink" href="#id26" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id27">
+<h3>0.0.11<a class="headerlink" href="#id27" title="Permalink to this headline">¶</a></h3>
 <p>Features</p>
 <blockquote>
 <div><ul class="simple">
@@ -440,8 +467,8 @@ which has a name and an id</li>
 </ul>
 </div></blockquote>
 </div>
-<div class="section" id="id27">
-<h2>0.0.10<a class="headerlink" href="#id27" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id28">
+<h3>0.0.10<a class="headerlink" href="#id28" title="Permalink to this headline">¶</a></h3>
 <p>Features</p>
 <blockquote>
 <div><ul class="simple">
@@ -457,8 +484,8 @@ which has a name and an id</li>
 </ul>
 </div></blockquote>
 </div>
-<div class="section" id="id28">
-<h2>0.0.9<a class="headerlink" href="#id28" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id29">
+<h3>0.0.9<a class="headerlink" href="#id29" title="Permalink to this headline">¶</a></h3>
 <p>Features</p>
 <blockquote>
 <div><ul class="simple">
@@ -473,6 +500,7 @@ which has a name and an id</li>
 <li>Properly returning the maximum number of players for a game</li>
 </ul>
 </div></blockquote>
+</div>
 </div>
 </div>
 
@@ -497,12 +525,12 @@ which has a name and an id</li>
         <li class="right" >
           <a href="index.html" title="boardgamegeek - A Python API for boardgamegeek.com"
              >previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="index.html">boardgamegeek 0.13.2 documentation</a> &raquo;</li> 
+        <li class="nav-item nav-item-0"><a href="index.html">boardgamegeek 0.0.1 documentation</a> &#187;</li> 
       </ul>
     </div>
     <div class="footer" role="contentinfo">
-        &copy; Copyright 2014, Cosmin Luță.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.3.1.
+        &#169; Copyright 2014, Cosmin Luță.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.5.2.
     </div>
   </body>
 </html>
