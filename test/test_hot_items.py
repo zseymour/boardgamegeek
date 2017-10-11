@@ -17,7 +17,7 @@ def test_get_hot_items_boardgames(bgg, null_logger):
         assert type(item.year) in [int, type(None)]
         # test that all thumbnails have been fixed (http:// added)
         # note: I guess this could fail if the boardgame has no thumbnail...
-        assert item.thumbnail.startswith("http://")
+        assert item.thumbnail.startswith("https://")
         item._format(null_logger)
 
 

@@ -81,6 +81,8 @@ def test_get_plays_of_user(bgg, null_logger):
                 assert hasattr(player, "new")
                 assert hasattr(player, "win")
                 assert hasattr(player, "rating")
+                assert hasattr(player, "color")
+                assert hasattr(player, "location")
 
     plays._format(null_logger)
 
