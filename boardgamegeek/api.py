@@ -717,7 +717,7 @@ class BGGClient(BGGCommon):
         :param float timeout: Timeout for network operations, in seconds
         :param int retries: Number of retries to perform in case the API returns HTTP 202 (retry) or in case of timeouts
         :param float retry_delay: Time to sleep, in seconds, between retries when the API returns HTTP 202 (retry)
-        :param disable_ssl: If true, use HTTP instead of HTTPS for calling the BGG API
+        :param disable_ssl: ignored, left for backwards compatibility
         :param requests_per_minute: how many requests per minute to allow to go out to BGG (throttle prevention)
 
         Example usage::
@@ -732,8 +732,7 @@ class BGGClient(BGGCommon):
     """
     def __init__(self, cache=CacheBackendMemory(ttl=3600), timeout=15, retries=3, retry_delay=5, disable_ssl=False, requests_per_minute=DEFAULT_REQUESTS_PER_MINUTE):
 
-        api_endpoint = "http{}://www.boardgamegeek.com/xmlapi2".format("" if disable_ssl else "s")
-        super(BGGClient, self).__init__(api_endpoint=api_endpoint,
+        super(BGGClient, self).__init__(api_endpoint="https://www.boardgamegeek.com/xmlapi2",
                                         cache=cache,
                                         timeout=timeout,
                                         retries=retries,
@@ -756,7 +755,7 @@ class BGGClient(BGGCommon):
         """
         return self._get_game_id(name, game_type=BGGRestrictSearchResultsTo.BOARD_GAME, choose=choose)
 
-    
+
     def game_list(self, game_id_list=[], versions=False,
                   videos=False, historical=False, marketplace=False):
         """
