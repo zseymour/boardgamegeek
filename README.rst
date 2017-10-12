@@ -2,11 +2,12 @@
 boardgamegeek - A Python API for boardgamegeek.com
 ==================================================
 
-+-------------+---------------------------------------+
-| Stable      | |travis-master| |coveralls-master|    |
-+-------------+---------------------------------------+
-| Development | |travis-develop| |coveralls-develop|  |
-+-------------+---------------------------------------+
++------------------+-----------------------------------------------------+
+| boardgamegeek v1 | |travis-master| |coveralls-master|                  |
++------------------+-----------------------------------------------------+
+| Boardgamegeek v2 | |travis-boardgamegeek2| |coveralls-boardgamegeek2|  |
++------------------+-----------------------------------------------------+
+
 
 Development status:
 
@@ -35,3 +36,9 @@ Documentation is available at http://lcosmin.github.io/boardgamegeek
 
 .. |coveralls-develop| image:: https://coveralls.io/repos/lcosmin/boardgamegeek/badge.png?branch=develop
       :target: https://coveralls.io/r/lcosmin/boardgamegeek?branch=develop
+      
+.. |travis-boardgamegeek2| image:: https://travis-ci.org/lcosmin/boardgamegeek.svg?branch=feature/boardgamegeek2
+      :target: https://travis-ci.org/lcosmin/boardgamegeek
+
+.. |coveralls-boardgamegeek2| image:: https://coveralls.io/repos/lcosmin/boardgamegeek/badge.png?branch=feature/boardgamegeek2
+      :target: https://coveralls.io/r/lcosmin/boardgamegeek?branch=develop      
