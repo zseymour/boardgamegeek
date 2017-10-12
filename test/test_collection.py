@@ -6,6 +6,12 @@ from _common import *
 from boardgamegeek import BGGError, BGGValueError, BGGItemNotFoundError
 from boardgamegeek.objects.collection import CollectionBoardGame, Collection
 from boardgamegeek.objects.games import BoardGameVersion
+import time
+
+
+def setup_module():
+    # more delays to prevent throttling from the BGG api
+    time.sleep(15)
 
 
 def test_get_collection_with_invalid_parameters(bgg):

@@ -1,6 +1,7 @@
 # coding: utf-8
 import datetime
 import sys
+import time
 
 from _common import *
 from boardgamegeek import BGGError, BGGItemNotFoundError, BGGValueError
@@ -11,6 +12,11 @@ if sys.version_info >= (3,):
     STR_TYPES_OR_NONE = [str, type(None)]
 else:
     STR_TYPES_OR_NONE = [str, unicode, type(None)]
+
+
+def setup_module():
+    # more delays to prevent throttling from the BGG api
+    time.sleep(15)
 
 
 def test_get_unknown_game_info(bgg):

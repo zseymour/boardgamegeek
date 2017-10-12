@@ -1,4 +1,5 @@
 import datetime
+import time
 
 from _common import *
 from boardgamegeek import BGGError, BGGValueError, BGGItemNotFoundError
@@ -6,6 +7,11 @@ from boardgamegeek.objects.plays import UserPlays, GamePlays, PlaySession, Plays
 
 
 progress_called = False
+
+
+def setup_module():
+    # more delays to prevent throttling from the BGG api
+    time.sleep(15)
 
 
 def progress_cb(items, total):

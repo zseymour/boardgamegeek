@@ -1,7 +1,14 @@
+import time
+
 from boardgamegeek import BGGError, BGGValueError
 from boardgamegeek.objects.hotitems import HotItems, HotItem
 
 from _common import *
+
+
+def setup_module():
+    # more delays to prevent throttling from the BGG api
+    time.sleep(15)
 
 
 def test_get_hot_items_invalid_type(bgg):
