@@ -25,6 +25,8 @@ TEST_GAME_ID_2 = 283
 TEST_GUILD_ID = 1229
 TEST_GUILD_ID_2 = 930
 
+TEST_GAME_ACCESSORY_ID = 104163 # Descent: Journeys in the Dark (second edition) – Conversion Kit
+
 
 @pytest.fixture
 def xml():
