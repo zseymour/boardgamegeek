@@ -204,3 +204,4 @@ def test_get_accessory(bgg):
     game = bgg.game(game_id=TEST_GAME_ACCESSORY_ID)
 
     assert game.id == TEST_GAME_ACCESSORY_ID
+    assert game.accessory
