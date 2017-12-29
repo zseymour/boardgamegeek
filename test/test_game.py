@@ -199,3 +199,9 @@ def test_get_games_by_name(bgg, null_logger):
         g._format(null_logger)
 
     assert len(games) > 1
+
+def test_get_accessory(bgg):
+    game = bgg.game(game_id=TEST_GAME_ACCESSORY_ID)
+
+    assert game.id == TEST_GAME_ACCESSORY_ID
+    assert game.accessory

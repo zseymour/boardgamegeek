@@ -11,7 +11,7 @@ log = logging.getLogger("boardgamegeek.loaders.game")
 def create_game_from_xml(xml_root, game_id, html_parser):
 
     game_type = xml_root.attrib["type"]
-    if game_type not in ["boardgame", "boardgameexpansion"]:
+    if game_type not in ["boardgame", "boardgameexpansion", "boardgameaccessory"]:
         log.debug("unsupported type {} for item id {}".format(game_type, game_id))
         raise BGGApiError("item has an unsupported type")
 
@@ -21,6 +21,7 @@ def create_game_from_xml(xml_root, game_id, html_parser):
             "thumbnail": xml_subelement_text(xml_root, "thumbnail"),
             "image": xml_subelement_text(xml_root, "image"),
             "expansion": game_type == "boardgameexpansion",       # is this game an expansion?
+            "accessory": game_type == "boardgameaccessory",       # is this game an accessory?
             "families": xml_subelement_attr_list(xml_root, "link[@type='boardgamefamily']"),
             "categories": xml_subelement_attr_list(xml_root, "link[@type='boardgamecategory']"),
             "implementations": xml_subelement_attr_list(xml_root, "link[@type='boardgameimplementation']"),
