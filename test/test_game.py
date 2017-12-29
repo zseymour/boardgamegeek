@@ -43,8 +43,9 @@ def check_game(game):
     assert game.name == TEST_GAME_NAME
     assert game.id == TEST_GAME_ID
     assert game.year == 2007
-    assert game.mechanics == ['Card Drafting', 'Hand Management',
-                              'Variable Player Powers', 'Worker Placement']
+    assert game.mechanics == ['Area Enclosure', 'Card Drafting',
+                              'Hand Management', 'Variable Player Powers',
+                              'Worker Placement']
     assert game.min_players == 1
     assert game.max_players == 5
     assert game.thumbnail == "https://cf.geekdo-images.com/images/pic259085_t.jpg"
