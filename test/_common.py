@@ -29,10 +29,9 @@ TEST_GUILD_ID_2 = 930
 
 TEST_GAME_ACCESSORY_ID = 104163 # Descent: Journeys in the Dark (second edition) – Conversion Kit
 
-# The URL when we search for something on BGG
+# The URLs when we call the various BGG commands
+BGG_COLLECTION_URL = "https://www.boardgamegeek.com/xmlapi2/collection"
 BGG_SEARCH_URL = "https://www.boardgamegeek.com/xmlapi2/search"
-
-# The URL when we fetch a specific item or items from BGG
 BGG_THING_URL = "https://www.boardgamegeek.com/xmlapi2/thing"
 
 # The files containing the responses for certain queries
@@ -53,6 +52,9 @@ TRIO_XML_FILENAME = "test/Trio.xml"
 SEARCH_AGRICOLA_XML_FILENAME = "test/search-Agricola.xml"
 SEARCH_COUP_XML_FILENAME = "test/search-Coup.xml"
 SEARCH_ECLIPSE_XML_FILENAME = "test/search-Eclipse.xml"
+
+INVALID_COLLECTION_XML_FILENAME = "test/InvalidCollection.xml"
+FAGENTU007_XML_FILENAME = "test/fagentu007.xml"
 
 
 @pytest.fixture
@@ -95,6 +97,20 @@ class MockResponse():
         self.status_code = 200
         self.text = text
 
+def simulate_bgg_collection(params):
+    supported_users = {
+            TEST_VALID_USER: FAGENTU007_XML_FILENAME,
+            TEST_INVALID_USER: INVALID_COLLECTION_XML_FILENAME
+            }
+
+    try:
+        filename = supported_users[params["username"]]
+    except KeyError as e:
+        raise Exception("Unknown user " + str(params) + " given to simulate_bgg_collection")
+
+    with open(filename, "r") as xmlfile:
+        return xmlfile.read()
+
 def simulate_bgg_search(params):
     supported_searches = {
             TEST_GAME_NAME: SEARCH_AGRICOLA_XML_FILENAME,
@@ -136,6 +152,7 @@ def simulate_bgg_thing(params):
 
 def simulate_bgg(url, params, timeout):
     supported_urls = {
+            BGG_COLLECTION_URL: simulate_bgg_collection,
             BGG_SEARCH_URL: simulate_bgg_search,
             BGG_THING_URL: simulate_bgg_thing
             }
