@@ -6,17 +6,15 @@ from boardgamegeek.objects.hotitems import HotItems, HotItem
 from _common import *
 
 
-def setup_module():
-    # more delays to prevent throttling from the BGG api
-    time.sleep(15)
-
-
 def test_get_hot_items_invalid_type(bgg):
     with pytest.raises(BGGValueError):
         bgg.hot_items("invalid type")
 
 
-def test_get_hot_items_boardgames(bgg, null_logger):
+def test_get_hot_items_boardgames(bgg, mocker, null_logger):
+    mock_get = mocker.patch("requests.sessions.Session.get")
+    mock_get.side_effect = simulate_bgg
+
     for item in bgg.hot_items("boardgame"):
         assert type(item.id) == int
         assert len(item.name) > 0
@@ -28,7 +26,10 @@ def test_get_hot_items_boardgames(bgg, null_logger):
         item._format(null_logger)
 
 
-def test_get_hot_items_boardgamepersons(bgg, null_logger):
+def test_get_hot_items_boardgamepersons(bgg, mocker, null_logger):
+    mock_get = mocker.patch("requests.sessions.Session.get")
+    mock_get.side_effect = simulate_bgg
+
     for item in bgg.hot_items("boardgameperson"):
         assert type(item.id) == int
         assert len(item.name) > 0
