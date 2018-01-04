@@ -1,6 +1,7 @@
 # coding: utf-8
 
 import logging
+import os
 import pytest
 import xml.etree.ElementTree as ET
 
@@ -29,33 +30,8 @@ TEST_GUILD_ID_2 = 930
 
 TEST_GAME_ACCESSORY_ID = 104163 # Descent: Journeys in the Dark (second edition) – Conversion Kit
 
-# The URLs when we call the various BGG commands
-BGG_COLLECTION_URL = "https://www.boardgamegeek.com/xmlapi2/collection"
-BGG_SEARCH_URL = "https://www.boardgamegeek.com/xmlapi2/search"
-BGG_THING_URL = "https://www.boardgamegeek.com/xmlapi2/thing"
-
-# The files containing the responses for certain queries
-INVALID_REQUEST_XML_FILENAME = "test/Invalid.xml"
-
-AGRICOLA_XML_FILENAME = "test/Agricola.xml"
-AGRICOLA_AND_ADVANCED_THIRD_REICH_XML_FILENAME = "test/Agricola+AdvancedThirdReich.xml"
-COUP_1653_XML_FILENAME = "test/Coup-1653.xml"
-COUP_2088_XML_FILENAME = "test/Coup-2088.xml"
-COUP_131357_XML_FILENAME = "test/Coup-131357.xml"
-DESCENT_CONVERSION_KIT_XML_FILENAME = "test/DescentConversionKit.xml"
-ECLIPSE_11542_XML_FILENAME = "test/Eclipse-11542.xml"
-ECLIPSE_23272_XML_FILENAME = "test/Eclipse-23272.xml"
-ECLIPSE_72125_XML_FILENAME = "test/Eclipse-72125.xml"
-HIJARA_XML_FILENAME = "test/Hijara.xml"
-TRIO_XML_FILENAME = "test/Trio.xml"
-
-SEARCH_AGRICOLA_XML_FILENAME = "test/search-Agricola.xml"
-SEARCH_COUP_XML_FILENAME = "test/search-Coup.xml"
-SEARCH_ECLIPSE_XML_FILENAME = "test/search-Eclipse.xml"
-
-INVALID_COLLECTION_XML_FILENAME = "test/InvalidCollection.xml"
-FAGENTU007_XML_FILENAME = "test/fagentu007.xml"
-
+# The top level directory for our XML files
+XML_PATH = os.path.join("test", "xml")
 
 @pytest.fixture
 def xml():
@@ -97,70 +73,16 @@ class MockResponse():
         self.status_code = 200
         self.text = text
 
-def simulate_bgg_collection(params):
-    supported_users = {
-            TEST_VALID_USER: FAGENTU007_XML_FILENAME,
-            TEST_INVALID_USER: INVALID_COLLECTION_XML_FILENAME
-            }
-
-    try:
-        filename = supported_users[params["username"]]
-    except KeyError as e:
-        raise Exception("Unknown user " + str(params) + " given to simulate_bgg_collection")
-
-    with open(filename, "r") as xmlfile:
-        return xmlfile.read()
-
-def simulate_bgg_search(params):
-    supported_searches = {
-            TEST_GAME_NAME: SEARCH_AGRICOLA_XML_FILENAME,
-            "coup": SEARCH_COUP_XML_FILENAME,
-            "eclipse": SEARCH_ECLIPSE_XML_FILENAME,
-            TEST_INVALID_GAME_NAME: INVALID_REQUEST_XML_FILENAME
-            }
-
-    try:
-        filename = supported_searches[params["query"]]
-    except KeyError as e:
-        raise Exception("Unknown query " + str(params) + " given to simulate_bgg_search")
-
-    with open(filename, "r") as xmlfile:
-        return xmlfile.read()
-
-def simulate_bgg_thing(params):
-    supported_things = {
-            824: HIJARA_XML_FILENAME,
-            1653: COUP_1653_XML_FILENAME,
-            2088: COUP_2088_XML_FILENAME,
-            8148: TRIO_XML_FILENAME,
-            11542: ECLIPSE_11542_XML_FILENAME,
-            23272: ECLIPSE_23272_XML_FILENAME,
-            TEST_GAME_ID: AGRICOLA_XML_FILENAME,
-            "31260,283": AGRICOLA_AND_ADVANCED_THIRD_REICH_XML_FILENAME,
-            72125: ECLIPSE_72125_XML_FILENAME,
-            TEST_GAME_ACCESSORY_ID: DESCENT_CONVERSION_KIT_XML_FILENAME,
-            131357: COUP_131357_XML_FILENAME
-            }
-
-    try:
-        filename = supported_things[params["id"]]
-    except KeyError as e:
-        raise Exception("Unknown ID " + str(params) + " given to simulate_bgg_thing")
-
-    with open(filename, "r") as xmlfile:
-        return xmlfile.read()
-
 def simulate_bgg(url, params, timeout):
-    supported_urls = {
-            BGG_COLLECTION_URL: simulate_bgg_collection,
-            BGG_SEARCH_URL: simulate_bgg_search,
-            BGG_THING_URL: simulate_bgg_thing
-            }
+    last_slash = url.rindex('/')
+    fragment = url[last_slash + 1:]
 
-    try:
-        simulator_function = supported_urls[url]
-    except KeyError as e:
-        raise Exception("Unknown url " + url + " given to simulate_bgg")
+    sorted_params = sorted(params.items(), key=lambda t: t[0])
+    query_string = '&'.join([str(k) + "=" + str(v) for k, v in sorted_params])
 
-    response_text = simulator_function(params)
+    filename = os.path.join(XML_PATH, fragment + "?" + query_string)
+
+    with open(filename, "r") as xmlfile:
+        response_text = xmlfile.read()
+
     return MockResponse(response_text)
