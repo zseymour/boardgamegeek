@@ -123,7 +123,7 @@ def test_get_plays_of_game(bgg, mocker, null_logger):
     plays._format(null_logger)
 
 
-def not_a_test_create_plays_with_initial_data():
+def test_create_plays_with_initial_data():
 
     with pytest.raises(BGGError):
         Plays({"plays": [{"user_id": 10}]})
