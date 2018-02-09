@@ -2,11 +2,9 @@
 boardgamegeek - A Python API for boardgamegeek.com
 ==================================================
 
-+---------+---------------------------------------+
-| Stable  | |travis-master| |coveralls-master|    |
-+---------+---------------------------------------+
-| Develop | |travis-develop| |coveralls-develop|  |
-+---------+---------------------------------------+
++------------------+-----------------------------------------------------+
+| Boardgamegeek v2 | |travis-boardgamegeek2| |coveralls-boardgamegeek2|  |
++------------------+-----------------------------------------------------+
 
 
 Development status:
@@ -25,15 +23,8 @@ Documentation is available at http://lcosmin.github.io/boardgamegeek
 .. _BoardGameGeek: http://www.boardgamegeek.com
 .. _libBGG: https://github.com/philsstein/libBGG
 
-.. |travis-master| image:: https://travis-ci.org/lcosmin/boardgamegeek.svg?branch=master
-    :target: https://travis-ci.org/lcosmin/boardgamegeek
-
-.. |coveralls-master| image:: https://coveralls.io/repos/lcosmin/boardgamegeek/badge.png?branch=master
-      :target: https://coveralls.io/r/lcosmin/boardgamegeek?branch=master
-
-.. |travis-develop| image:: https://travis-ci.org/lcosmin/boardgamegeek.svg?branch=develop
+.. |travis-boardgamegeek2| image:: https://travis-ci.org/lcosmin/boardgamegeek.svg?branch=feature/boardgamegeek2
       :target: https://travis-ci.org/lcosmin/boardgamegeek
 
-.. |coveralls-develop| image:: https://coveralls.io/repos/lcosmin/boardgamegeek/badge.png?branch=develop
-      :target: https://coveralls.io/r/lcosmin/boardgamegeek?branch=develop
-      
+.. |coveralls-boardgamegeek2| image:: https://coveralls.io/repos/lcosmin/boardgamegeek/badge.png?branch=feature/boardgamegeek2
+      :target: https://coveralls.io/r/lcosmin/boardgamegeek?branch=develop      

@@ -762,7 +762,7 @@ class BoardGame(BaseGame):
             self.add_comment(comment)
 
         self._player_suggestion = []
-        if "suggested_players" in data:
+        if "suggested_players" in data and "results" in data['suggested_players']:
             for count, result in data['suggested_players']['results'].items():
                 suggestion_data = {
                     'player_count': count,
@@ -826,6 +826,7 @@ class BoardGame(BaseGame):
         log.info("image             : {}".format(self.image))
 
         log.info("is expansion      : {}".format(self.expansion))
+        log.info("is accessory      : {}".format(self.accessory))
 
         if self.expansions:
             log.info("expansions")
@@ -1005,6 +1006,14 @@ class BoardGame(BaseGame):
         :rtype: bool
         """
         return self._data.get("expansion", False)
+
+    @property
+    def accessory(self):
+        """
+        :return: True if this item is an accessory
+        :rtype: bool
+        """
+        return self._data.get("accessory", False)
 
     @property
     def min_age(self):

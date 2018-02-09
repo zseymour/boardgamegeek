@@ -49,7 +49,11 @@ Quick Install
 
 To install ``boardgamegeek``, just use pip::
 
-    > pip install boardgamegeek
+    > pip install boardgamegeek2
+
+If you had previously used this library before it was rewritten, you'll need to uninstall it first:
+
+    > pip uninstall boardgamegeek
 
 
 Usage
@@ -95,6 +99,8 @@ Contributions to this fork:
 * Tom Usher (github:tomusher)
 * Brent Ropp (github:bar350)
 * Michał Machnicki (github:machnic)
+* Philip Kendall (github:pak21)
+* David Feng (github:selwyth)
 
 Indices and tables
 ==================
