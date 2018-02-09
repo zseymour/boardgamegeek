@@ -1,0 +1,1011 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>boardgamegeek.api &#8212; boardgamegeek 0.13.2 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/sphinxdoc.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.13.2',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+  </head>
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">boardgamegeek 0.13.2 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" accesskey="U">Module code</a> &#187;</li> 
+      </ul>
+    </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for boardgamegeek.api</h1><div class="highlight"><pre>
+<span></span><span class="c1"># coding: utf-8</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">:mod:`boardgamegeek.api` - Core functions</span>
+<span class="sd">=========================================</span>
+
+<span class="sd">This module contains the core functionality needed to retrieve data from boardgamegeek.com and parse it into usable</span>
+<span class="sd">objects.</span>
+
+<span class="sd">.. module:: boardgamegeek.api</span>
+<span class="sd">   :platform: Unix, Windows</span>
+<span class="sd">   :synopsis: module handling communication with the online BoardGameGeek API</span>
+
+<span class="sd">.. moduleauthor:: Cosmin Luță &lt;q4break@gmail.com&gt;</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">unicode_literals</span>
+
+<span class="kn">import</span> <span class="nn">datetime</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">import</span> <span class="nn">warnings</span>
+
+<span class="c1"># This is required for decoding HTML entities from the description text</span>
+<span class="c1"># of games</span>
+<span class="k">if</span> <span class="n">sys</span><span class="o">.</span><span class="n">version_info</span> <span class="o">&gt;=</span> <span class="p">(</span><span class="mi">3</span><span class="p">,):</span>
+    <span class="kn">import</span> <span class="nn">html.parser</span> <span class="k">as</span> <span class="nn">hp</span>
+<span class="k">else</span><span class="p">:</span>
+    <span class="kn">import</span> <span class="nn">HTMLParser</span> <span class="k">as</span> <span class="nn">hp</span>
+
+
+<span class="kn">from</span> <span class="nn">.objects.user</span> <span class="k">import</span> <span class="n">User</span>
+<span class="kn">from</span> <span class="nn">.objects.search</span> <span class="k">import</span> <span class="n">SearchResult</span>
+
+<span class="kn">from</span> <span class="nn">.exceptions</span> <span class="k">import</span> <span class="n">BGGApiError</span><span class="p">,</span> <span class="n">BGGError</span><span class="p">,</span> <span class="n">BGGItemNotFoundError</span><span class="p">,</span> <span class="n">BGGValueError</span>
+<span class="kn">from</span> <span class="nn">.utils</span> <span class="k">import</span> <span class="n">xml_subelement_attr</span><span class="p">,</span> <span class="n">request_and_parse_xml</span>
+<span class="kn">from</span> <span class="nn">.utils</span> <span class="k">import</span> <span class="n">RateLimitingAdapter</span><span class="p">,</span> <span class="n">DEFAULT_REQUESTS_PER_MINUTE</span>
+<span class="kn">from</span> <span class="nn">.cache</span> <span class="k">import</span> <span class="n">CacheBackendMemory</span><span class="p">,</span> <span class="n">CacheBackendNone</span>
+
+<span class="kn">from</span> <span class="nn">.loaders</span> <span class="k">import</span> <span class="n">create_guild_from_xml</span><span class="p">,</span> <span class="n">add_guild_members_from_xml</span>
+<span class="kn">from</span> <span class="nn">.loaders</span> <span class="k">import</span> <span class="n">create_plays_from_xml</span><span class="p">,</span> <span class="n">add_plays_from_xml</span>
+<span class="kn">from</span> <span class="nn">.loaders</span> <span class="k">import</span> <span class="n">create_hot_items_from_xml</span><span class="p">,</span> <span class="n">add_hot_items_from_xml</span>
+<span class="kn">from</span> <span class="nn">.loaders</span> <span class="k">import</span> <span class="n">create_collection_from_xml</span><span class="p">,</span> <span class="n">add_collection_items_from_xml</span>
+<span class="kn">from</span> <span class="nn">.loaders</span> <span class="k">import</span> <span class="n">create_game_from_xml</span><span class="p">,</span> <span class="n">add_game_comments_from_xml</span>
+
+
+<span class="n">log</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s2">&quot;boardgamegeek.api&quot;</span><span class="p">)</span>
+<span class="n">html_parser</span> <span class="o">=</span> <span class="n">hp</span><span class="o">.</span><span class="n">HTMLParser</span><span class="p">()</span>
+
+<span class="n">HOT_ITEM_CHOICES</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;boardgame&quot;</span><span class="p">,</span> <span class="s2">&quot;rpg&quot;</span><span class="p">,</span> <span class="s2">&quot;videogame&quot;</span><span class="p">,</span> <span class="s2">&quot;boardgameperson&quot;</span><span class="p">,</span> <span class="s2">&quot;rpgperson&quot;</span><span class="p">,</span> <span class="s2">&quot;boardgamecompany&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;rpgcompany&quot;</span><span class="p">,</span> <span class="s2">&quot;videogamecompany&quot;</span><span class="p">]</span>
+
+<span class="n">COLLECTION_SUBTYPES</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;boardgame&quot;</span><span class="p">,</span> <span class="s2">&quot;boardgameexpansion&quot;</span><span class="p">,</span> <span class="s2">&quot;boardgameaccessory&quot;</span><span class="p">,</span> <span class="s2">&quot;rpgitem&quot;</span><span class="p">,</span> <span class="s2">&quot;rpgissue&quot;</span><span class="p">,</span> <span class="s2">&quot;videogame&quot;</span><span class="p">]</span>
+
+
+<span class="k">class</span> <span class="nc">BGGChoose</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Constants indicating how a game should be chosen when performing a search by name</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">FIRST</span> <span class="o">=</span> <span class="s2">&quot;first&quot;</span>
+    <span class="n">RECENT</span> <span class="o">=</span> <span class="s2">&quot;recent&quot;</span>
+    <span class="n">BEST_RANK</span> <span class="o">=</span> <span class="s2">&quot;best-rank&quot;</span>
+
+
+<span class="k">class</span> <span class="nc">BGGRestrictSearchResultsTo</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Item types that should be included in search results</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">RPG</span> <span class="o">=</span> <span class="s2">&quot;rpgitem&quot;</span>
+    <span class="n">VIDEO_GAME</span> <span class="o">=</span> <span class="s2">&quot;videogame&quot;</span>
+    <span class="n">BOARD_GAME</span> <span class="o">=</span> <span class="s2">&quot;boardgame&quot;</span>
+    <span class="n">BOARD_GAME_EXPANSION</span> <span class="o">=</span> <span class="s2">&quot;boardgameexpansion&quot;</span>
+
+
+<span class="k">class</span> <span class="nc">BGGRestrictDomainTo</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Constants used in BoardGameGeek.user() calls, for specifying what hot/top items should be restricted to</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">BOARD_GAME</span> <span class="o">=</span> <span class="s2">&quot;boardgame&quot;</span>
+    <span class="n">RPG</span> <span class="o">=</span> <span class="s2">&quot;rpg&quot;</span>
+    <span class="n">VIDEO_GAME</span> <span class="o">=</span> <span class="s2">&quot;videogame&quot;</span>
+
+
+<span class="k">class</span> <span class="nc">BGGRestrictPlaysTo</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="n">BOARD_GAME</span> <span class="o">=</span> <span class="s2">&quot;boardgame&quot;</span>
+    <span class="n">BOARD_GAME_EXTENSION</span> <span class="o">=</span> <span class="s2">&quot;boardgameexpansion&quot;</span>
+    <span class="n">BOARD_GAME_ACCESSORY</span> <span class="o">=</span> <span class="s2">&quot;boardgameaccessory&quot;</span>
+    <span class="n">RPG</span> <span class="o">=</span> <span class="s2">&quot;rpgitem&quot;</span>
+    <span class="n">VIDEO_GAME</span> <span class="o">=</span> <span class="s2">&quot;videogame&quot;</span>
+
+
+<span class="k">class</span> <span class="nc">BGGRestrictCollectionTo</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="n">BOARD_GAME</span> <span class="o">=</span> <span class="s2">&quot;boardgame&quot;</span>
+    <span class="n">BOARD_GAME_EXTENSION</span> <span class="o">=</span> <span class="s2">&quot;boardgameexpansion&quot;</span>
+    <span class="n">BOARD_GAME_ACCESSORY</span> <span class="o">=</span> <span class="s2">&quot;boardgameaccessory&quot;</span>
+    <span class="n">RPG</span> <span class="o">=</span> <span class="s2">&quot;rpgitem&quot;</span>
+    <span class="n">RPG_ISSUE</span> <span class="o">=</span> <span class="s2">&quot;rpgissue&quot;</span>
+    <span class="n">VIDEO_GAME</span> <span class="o">=</span> <span class="s2">&quot;videogame&quot;</span>
+
+
+<span class="k">def</span> <span class="nf">call_progress_cb</span><span class="p">(</span><span class="n">progress_cb</span><span class="p">,</span> <span class="n">current</span><span class="p">,</span> <span class="n">total</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">progress_cb</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">progress_cb</span><span class="p">(</span><span class="n">current</span><span class="p">,</span> <span class="n">total</span><span class="p">)</span>
+
+
+<span class="k">class</span> <span class="nc">BGGCommon</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Base class for the BoardGameGeek websites APIs. All site-specific clients are derived from this.</span>
+
+<span class="sd">    :param str api_endpoint: URL of the API</span>
+<span class="sd">    :param :py:class:`boardgamegeek.cache.CacheBackend` cache: object to be used for caching BGG API results</span>
+<span class="sd">    :param float timeout: timeout for a request, in seconds</span>
+<span class="sd">    :param int retries: how many retries to perform in special cases</span>
+<span class="sd">    :param float retry_delay: delay between retries, in seconds</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">api_endpoint</span><span class="p">,</span> <span class="n">cache</span><span class="p">,</span> <span class="n">timeout</span><span class="p">,</span> <span class="n">retries</span><span class="p">,</span> <span class="n">retry_delay</span><span class="p">,</span> <span class="n">requests_per_minute</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_search_api_url</span> <span class="o">=</span> <span class="n">api_endpoint</span> <span class="o">+</span> <span class="s2">&quot;/search&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_thing_api_url</span> <span class="o">=</span> <span class="n">api_endpoint</span> <span class="o">+</span> <span class="s2">&quot;/thing&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_guild_api_url</span> <span class="o">=</span> <span class="n">api_endpoint</span> <span class="o">+</span> <span class="s2">&quot;/guild&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_user_api_url</span> <span class="o">=</span> <span class="n">api_endpoint</span> <span class="o">+</span> <span class="s2">&quot;/user&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_plays_api_url</span> <span class="o">=</span> <span class="n">api_endpoint</span> <span class="o">+</span> <span class="s2">&quot;/plays&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_hot_api_url</span> <span class="o">=</span> <span class="n">api_endpoint</span> <span class="o">+</span> <span class="s2">&quot;/hot&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_collection_api_url</span> <span class="o">=</span> <span class="n">api_endpoint</span> <span class="o">+</span> <span class="s2">&quot;/collection&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_timeout</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">timeout</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_retries</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">retries</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_retry_delay</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">retry_delay</span><span class="p">)</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">BGGValueError</span>
+
+        <span class="k">if</span> <span class="n">cache</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">cache</span> <span class="o">=</span> <span class="n">CacheBackendNone</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">requests_session</span> <span class="o">=</span> <span class="n">cache</span><span class="o">.</span><span class="n">cache</span>
+
+        <span class="c1"># add the rate limiting adapter</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">requests_session</span><span class="o">.</span><span class="n">mount</span><span class="p">(</span><span class="n">api_endpoint</span><span class="p">,</span> <span class="n">RateLimitingAdapter</span><span class="p">(</span><span class="n">rpm</span><span class="o">=</span><span class="n">requests_per_minute</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="nf">_get_game_id</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">game_type</span><span class="p">,</span> <span class="n">choose</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns the BGG ID of a game, searching by name</span>
+
+<span class="sd">        :param str name: the name of the game to search for</span>
+<span class="sd">        :param str game_type: searched game type (BGGItemType.RPG, BGGItemType.VIDEO_GAME, BGGItemType.BOARD_GAME,</span>
+<span class="sd">                                                  BGGItemType.BOARD_GAME_EXPANSION)</span>
+<span class="sd">        :param str choose: method of selecting the game by name, when having multiple results. Valid values are:</span>
+<span class="sd">                           `BGGChoose.FIRST`, `BGGChoose.RECENT`, `BGGChoose.BEST_RANK`</span>
+<span class="sd">        :return: game&#39;s id</span>
+<span class="sd">        :raises: :py:exc:`boardgamegeek.exceptions.BGGValueError` in case of invalid parameter(s)</span>
+<span class="sd">        :raises: :py:exc:`boardgamegeek.exceptions.BGGItemNotFoundError` if the game hasn&#39;t been found</span>
+<span class="sd">        :raises: :py:exc:`boardgamegeek.exceptions.BGGApiRetryError` if this request should be retried after a short delay</span>
+<span class="sd">        :raises: :py:exc:`boardgamegeek.exceptions.BGGApiError` if the API response was invalid or couldn&#39;t be parsed</span>
+<span class="sd">        :raises: :py:exc:`boardgamegeek.exceptions.BGGApiTimeoutError` if there was a timeout</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="n">choose</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="n">BGGChoose</span><span class="o">.</span><span class="n">FIRST</span><span class="p">,</span> <span class="n">BGGChoose</span><span class="o">.</span><span class="n">RECENT</span><span class="p">,</span> <span class="n">BGGChoose</span><span class="o">.</span><span class="n">BEST_RANK</span><span class="p">]:</span>
+            <span class="k">raise</span> <span class="n">BGGValueError</span><span class="p">(</span><span class="s2">&quot;invalid value for parameter &#39;choose&#39;: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">choose</span><span class="p">))</span>
+
+        <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;getting game id for &#39;</span><span class="si">{}</span><span class="s2">&#39;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">name</span><span class="p">))</span>
+        <span class="n">res</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">search_type</span><span class="o">=</span><span class="p">[</span><span class="n">game_type</span><span class="p">],</span> <span class="n">exact</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">res</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">BGGItemNotFoundError</span><span class="p">(</span><span class="s2">&quot;can&#39;t find &#39;</span><span class="si">{}</span><span class="s2">&#39;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">name</span><span class="p">))</span>
+
+        <span class="k">if</span> <span class="n">choose</span> <span class="o">==</span> <span class="n">BGGChoose</span><span class="o">.</span><span class="n">FIRST</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">res</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">id</span>
+        <span class="k">elif</span> <span class="n">choose</span> <span class="o">==</span> <span class="n">BGGChoose</span><span class="o">.</span><span class="n">RECENT</span><span class="p">:</span>
+            <span class="c1"># choose the result with the biggest year</span>
+            <span class="k">return</span> <span class="nb">max</span><span class="p">(</span><span class="n">res</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="n">year</span> <span class="k">if</span> <span class="n">x</span><span class="o">.</span><span class="n">year</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="o">-</span><span class="mi">300000</span><span class="p">)</span><span class="o">.</span><span class="n">id</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># getting the best rank requires fetching the data of all games returned</span>
+            <span class="n">game_data</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">game</span><span class="p">(</span><span class="n">game_id</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">id</span><span class="p">)</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">res</span><span class="p">]</span>
+            <span class="c1"># ...and selecting the one with the best ranking</span>
+            <span class="k">return</span> <span class="nb">min</span><span class="p">(</span><span class="n">game_data</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="n">boardgame_rank</span> <span class="k">if</span> <span class="n">x</span><span class="o">.</span><span class="n">boardgame_rank</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="mi">10000000000</span><span class="p">)</span><span class="o">.</span><span class="n">id</span>
+
+    <span class="k">def</span> <span class="nf">guild</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">guild_id</span><span class="p">,</span> <span class="n">progress</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">members</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Retrieves details about a guild</span>
+
+<span class="sd">        :param integer guild_id: the id number of the guild</span>
+<span class="sd">        :param callable progress: an optional callable for reporting progress, taking two integers (``current``, ``total``) as arguments</span>
+<span class="sd">        :param bool members: if ``True``, names of the guild members will be fetched</span>
+<span class="sd">        :return: ``Guild`` object containing the data</span>
+<span class="sd">        :return: ``None`` if the information couldn&#39;t be retrieved</span>
+<span class="sd">        :rtype: :py:class:`boardgamegeek.guild.Guild`</span>
+<span class="sd">        :raises: :py:exc:`BGGValueError` in case of an invalid parameter(s)</span>
+<span class="sd">        :raises: :py:exc:`boardgamegeek.exceptions.BGGApiRetryError` if this request should be retried after a short delay</span>
+<span class="sd">        :raises: :py:exc:`boardgamegeek.exceptions.BGGApiError` if the response couldn&#39;t be parsed</span>
+<span class="sd">        :raises: :py:exc:`boardgamegeek.exceptions.BGGApiTimeoutError` if there was a timeout</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">guild_id</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">guild_id</span><span class="p">)</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">BGGValueError</span><span class="p">(</span><span class="s2">&quot;invalid guild id&quot;</span><span class="p">)</span>
+
+        <span class="n">xml_root</span> <span class="o">=</span> <span class="n">request_and_parse_xml</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">requests_session</span><span class="p">,</span>
+                                         <span class="bp">self</span><span class="o">.</span><span class="n">_guild_api_url</span><span class="p">,</span>
+                                         <span class="n">params</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="n">guild_id</span><span class="p">,</span>
+                                                 <span class="s2">&quot;members&quot;</span><span class="p">:</span> <span class="mi">1</span> <span class="k">if</span> <span class="n">members</span> <span class="k">else</span> <span class="mi">0</span><span class="p">},</span>
+                                         <span class="n">timeout</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_timeout</span><span class="p">,</span>
+                                         <span class="n">retries</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_retries</span><span class="p">,</span>
+                                         <span class="n">retry_delay</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_retry_delay</span><span class="p">)</span>
+
+        <span class="n">guild</span> <span class="o">=</span> <span class="n">create_guild_from_xml</span><span class="p">(</span><span class="n">xml_root</span><span class="p">,</span> <span class="n">html_parser</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">members</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">guild</span>
+
+        <span class="c1"># Add the first page of members</span>
+        <span class="n">added_member</span> <span class="o">=</span> <span class="n">add_guild_members_from_xml</span><span class="p">(</span><span class="n">guild</span><span class="p">,</span> <span class="n">xml_root</span><span class="p">)</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">call_progress_cb</span><span class="p">(</span><span class="n">progress</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">guild</span><span class="p">),</span> <span class="n">guild</span><span class="o">.</span><span class="n">members_count</span><span class="p">)</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">guild</span>
+
+        <span class="c1"># Fetch the other pages of members</span>
+        <span class="n">page</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="k">while</span> <span class="nb">len</span><span class="p">(</span><span class="n">guild</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">guild</span><span class="o">.</span><span class="n">members_count</span> <span class="ow">and</span> <span class="n">added_member</span><span class="p">:</span>
+            <span class="n">page</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;fetching guild members page </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">page</span><span class="p">))</span>
+
+            <span class="n">xml_root</span> <span class="o">=</span> <span class="n">request_and_parse_xml</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">requests_session</span><span class="p">,</span>
+                                             <span class="bp">self</span><span class="o">.</span><span class="n">_guild_api_url</span><span class="p">,</span>
+                                             <span class="n">params</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="n">guild_id</span><span class="p">,</span> <span class="s2">&quot;members&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;page&quot;</span><span class="p">:</span> <span class="n">page</span><span class="p">},</span>
+                                             <span class="n">timeout</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_timeout</span><span class="p">,</span>
+                                             <span class="n">retries</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_retries</span><span class="p">,</span>
+                                             <span class="n">retry_delay</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_retry_delay</span><span class="p">)</span>
+
+            <span class="n">added_member</span> <span class="o">=</span> <span class="n">add_guild_members_from_xml</span><span class="p">(</span><span class="n">guild</span><span class="p">,</span> <span class="n">xml_root</span><span class="p">)</span>
+
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">call_progress_cb</span><span class="p">(</span><span class="n">progress</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">guild</span><span class="p">),</span> <span class="n">guild</span><span class="o">.</span><span class="n">members_count</span><span class="p">)</span>
+            <span class="k">except</span><span class="p">:</span>
+                <span class="k">break</span>
+
+        <span class="k">return</span> <span class="n">guild</span>
+
+    <span class="c1"># TODO: refactor</span>
+    <span class="k">def</span> <span class="nf">user</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">progress</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">buddies</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">guilds</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">hot</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">top</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">domain</span><span class="o">=</span><span class="n">BGGRestrictDomainTo</span><span class="o">.</span><span class="n">BOARD_GAME</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Retrieves details about an user</span>
+
+<span class="sd">        :param str name: user&#39;s login name</span>
+<span class="sd">        :param callable progress: an optional callable for reporting progress when fetching the buddy list/guilds,</span>
+<span class="sd">                                  taking two integers (``current``, ``total``) as arguments</span>
+<span class="sd">        :param bool buddies: if ``True``, get the user&#39;s buddies</span>
+<span class="sd">        :param bool guilds: if ``True``, get the user&#39;s guilds</span>
+<span class="sd">        :param bool hot: if ``True``, get the user&#39;s &quot;hot&quot; list</span>
+<span class="sd">        :param bool top: if ``True``, get the user&#39;s &quot;top&quot; list</span>
+<span class="sd">        :param str domain: restrict items on the &quot;hot&quot; and &quot;top&quot; lists to ``domain``. One of the constants in :py:class:`boardgamegeek.BGGSelectDomain`</span>
+<span class="sd">        :return: ``User`` object</span>
+<span class="sd">        :rtype: :py:class:`boardgamegeek.user.User`</span>
+<span class="sd">        :return: ``None`` if the user couldn&#39;t be found</span>
+
+<span class="sd">        :raises: `ValueError` in case of invalid parameters</span>
+<span class="sd">        :raises: :py:exc:`boardgamegeek.exceptions.BGGValueError` in case of invalid parameter(s)</span>
+<span class="sd">        :raises: :py:exc:`boardgamegeek.exceptions.BGGItemNotFoundError` if the user wasn&#39;t found</span>
+<span class="sd">        :raises: :py:exc:`boardgamegeek.exceptions.BGGApiRetryError` if this request should be retried after a short delay</span>
+<span class="sd">        :raises: :py:exc:`boardgamegeek.exceptions.BGGApiError` if the response couldn&#39;t be parsed</span>
+<span class="sd">        :raises: :py:exc:`boardgamegeek.exceptions.BGGApiTimeoutError` if there was a timeout</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">name</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">BGGValueError</span><span class="p">(</span><span class="s2">&quot;no user name specified&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">domain</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="n">BGGRestrictDomainTo</span><span class="o">.</span><span class="n">BOARD_GAME</span><span class="p">,</span> <span class="n">BGGRestrictDomainTo</span><span class="o">.</span><span class="n">RPG</span><span class="p">,</span> <span class="n">BGGRestrictDomainTo</span><span class="o">.</span><span class="n">VIDEO_GAME</span><span class="p">]:</span>
+            <span class="k">raise</span> <span class="n">BGGValueError</span><span class="p">(</span><span class="s2">&quot;invalid domain&quot;</span><span class="p">)</span>
+
+        <span class="n">params</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="n">name</span><span class="p">,</span>
+                  <span class="s2">&quot;buddies&quot;</span><span class="p">:</span> <span class="mi">1</span> <span class="k">if</span> <span class="n">buddies</span> <span class="k">else</span> <span class="mi">0</span><span class="p">,</span>
+                  <span class="s2">&quot;guilds&quot;</span><span class="p">:</span> <span class="mi">1</span> <span class="k">if</span> <span class="n">guilds</span> <span class="k">else</span> <span class="mi">0</span><span class="p">,</span>
+                  <span class="s2">&quot;hot&quot;</span><span class="p">:</span> <span class="mi">1</span> <span class="k">if</span> <span class="n">hot</span> <span class="k">else</span> <span class="mi">0</span><span class="p">,</span>
+                  <span class="s2">&quot;top&quot;</span><span class="p">:</span> <span class="mi">1</span> <span class="k">if</span> <span class="n">top</span> <span class="k">else</span> <span class="mi">0</span><span class="p">,</span>
+                  <span class="s2">&quot;domain&quot;</span><span class="p">:</span> <span class="n">domain</span><span class="p">}</span>
+
+        <span class="n">root</span> <span class="o">=</span> <span class="n">request_and_parse_xml</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">requests_session</span><span class="p">,</span>
+                                     <span class="bp">self</span><span class="o">.</span><span class="n">_user_api_url</span><span class="p">,</span>
+                                     <span class="n">params</span><span class="o">=</span><span class="n">params</span><span class="p">,</span>
+                                     <span class="n">timeout</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_timeout</span><span class="p">,</span>
+                                     <span class="n">retries</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_retries</span><span class="p">,</span>
+                                     <span class="n">retry_delay</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_retry_delay</span><span class="p">)</span>
+
+        <span class="c1"># when the user is not found, the API returns an response, but with most fields empty. id is empty too</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="n">root</span><span class="o">.</span><span class="n">attrib</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">],</span>
+                    <span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="n">root</span><span class="o">.</span><span class="n">attrib</span><span class="p">[</span><span class="s2">&quot;id&quot;</span><span class="p">])}</span>
+        <span class="k">except</span> <span class="p">(</span><span class="ne">KeyError</span><span class="p">,</span> <span class="ne">ValueError</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">BGGItemNotFoundError</span>
+
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;firstname&quot;</span><span class="p">,</span> <span class="s2">&quot;lastname&quot;</span><span class="p">,</span> <span class="s2">&quot;avatarlink&quot;</span><span class="p">,</span>
+                  <span class="s2">&quot;stateorprovince&quot;</span><span class="p">,</span> <span class="s2">&quot;country&quot;</span><span class="p">,</span> <span class="s2">&quot;webaddress&quot;</span><span class="p">,</span> <span class="s2">&quot;xboxaccount&quot;</span><span class="p">,</span>
+                  <span class="s2">&quot;wiiaccount&quot;</span><span class="p">,</span> <span class="s2">&quot;steamaccount&quot;</span><span class="p">,</span> <span class="s2">&quot;psnaccount&quot;</span><span class="p">,</span> <span class="s2">&quot;traderating&quot;</span><span class="p">]:</span>
+            <span class="n">data</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">xml_subelement_attr</span><span class="p">(</span><span class="n">root</span><span class="p">,</span> <span class="n">i</span><span class="p">)</span>
+
+        <span class="n">data</span><span class="p">[</span><span class="s2">&quot;yearregistered&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">xml_subelement_attr</span><span class="p">(</span><span class="n">root</span><span class="p">,</span> <span class="s2">&quot;yearregistered&quot;</span><span class="p">,</span> <span class="n">convert</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">quiet</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">data</span><span class="p">[</span><span class="s2">&quot;lastlogin&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">xml_subelement_attr</span><span class="p">(</span><span class="n">root</span><span class="p">,</span>
+                                                <span class="s2">&quot;lastlogin&quot;</span><span class="p">,</span>
+                                                <span class="n">convert</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">strptime</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="s2">&quot;%Y-%m-</span><span class="si">%d</span><span class="s2">&quot;</span><span class="p">),</span>
+                                                <span class="n">quiet</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+        <span class="c1"># TODO: move add_top_item add_hot_item to sepparated files</span>
+        <span class="n">user</span> <span class="o">=</span> <span class="n">User</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+
+        <span class="c1"># add top items</span>
+        <span class="k">if</span> <span class="n">top</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">top_item</span> <span class="ow">in</span> <span class="n">root</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="s2">&quot;.//top/item&quot;</span><span class="p">):</span>
+                <span class="n">user</span><span class="o">.</span><span class="n">add_top_item</span><span class="p">({</span><span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="n">top_item</span><span class="o">.</span><span class="n">attrib</span><span class="p">[</span><span class="s2">&quot;id&quot;</span><span class="p">]),</span>
+                                   <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="n">top_item</span><span class="o">.</span><span class="n">attrib</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">]})</span>
+
+        <span class="c1"># add hot items</span>
+        <span class="k">if</span> <span class="n">hot</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">hot_item</span> <span class="ow">in</span> <span class="n">root</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="s2">&quot;.//hot/item&quot;</span><span class="p">):</span>
+                <span class="n">user</span><span class="o">.</span><span class="n">add_hot_item</span><span class="p">({</span><span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="n">hot_item</span><span class="o">.</span><span class="n">attrib</span><span class="p">[</span><span class="s2">&quot;id&quot;</span><span class="p">]),</span>
+                                   <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="n">hot_item</span><span class="o">.</span><span class="n">attrib</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">]})</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">buddies</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">guilds</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">user</span>
+
+        <span class="n">total_buddies</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">total_guilds</span> <span class="o">=</span> <span class="mi">0</span>
+
+        <span class="n">buddies</span> <span class="o">=</span> <span class="n">root</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s2">&quot;buddies&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">buddies</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">total_buddies</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">buddies</span><span class="o">.</span><span class="n">attrib</span><span class="p">[</span><span class="s2">&quot;total&quot;</span><span class="p">])</span>
+            <span class="k">if</span> <span class="n">total_buddies</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="c1"># add the buddies from the first page</span>
+                <span class="k">for</span> <span class="n">buddy</span> <span class="ow">in</span> <span class="n">buddies</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="s2">&quot;.//buddy&quot;</span><span class="p">):</span>
+                    <span class="n">user</span><span class="o">.</span><span class="n">add_buddy</span><span class="p">({</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="n">buddy</span><span class="o">.</span><span class="n">attrib</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">],</span>
+                                    <span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="n">buddy</span><span class="o">.</span><span class="n">attrib</span><span class="p">[</span><span class="s2">&quot;id&quot;</span><span class="p">]})</span>
+
+        <span class="n">guilds</span> <span class="o">=</span> <span class="n">root</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s2">&quot;guilds&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">guilds</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">total_guilds</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">guilds</span><span class="o">.</span><span class="n">attrib</span><span class="p">[</span><span class="s2">&quot;total&quot;</span><span class="p">])</span>
+            <span class="k">if</span> <span class="n">total_guilds</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="c1"># add the guilds from the first page</span>
+                <span class="k">for</span> <span class="n">guild</span> <span class="ow">in</span> <span class="n">guilds</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="s2">&quot;.//guild&quot;</span><span class="p">):</span>
+                    <span class="n">user</span><span class="o">.</span><span class="n">add_guild</span><span class="p">({</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="n">guild</span><span class="o">.</span><span class="n">attrib</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">],</span>
+                                    <span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="n">guild</span><span class="o">.</span><span class="n">attrib</span><span class="p">[</span><span class="s2">&quot;id&quot;</span><span class="p">]})</span>
+
+        <span class="c1"># It seems that the BGG API can return more results than what&#39;s specified in the documentation (they say</span>
+        <span class="c1"># page size is 100, but for an user with 114 friends, all buddies are there on the first page).</span>
+        <span class="c1"># Therefore, we&#39;ll keep fetching pages until we reach the number of items we&#39;re expecting or we don&#39;t get</span>
+        <span class="c1"># any more data</span>
+
+        <span class="n">max_items_to_fetch</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">total_buddies</span><span class="p">,</span> <span class="n">total_guilds</span><span class="p">)</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">call_progress_cb</span><span class="p">(</span><span class="n">progress</span><span class="p">,</span> <span class="nb">max</span><span class="p">(</span><span class="n">user</span><span class="o">.</span><span class="n">total_buddies</span><span class="p">,</span> <span class="n">user</span><span class="o">.</span><span class="n">total_guilds</span><span class="p">),</span> <span class="n">max_items_to_fetch</span><span class="p">)</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">user</span>
+
+        <span class="n">page</span> <span class="o">=</span> <span class="mi">2</span>
+        <span class="k">while</span> <span class="nb">max</span><span class="p">(</span><span class="n">user</span><span class="o">.</span><span class="n">total_buddies</span><span class="p">,</span> <span class="n">user</span><span class="o">.</span><span class="n">total_guilds</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">max_items_to_fetch</span><span class="p">:</span>
+            <span class="n">added_buddy</span> <span class="o">=</span> <span class="kc">False</span>
+            <span class="n">added_guild</span> <span class="o">=</span> <span class="kc">False</span>
+            <span class="n">params</span><span class="p">[</span><span class="s2">&quot;page&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">page</span>
+            <span class="n">root</span> <span class="o">=</span> <span class="n">request_and_parse_xml</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">requests_session</span><span class="p">,</span>
+                                         <span class="bp">self</span><span class="o">.</span><span class="n">_user_api_url</span><span class="p">,</span>
+                                         <span class="n">params</span><span class="o">=</span><span class="n">params</span><span class="p">,</span>
+                                         <span class="n">timeout</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_timeout</span><span class="p">)</span>
+
+            <span class="k">for</span> <span class="n">buddy</span> <span class="ow">in</span> <span class="n">root</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="s2">&quot;.//buddy&quot;</span><span class="p">):</span>
+                <span class="n">user</span><span class="o">.</span><span class="n">add_buddy</span><span class="p">({</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="n">buddy</span><span class="o">.</span><span class="n">attrib</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">],</span>
+                                <span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="n">buddy</span><span class="o">.</span><span class="n">attrib</span><span class="p">[</span><span class="s2">&quot;id&quot;</span><span class="p">]})</span>
+                <span class="n">added_buddy</span> <span class="o">=</span> <span class="kc">True</span>
+
+            <span class="k">for</span> <span class="n">guild</span> <span class="ow">in</span> <span class="n">root</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="s2">&quot;.//guild&quot;</span><span class="p">):</span>
+                <span class="n">user</span><span class="o">.</span><span class="n">add_guild</span><span class="p">({</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="n">guild</span><span class="o">.</span><span class="n">attrib</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">],</span>
+                                <span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="n">guild</span><span class="o">.</span><span class="n">attrib</span><span class="p">[</span><span class="s2">&quot;id&quot;</span><span class="p">]})</span>
+                <span class="n">added_guild</span> <span class="o">=</span> <span class="kc">True</span>
+
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">call_progress_cb</span><span class="p">(</span><span class="n">progress</span><span class="p">,</span> <span class="nb">max</span><span class="p">(</span><span class="n">user</span><span class="o">.</span><span class="n">total_buddies</span><span class="p">,</span> <span class="n">user</span><span class="o">.</span><span class="n">total_guilds</span><span class="p">),</span> <span class="n">max_items_to_fetch</span><span class="p">)</span>
+            <span class="k">except</span><span class="p">:</span>
+                <span class="k">break</span>
+
+            <span class="n">page</span> <span class="o">+=</span> <span class="mi">1</span>
+
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">added_buddy</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">added_guild</span><span class="p">:</span>
+                <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;didn&#39;t add any buddy/guild after fetching page </span><span class="si">{}</span><span class="s2">, stopping here&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">page</span><span class="p">))</span>
+                <span class="k">break</span>
+
+        <span class="k">return</span> <span class="n">user</span>
+
+    <span class="k">def</span> <span class="nf">plays</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">game_id</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">progress</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">min_date</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">max_date</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">subtype</span><span class="o">=</span><span class="n">BGGRestrictPlaysTo</span><span class="o">.</span><span class="n">BOARD_GAME</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Retrieves the plays for an user (if using ``name``) or for a game (if using ``game_id``)</span>
+
+<span class="sd">        :param str name: user name to retrieve the plays for</span>
+<span class="sd">        :param integer game_id: game id to retrieve the plays for</span>
+<span class="sd">        :param callable progress: an optional callable for reporting progress, taking two integers (``current``,</span>
+<span class="sd">                                  ``total``) as arguments</span>
+<span class="sd">        :param datetime.date min_date: return only plays of the specified date or later</span>
+<span class="sd">        :param datetime.date max_date: return only plays of the specified date or earlier</span>
+<span class="sd">        :param str subtype: limit plays results to the specified subtype.</span>
+<span class="sd">        :return: object containing all the plays</span>
+<span class="sd">        :rtype: :py:class:`boardgamegeek.plays.Plays`</span>
+<span class="sd">        :return: ``None`` if the user/game couldn&#39;t be found</span>
+<span class="sd">        :raises: :py:exc:`boardgamegeek.exceptions.BGGValueError` in case of invalid parameter(s)</span>
+<span class="sd">        :raises: :py:exc:`boardgamegeek.exceptions.BGGApiRetryError` if this request should be retried after a short delay</span>
+<span class="sd">        :raises: :py:exc:`boardgamegeek.exceptions.BGGApiError` if the response couldn&#39;t be parsed</span>
+<span class="sd">        :raises: :py:exc:`boardgamegeek.exceptions.BGGApiTimeoutError` if there was a timeout</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">name</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">game_id</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">BGGValueError</span><span class="p">(</span><span class="s2">&quot;no user name specified&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">name</span> <span class="ow">and</span> <span class="n">game_id</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">BGGValueError</span><span class="p">(</span><span class="s2">&quot;can&#39;t retrieve by user and by game at the same time&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">subtype</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;boardgame&quot;</span><span class="p">,</span> <span class="s2">&quot;boardgameexpansion&quot;</span><span class="p">,</span> <span class="s2">&quot;boardgameaccessory&quot;</span><span class="p">,</span> <span class="s2">&quot;rpgitem&quot;</span><span class="p">,</span> <span class="s2">&quot;videogame&quot;</span><span class="p">]:</span>
+            <span class="k">raise</span> <span class="n">BGGValueError</span><span class="p">(</span><span class="s2">&quot;invalid subtype&quot;</span><span class="p">)</span>
+
+        <span class="n">params</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;subtype&quot;</span><span class="p">:</span> <span class="n">subtype</span><span class="p">}</span>
+
+        <span class="k">if</span> <span class="n">name</span><span class="p">:</span>
+            <span class="n">params</span><span class="p">[</span><span class="s2">&quot;username&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">name</span>
+            <span class="n">game_id</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">params</span><span class="p">[</span><span class="s2">&quot;id&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">game_id</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">BGGValueError</span><span class="p">(</span><span class="s2">&quot;invalid game id&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">min_date</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">params</span><span class="p">[</span><span class="s2">&quot;mindate&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">min_date</span><span class="o">.</span><span class="n">isoformat</span><span class="p">()</span>
+            <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">BGGValueError</span><span class="p">(</span><span class="s2">&quot;mindate must be a datetime.date object&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">max_date</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">params</span><span class="p">[</span><span class="s2">&quot;maxdate&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">max_date</span><span class="o">.</span><span class="n">isoformat</span><span class="p">()</span>
+            <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">BGGValueError</span><span class="p">(</span><span class="s2">&quot;maxdate must be a datetime.date object&quot;</span><span class="p">)</span>
+
+        <span class="n">xml_root</span> <span class="o">=</span> <span class="n">request_and_parse_xml</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">requests_session</span><span class="p">,</span>
+                                         <span class="bp">self</span><span class="o">.</span><span class="n">_plays_api_url</span><span class="p">,</span>
+                                         <span class="n">params</span><span class="o">=</span><span class="n">params</span><span class="p">,</span>
+                                         <span class="n">timeout</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_timeout</span><span class="p">,</span>
+                                         <span class="n">retries</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_retries</span><span class="p">,</span>
+                                         <span class="n">retry_delay</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_retry_delay</span><span class="p">)</span>
+
+        <span class="n">plays</span> <span class="o">=</span> <span class="n">create_plays_from_xml</span><span class="p">(</span><span class="n">xml_root</span><span class="p">,</span> <span class="n">game_id</span><span class="p">)</span>
+        <span class="n">added_plays</span> <span class="o">=</span> <span class="n">add_plays_from_xml</span><span class="p">(</span><span class="n">plays</span><span class="p">,</span> <span class="n">xml_root</span><span class="p">)</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">call_progress_cb</span><span class="p">(</span><span class="n">progress</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">plays</span><span class="p">),</span> <span class="n">plays</span><span class="o">.</span><span class="n">plays_count</span><span class="p">)</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">plays</span>
+
+        <span class="n">page</span> <span class="o">=</span> <span class="mi">1</span>
+
+        <span class="c1"># Since the BGG API doesn&#39;t seem to report the total number of plays for games correctly (it&#39;s 0), just</span>
+        <span class="c1"># continue until we can&#39;t add anymore</span>
+        <span class="k">while</span> <span class="n">added_plays</span><span class="p">:</span>
+            <span class="n">page</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;fetching page </span><span class="si">{}</span><span class="s2"> of plays&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">page</span><span class="p">))</span>
+
+            <span class="n">params</span><span class="p">[</span><span class="s2">&quot;page&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">page</span>
+
+            <span class="c1"># fetch the next pages of plays</span>
+            <span class="n">xml_root</span> <span class="o">=</span> <span class="n">request_and_parse_xml</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">requests_session</span><span class="p">,</span>
+                                             <span class="bp">self</span><span class="o">.</span><span class="n">_plays_api_url</span><span class="p">,</span>
+                                             <span class="n">params</span><span class="o">=</span><span class="n">params</span><span class="p">,</span>
+                                             <span class="n">timeout</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_timeout</span><span class="p">,</span>
+                                             <span class="n">retries</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_retries</span><span class="p">,</span>
+                                             <span class="n">retry_delay</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_retry_delay</span><span class="p">)</span>
+
+            <span class="n">added_plays</span> <span class="o">=</span> <span class="n">add_plays_from_xml</span><span class="p">(</span><span class="n">plays</span><span class="p">,</span> <span class="n">xml_root</span><span class="p">)</span>
+
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">call_progress_cb</span><span class="p">(</span><span class="n">progress</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">plays</span><span class="p">),</span> <span class="n">plays</span><span class="o">.</span><span class="n">plays_count</span><span class="p">)</span>
+            <span class="k">except</span><span class="p">:</span>
+                <span class="k">break</span>
+
+        <span class="k">return</span> <span class="n">plays</span>
+
+    <span class="k">def</span> <span class="nf">hot_items</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item_type</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Return the list of &quot;Hot Items&quot;</span>
+
+<span class="sd">        :param str item_type: hot item type. Valid values: &quot;boardgame&quot;, &quot;rpg&quot;, &quot;videogame&quot;, &quot;boardgameperson&quot;,</span>
+<span class="sd">                              &quot;rpgperson&quot;, &quot;boardgamecompany&quot;, &quot;rpgcompany&quot;, &quot;videogamecompany&quot;)</span>
+<span class="sd">        :return: ``HotItems`` object</span>
+<span class="sd">        :rtype: :py:class:`boardgamegeek.hotitems.HotItems`</span>
+<span class="sd">        :return: ``None`` in case the hot items couldn&#39;t be retrieved</span>
+
+<span class="sd">        :raises: :py:exc:`boardgamegeek.exceptions.BGGValueError` in case of invalid parameter(s)</span>
+<span class="sd">        :raises: :py:exc:`boardgamegeek.exceptions.BGGApiRetryError` if this request should be retried after</span>
+<span class="sd">                  a short delay</span>
+<span class="sd">        :raises: :py:exc:`boardgamegeek.exceptions.BGGApiError` if the response couldn&#39;t be parsed</span>
+<span class="sd">        :raises: :py:exc:`boardgamegeek.exceptions.BGGApiTimeoutError` if there was a timeout</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">item_type</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">HOT_ITEM_CHOICES</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">BGGValueError</span><span class="p">(</span><span class="s2">&quot;invalid type specified&quot;</span><span class="p">)</span>
+
+        <span class="n">params</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="n">item_type</span><span class="p">}</span>
+
+        <span class="n">xml_root</span> <span class="o">=</span> <span class="n">request_and_parse_xml</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">requests_session</span><span class="p">,</span>
+                                         <span class="bp">self</span><span class="o">.</span><span class="n">_hot_api_url</span><span class="p">,</span>
+                                         <span class="n">params</span><span class="o">=</span><span class="n">params</span><span class="p">,</span>
+                                         <span class="n">timeout</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_timeout</span><span class="p">,</span>
+                                         <span class="n">retries</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_retries</span><span class="p">,</span>
+                                         <span class="n">retry_delay</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_retry_delay</span><span class="p">)</span>
+
+        <span class="n">hot_items</span> <span class="o">=</span> <span class="n">create_hot_items_from_xml</span><span class="p">(</span><span class="n">xml_root</span><span class="p">)</span>
+        <span class="n">add_hot_items_from_xml</span><span class="p">(</span><span class="n">hot_items</span><span class="p">,</span> <span class="n">xml_root</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">hot_items</span>
+
+    <span class="k">def</span> <span class="nf">collection</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">user_name</span><span class="p">,</span> <span class="n">subtype</span><span class="o">=</span><span class="n">BGGRestrictCollectionTo</span><span class="o">.</span><span class="n">BOARD_GAME</span><span class="p">,</span> <span class="n">exclude_subtype</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ids</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">versions</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                   <span class="n">own</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">rated</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">played</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">commented</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">trade</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">want</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">wishlist</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                   <span class="n">wishlist_prio</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">preordered</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">want_to_play</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">want_to_buy</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">prev_owned</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                   <span class="n">has_parts</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">want_parts</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">min_rating</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">rating</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">min_bgg_rating</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">bgg_rating</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                   <span class="n">min_plays</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">max_plays</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">collection_id</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">modified_since</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns an user&#39;s game collection</span>
+
+<span class="sd">        :param str user_name: user name to retrieve the collection for</span>
+<span class="sd">        :param str subtype: what type of items to return. One of the constants in :py:class:`boardgamegeek.api.BGGRestrictCollectionTo`</span>
+<span class="sd">        :param str exclude_subtype: if not ``None`` (default), exclude the specified subtype. Else, one of the constants in :py:class:`boardgamegeek.api.BGGRestrictCollectionTo`</span>
+<span class="sd">        :param list ids: if not ``None`` (default), limit the results to the specified ids.</span>
+<span class="sd">        :param bool versions: include item version information</span>
+<span class="sd">        :param bool own: include (if ``True``) or exclude (if ``False``) owned items</span>
+<span class="sd">        :param bool rated: include (if ``True``) or exclude (if ``False``) rated items</span>
+<span class="sd">        :param bool played: include (if ``True``) or exclude (if ``False``) played items</span>
+<span class="sd">        :param bool commented: include (if ``True``) or exclude (if ``False``) items commented on</span>
+<span class="sd">        :param bool trade: include (if ``True``) or exclude (if ``False``) items for trade</span>
+<span class="sd">        :param bool want: include (if ``True``) or exclude (if ``False``) items wanted in trade</span>
+<span class="sd">        :param bool wishlist: include (if ``True``) or exclude (if ``False``) items in the wishlist</span>
+<span class="sd">        :param int wishlist_prio: return only the items with the specified wishlist priority (valid values: 1 to 5)</span>
+<span class="sd">        :param bool preordered: include (if ``True``) or exclude (if ``False``) preordered items</span>
+<span class="sd">        :param bool want_to_play: include (if ``True``) or exclude (if ``False``) items wanting to play</span>
+<span class="sd">        :param bool want_to_buy: include (if ``True``) or exclude (if ``False``) items wanting to buy</span>
+<span class="sd">        :param bool prev_owned: include (if ``True``) or exclude (if ``False``) previously owned items</span>
+<span class="sd">        :param bool has_parts: include (if ``True``) or exclude (if ``False``) items for which there is a comment in the</span>
+<span class="sd">                               &quot;Has parts&quot; field</span>
+<span class="sd">        :param bool want_parts: include (if ``True``) or exclude (if ``False``) items for which there is a comment in</span>
+<span class="sd">                                the &quot;Want parts&quot; field</span>
+<span class="sd">        :param double min_rating: return items rated by the user with a minimum of ``min_rating``</span>
+<span class="sd">        :param double rating: return items rated by the user with a maximum of ``rating``</span>
+<span class="sd">        :param double min_bgg_rating : return items rated on BGG with a minimum of ``min_bgg_rating``</span>
+<span class="sd">        :param double bgg_rating: return items rated on BGG with a maximum of ``bgg_rating``</span>
+<span class="sd">        :param int collection_id: restrict results to the collection specified by this id</span>
+<span class="sd">        :param str modified_since: restrict results to those whose status (own, want, etc.) has been changed/added since ``modified_since``. Format: ``YY-MM-DD`` or ``YY-MM-DD HH:MM:SS``</span>
+
+
+<span class="sd">        :return: ``Collection`` object</span>
+<span class="sd">        :rtype: :py:class:`boardgamegeek.collection.Collection`</span>
+<span class="sd">        :return: ``None`` if user not found</span>
+
+<span class="sd">        :raises: :py:exc:`boardgamegeek.exceptions.BGGValueError` in case of invalid parameter(s)</span>
+<span class="sd">        :raises: :py:exc:`boardgamegeek.exceptions.BGGApiRetryError` if this request should be retried after a short delay</span>
+<span class="sd">        :raises: :py:exc:`boardgamegeek.exceptions.BGGApiError` if the response couldn&#39;t be parsed</span>
+<span class="sd">        :raises: :py:exc:`boardgamegeek.exceptions.BGGApiTimeoutError` if there was a timeout</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c1"># Parameter validation</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">user_name</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">BGGValueError</span><span class="p">(</span><span class="s2">&quot;no user name specified&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">subtype</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">COLLECTION_SUBTYPES</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">BGGValueError</span><span class="p">(</span><span class="s2">&quot;invalid &#39;subtype&#39;&quot;</span><span class="p">)</span>
+
+        <span class="n">params</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;username&quot;</span><span class="p">:</span> <span class="n">user_name</span><span class="p">,</span>
+                <span class="s2">&quot;subtype&quot;</span><span class="p">:</span> <span class="n">subtype</span><span class="p">,</span>
+                <span class="s2">&quot;stats&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">}</span>
+
+        <span class="k">if</span> <span class="n">exclude_subtype</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">exclude_subtype</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">COLLECTION_SUBTYPES</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">BGGValueError</span><span class="p">(</span><span class="s2">&quot;invalid &#39;exclude_subtype&#39;&quot;</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">subtype</span> <span class="o">==</span> <span class="n">exclude_subtype</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">BGGValueError</span><span class="p">(</span><span class="s2">&quot;incompatible &#39;subtype&#39; and &#39;exclude_subtype&#39;&quot;</span><span class="p">)</span>
+
+            <span class="n">params</span><span class="p">[</span><span class="s2">&quot;excludesubtype&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">exclude_subtype</span>
+
+        <span class="k">if</span> <span class="n">ids</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">params</span><span class="p">[</span><span class="s2">&quot;id&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;,&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="s2">&quot;</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">id_</span><span class="p">)</span> <span class="k">for</span> <span class="n">id_</span> <span class="ow">in</span> <span class="n">ids</span><span class="p">])</span>
+
+        <span class="k">for</span> <span class="n">param</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;versions&quot;</span><span class="p">,</span> <span class="s2">&quot;own&quot;</span><span class="p">,</span> <span class="s2">&quot;rated&quot;</span><span class="p">,</span> <span class="s2">&quot;played&quot;</span><span class="p">,</span> <span class="s2">&quot;trade&quot;</span><span class="p">,</span> <span class="s2">&quot;want&quot;</span><span class="p">,</span> <span class="s2">&quot;wishlist&quot;</span><span class="p">,</span> <span class="s2">&quot;preordered&quot;</span><span class="p">]:</span>
+            <span class="n">p</span> <span class="o">=</span> <span class="nb">locals</span><span class="p">()[</span><span class="n">param</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">p</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">params</span><span class="p">[</span><span class="n">param</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span> <span class="k">if</span> <span class="n">p</span> <span class="k">else</span> <span class="mi">0</span>
+
+        <span class="k">if</span> <span class="n">commented</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">params</span><span class="p">[</span><span class="s2">&quot;comment&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span> <span class="k">if</span> <span class="n">commented</span> <span class="k">else</span> <span class="mi">0</span>
+
+        <span class="k">if</span> <span class="n">wishlist_prio</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="mi">1</span> <span class="o">&lt;=</span> <span class="n">wishlist_prio</span> <span class="o">&lt;=</span> <span class="mi">5</span><span class="p">:</span>
+                <span class="n">params</span><span class="p">[</span><span class="s2">&quot;wishlishpriority&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">wishlist_prio</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">BGGValueError</span><span class="p">(</span><span class="s2">&quot;invalid &#39;wishlist_prio&#39;&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">want_to_play</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">params</span><span class="p">[</span><span class="s2">&quot;wanttoplay&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span> <span class="k">if</span> <span class="n">want_to_play</span> <span class="k">else</span> <span class="mi">0</span>
+
+        <span class="k">if</span> <span class="n">want_to_buy</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">params</span><span class="p">[</span><span class="s2">&quot;wanttobuy&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span> <span class="k">if</span> <span class="n">want_to_buy</span> <span class="k">else</span> <span class="mi">0</span>
+
+        <span class="k">if</span> <span class="n">prev_owned</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">params</span><span class="p">[</span><span class="s2">&quot;prevowned&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span> <span class="k">if</span> <span class="n">prev_owned</span> <span class="k">else</span> <span class="mi">0</span>
+
+        <span class="k">if</span> <span class="n">has_parts</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">params</span><span class="p">[</span><span class="s2">&quot;hasparts&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span> <span class="k">if</span> <span class="n">has_parts</span> <span class="k">else</span> <span class="mi">0</span>
+
+        <span class="k">if</span> <span class="n">want_parts</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">params</span><span class="p">[</span><span class="s2">&quot;wantparts&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span> <span class="k">if</span> <span class="n">want_parts</span> <span class="k">else</span> <span class="mi">0</span>
+
+        <span class="k">if</span> <span class="n">min_rating</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="mf">1.0</span> <span class="o">&lt;=</span> <span class="n">min_rating</span> <span class="o">&lt;=</span> <span class="mf">10.0</span><span class="p">:</span>
+                <span class="n">params</span><span class="p">[</span><span class="s2">&quot;minrating&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">min_rating</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">BGGValueError</span><span class="p">(</span><span class="s2">&quot;invalid &#39;min_rating&#39;&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">rating</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="mf">1.0</span> <span class="o">&lt;=</span> <span class="n">rating</span> <span class="o">&lt;=</span> <span class="mf">10.0</span><span class="p">:</span>
+                <span class="n">params</span><span class="p">[</span><span class="s2">&quot;rating&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">rating</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">BGGValueError</span><span class="p">(</span><span class="s2">&quot;invalid &#39;rating&#39;&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">min_bgg_rating</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="mf">1.0</span> <span class="o">&lt;=</span> <span class="n">min_bgg_rating</span> <span class="o">&lt;=</span> <span class="mf">10.0</span><span class="p">:</span>
+                <span class="n">params</span><span class="p">[</span><span class="s2">&quot;minbggrating&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">min_bgg_rating</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">BGGValueError</span><span class="p">(</span><span class="s2">&quot;invalid &#39;bgg_min_rating&#39;&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">bgg_rating</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="mf">1.0</span> <span class="o">&lt;=</span> <span class="n">bgg_rating</span> <span class="o">&lt;=</span> <span class="mf">10.0</span><span class="p">:</span>
+                <span class="n">params</span><span class="p">[</span><span class="s2">&quot;bggrating&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">bgg_rating</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">BGGValueError</span><span class="p">(</span><span class="s2">&quot;invalid &#39;bgg_rating&#39;&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">collection_id</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">params</span><span class="p">[</span><span class="s2">&quot;collid&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">collection_id</span>
+
+        <span class="k">if</span> <span class="n">modified_since</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">params</span><span class="p">[</span><span class="s2">&quot;modifiedsince&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">modified_since</span>
+
+        <span class="n">xml_root</span> <span class="o">=</span> <span class="n">request_and_parse_xml</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">requests_session</span><span class="p">,</span>
+                                         <span class="bp">self</span><span class="o">.</span><span class="n">_collection_api_url</span><span class="p">,</span>
+                                         <span class="n">params</span><span class="o">=</span><span class="n">params</span><span class="p">,</span>
+                                         <span class="n">timeout</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_timeout</span><span class="p">,</span>
+                                         <span class="n">retries</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_retries</span><span class="p">,</span>
+                                         <span class="n">retry_delay</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_retry_delay</span><span class="p">)</span>
+
+        <span class="n">collection</span> <span class="o">=</span> <span class="n">create_collection_from_xml</span><span class="p">(</span><span class="n">xml_root</span><span class="p">,</span> <span class="n">user_name</span><span class="p">)</span>
+        <span class="n">add_collection_items_from_xml</span><span class="p">(</span><span class="n">collection</span><span class="p">,</span> <span class="n">xml_root</span><span class="p">,</span> <span class="n">subtype</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">collection</span>
+
+    <span class="k">def</span> <span class="nf">search</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">query</span><span class="p">,</span> <span class="n">search_type</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">exact</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Search for a game</span>
+
+<span class="sd">        :param str query: the string to search for</span>
+<span class="sd">        :param list search_type: list of :py:class:`boardgamegeek.api.BGGRestrictItemTypeTo`, indicating what to include in the search results.</span>
+<span class="sd">        :param bool exact: if True, try to match the name exactly</span>
+<span class="sd">        :return: list of ``SearchResult``</span>
+<span class="sd">        :rtype: list of :py:class:`boardgamegeek.search.SearchResult`</span>
+
+<span class="sd">        :raises: :py:exc:`boardgamegeek.exceptions.BGGValueError` in case of invalid parameter(s)</span>
+<span class="sd">        :raises: :py:exc:`boardgamegeek.exceptions.BGGApiRetryError` if this request should be retried after a short delay</span>
+<span class="sd">        :raises: :py:exc:`boardgamegeek.exceptions.BGGApiError` if the API response was invalid or couldn&#39;t be parsed</span>
+<span class="sd">        :raises: :py:exc:`boardgamegeek.exceptions.BGGApiTimeoutError` if there was a timeout</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">query</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">BGGValueError</span><span class="p">(</span><span class="s2">&quot;invalid query string&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">search_type</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">search_type</span> <span class="o">=</span> <span class="p">[</span><span class="n">BGGRestrictSearchResultsTo</span><span class="o">.</span><span class="n">BOARD_GAME</span><span class="p">]</span>
+
+        <span class="n">params</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;query&quot;</span><span class="p">:</span> <span class="n">query</span><span class="p">}</span>
+
+        <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">search_type</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">s</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="n">BGGRestrictSearchResultsTo</span><span class="o">.</span><span class="n">RPG</span><span class="p">,</span> <span class="n">BGGRestrictSearchResultsTo</span><span class="o">.</span><span class="n">VIDEO_GAME</span><span class="p">,</span>
+                         <span class="n">BGGRestrictSearchResultsTo</span><span class="o">.</span><span class="n">BOARD_GAME</span><span class="p">,</span> <span class="n">BGGRestrictSearchResultsTo</span><span class="o">.</span><span class="n">BOARD_GAME_EXPANSION</span><span class="p">]:</span>
+                <span class="k">raise</span> <span class="n">BGGValueError</span><span class="p">(</span><span class="s2">&quot;invalid search type: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">search_type</span><span class="p">))</span>
+
+        <span class="n">params</span><span class="p">[</span><span class="s2">&quot;type&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;,&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">search_type</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">exact</span><span class="p">:</span>
+            <span class="n">params</span><span class="p">[</span><span class="s2">&quot;exact&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+
+        <span class="n">root</span> <span class="o">=</span> <span class="n">request_and_parse_xml</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">requests_session</span><span class="p">,</span>
+                                     <span class="bp">self</span><span class="o">.</span><span class="n">_search_api_url</span><span class="p">,</span>
+                                     <span class="n">params</span><span class="o">=</span><span class="n">params</span><span class="p">,</span>
+                                     <span class="n">timeout</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_timeout</span><span class="p">,</span>
+                                     <span class="n">retries</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_retries</span><span class="p">,</span>
+                                     <span class="n">retry_delay</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_retry_delay</span><span class="p">)</span>
+
+        <span class="n">results</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">root</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="s2">&quot;item&quot;</span><span class="p">):</span>
+            <span class="n">kwargs</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="n">item</span><span class="o">.</span><span class="n">attrib</span><span class="p">[</span><span class="s2">&quot;id&quot;</span><span class="p">],</span>
+                      <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="n">xml_subelement_attr</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="s2">&quot;name&quot;</span><span class="p">),</span>
+                      <span class="s2">&quot;yearpublished&quot;</span><span class="p">:</span> <span class="n">xml_subelement_attr</span><span class="p">(</span><span class="n">item</span><span class="p">,</span>
+                                                           <span class="s2">&quot;yearpublished&quot;</span><span class="p">,</span>
+                                                           <span class="n">default</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                                                           <span class="n">convert</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span>
+                                                           <span class="n">quiet</span><span class="o">=</span><span class="kc">True</span><span class="p">),</span>
+                      <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="n">item</span><span class="o">.</span><span class="n">attrib</span><span class="p">[</span><span class="s2">&quot;type&quot;</span><span class="p">]}</span>
+
+            <span class="n">results</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">SearchResult</span><span class="p">(</span><span class="n">kwargs</span><span class="p">))</span>
+
+        <span class="k">return</span> <span class="n">results</span>
+
+
+<div class="viewcode-block" id="BGGClient"><a class="viewcode-back" href="../../modules.html#boardgamegeek.api.BGGClient">[docs]</a><span class="k">class</span> <span class="nc">BGGClient</span><span class="p">(</span><span class="n">BGGCommon</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Python client for www.boardgamegeek.com&#39;s XML API 2.</span>
+
+<span class="sd">        Caching for the requests can be used by specifying an URI for the ``cache`` parameter. By default, an in-memory</span>
+<span class="sd">        cache is used, with sqlite being the other currently supported option.</span>
+
+<span class="sd">        :param :py:class:`boardgamegeek.cache.CacheBackend` cache: An object to be used for caching the requests</span>
+<span class="sd">        :param float timeout: Timeout for network operations, in seconds</span>
+<span class="sd">        :param int retries: Number of retries to perform in case the API returns HTTP 202 (retry) or in case of timeouts</span>
+<span class="sd">        :param float retry_delay: Time to sleep, in seconds, between retries when the API returns HTTP 202 (retry)</span>
+<span class="sd">        :param disable_ssl: ignored, left for backwards compatibility</span>
+<span class="sd">        :param requests_per_minute: how many requests per minute to allow to go out to BGG (throttle prevention)</span>
+
+<span class="sd">        Example usage::</span>
+
+<span class="sd">            &gt;&gt;&gt; bgg = BGGClient()</span>
+<span class="sd">            &gt;&gt;&gt; game = bgg.game(&quot;Android: Netrunner&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; game.id</span>
+<span class="sd">            124742</span>
+<span class="sd">            &gt;&gt;&gt; bgg_no_cache = BGGClient(cache=CacheBackendNone())</span>
+<span class="sd">            &gt;&gt;&gt; bgg_sqlite_cache = BGGClient(cache=CacheBackendSqlite(path=&quot;/path/to/cache.db&quot;, ttl=3600))</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cache</span><span class="o">=</span><span class="n">CacheBackendMemory</span><span class="p">(</span><span class="n">ttl</span><span class="o">=</span><span class="mi">3600</span><span class="p">),</span> <span class="n">timeout</span><span class="o">=</span><span class="mi">15</span><span class="p">,</span> <span class="n">retries</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">retry_delay</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">disable_ssl</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">requests_per_minute</span><span class="o">=</span><span class="n">DEFAULT_REQUESTS_PER_MINUTE</span><span class="p">):</span>
+
+        <span class="nb">super</span><span class="p">(</span><span class="n">BGGClient</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="n">api_endpoint</span><span class="o">=</span><span class="s2">&quot;https://www.boardgamegeek.com/xmlapi2&quot;</span><span class="p">,</span>
+                                        <span class="n">cache</span><span class="o">=</span><span class="n">cache</span><span class="p">,</span>
+                                        <span class="n">timeout</span><span class="o">=</span><span class="n">timeout</span><span class="p">,</span>
+                                        <span class="n">retries</span><span class="o">=</span><span class="n">retries</span><span class="p">,</span>
+                                        <span class="n">retry_delay</span><span class="o">=</span><span class="n">retry_delay</span><span class="p">,</span>
+                                        <span class="n">requests_per_minute</span><span class="o">=</span><span class="n">requests_per_minute</span><span class="p">)</span>
+
+<div class="viewcode-block" id="BGGClient.get_game_id"><a class="viewcode-back" href="../../modules.html#boardgamegeek.api.BGGClient.get_game_id">[docs]</a>    <span class="k">def</span> <span class="nf">get_game_id</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">choose</span><span class="o">=</span><span class="n">BGGChoose</span><span class="o">.</span><span class="n">FIRST</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns the BGG ID of a game, searching by name</span>
+
+<span class="sd">        :param str name: The name of the game to search for</span>
+<span class="sd">        :param boardgamegeek.BGGChoose choose: method of selecting the game by name, when dealing with multiple results.</span>
+<span class="sd">        :return: the game&#39;s id</span>
+<span class="sd">        :rtype: integer</span>
+<span class="sd">        :return: ``None`` if game wasn&#39;t found</span>
+<span class="sd">        :raises: :py:exc:`boardgamegeek.exceptions.BGGError` in case of invalid name</span>
+<span class="sd">        :raises: :py:exc:`boardgamegeek.exceptions.BGGApiRetryError` if this request should be retried after a short delay</span>
+<span class="sd">        :raises: :py:exc:`boardgamegeek.exceptions.BGGApiError` if the response couldn&#39;t be parsed</span>
+<span class="sd">        :raises: :py:exc:`boardgamegeek.exceptions.BGGApiTimeoutError` if there was a timeout</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_game_id</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">game_type</span><span class="o">=</span><span class="n">BGGRestrictSearchResultsTo</span><span class="o">.</span><span class="n">BOARD_GAME</span><span class="p">,</span> <span class="n">choose</span><span class="o">=</span><span class="n">choose</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="BGGClient.game_list"><a class="viewcode-back" href="../../modules.html#boardgamegeek.api.BGGClient.game_list">[docs]</a>    <span class="k">def</span> <span class="nf">game_list</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">game_id_list</span><span class="o">=</span><span class="p">[],</span> <span class="n">versions</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                  <span class="n">videos</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">historical</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">marketplace</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get list of games by from a list of ids.</span>
+
+<span class="sd">        :param list game_id_list:  List of game ids</span>
+<span class="sd">        :param bool versions: include versions information</span>
+<span class="sd">        :param bool videos: include videos</span>
+<span class="sd">        :param bool historical: include historical data</span>
+<span class="sd">        :param bool marketplace: include marketplace data</span>
+<span class="sd">        :return: list of ``BoardGame`` objects</span>
+<span class="sd">        :rtype: list`</span>
+
+<span class="sd">        :raises: :py:exc:`boardgamegeek.exceptions.BoardGameGeekAPIRetryError`</span>
+<span class="sd">            if this request should be retried after a short delay</span>
+<span class="sd">        :raises: :py:exc:`boardgamegeek.exceptions.BoardGameGeekAPIError`</span>
+<span class="sd">            if the response couldn&#39;t be parsed</span>
+<span class="sd">        :raises: :py:exc:`boardgamegeek.exceptions.BoardGameGeekTimeoutError`</span>
+<span class="sd">            if there was a timeout</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">game_id_list</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">BGGError</span><span class="p">(</span><span class="s2">&quot;List of Game Ids must be specified&quot;</span><span class="p">)</span>
+
+        <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;retrieving games </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">game_id_list</span><span class="p">,))</span>
+
+        <span class="n">params</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="s1">&#39;,&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="nb">str</span><span class="p">(</span><span class="n">game_id</span><span class="p">)</span> <span class="k">for</span> <span class="n">game_id</span> <span class="ow">in</span> <span class="n">game_id_list</span><span class="p">]),</span>
+                  <span class="s2">&quot;versions&quot;</span><span class="p">:</span> <span class="mi">1</span> <span class="k">if</span> <span class="n">versions</span> <span class="k">else</span> <span class="mi">0</span><span class="p">,</span>
+                  <span class="s2">&quot;videos&quot;</span><span class="p">:</span> <span class="mi">1</span> <span class="k">if</span> <span class="n">videos</span> <span class="k">else</span> <span class="mi">0</span><span class="p">,</span>
+                  <span class="s2">&quot;historical&quot;</span><span class="p">:</span> <span class="mi">1</span> <span class="k">if</span> <span class="n">historical</span> <span class="k">else</span> <span class="mi">0</span><span class="p">,</span>
+                  <span class="s2">&quot;marketplace&quot;</span><span class="p">:</span> <span class="mi">1</span> <span class="k">if</span> <span class="n">marketplace</span> <span class="k">else</span> <span class="mi">0</span><span class="p">,</span>
+                  <span class="s2">&quot;stats&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">}</span>
+
+        <span class="n">xml_root</span> <span class="o">=</span> <span class="n">request_and_parse_xml</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">requests_session</span><span class="p">,</span>
+                                         <span class="bp">self</span><span class="o">.</span><span class="n">_thing_api_url</span><span class="p">,</span>
+                                         <span class="n">params</span><span class="o">=</span><span class="n">params</span><span class="p">,</span>
+                                         <span class="n">timeout</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_timeout</span><span class="p">,</span>
+                                         <span class="n">retries</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_retries</span><span class="p">,</span>
+                                         <span class="n">retry_delay</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_retry_delay</span><span class="p">)</span>
+
+        <span class="n">xml_root</span> <span class="o">=</span> <span class="n">xml_root</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="s2">&quot;item&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">xml_root</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">msg</span> <span class="o">=</span> <span class="s2">&quot;invalid data for game ids: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">game_id_list</span><span class="p">,)</span>
+            <span class="k">raise</span> <span class="n">BGGApiError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+
+        <span class="n">game_list</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">game_root</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">xml_root</span><span class="p">):</span>
+            <span class="n">game</span> <span class="o">=</span> <span class="n">create_game_from_xml</span><span class="p">(</span><span class="n">game_root</span><span class="p">,</span>
+                                        <span class="n">game_id</span><span class="o">=</span><span class="n">game_id_list</span><span class="p">[</span><span class="n">i</span><span class="p">],</span>
+                                        <span class="n">html_parser</span><span class="o">=</span><span class="n">html_parser</span><span class="p">)</span>
+            <span class="n">game_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">game</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">game_list</span></div>
+
+
+<div class="viewcode-block" id="BGGClient.game"><a class="viewcode-back" href="../../modules.html#boardgamegeek.api.BGGClient.game">[docs]</a>    <span class="k">def</span> <span class="nf">game</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">game_id</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">choose</span><span class="o">=</span><span class="n">BGGChoose</span><span class="o">.</span><span class="n">FIRST</span><span class="p">,</span> <span class="n">versions</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">videos</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">historical</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+             <span class="n">marketplace</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">comments</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">rating_comments</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">progress</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get information about a game.</span>
+
+<span class="sd">        :param str name: If not None, get information about a game with this name</span>
+<span class="sd">        :param integer game_id:  If not None, get information about a game with this id</span>
+<span class="sd">        :param str choose: method of selecting the game by name, when dealing with multiple results.</span>
+<span class="sd">                           Valid values are : &quot;first&quot;, &quot;recent&quot; or &quot;best-rank&quot;</span>
+<span class="sd">        :param bool versions: include versions information</span>
+<span class="sd">        :param bool videos: include videos</span>
+<span class="sd">        :param bool historical: include historical data</span>
+<span class="sd">        :param bool marketplace: include marketplace data</span>
+<span class="sd">        :param bool comments: include comments</span>
+<span class="sd">        :param bool rating_comments: include comments with rating (ignored in favor of ``comments``, if that is true)</span>
+<span class="sd">        :param callable progress: callable for reporting progress if fetching comments</span>
+<span class="sd">        :return: ``BoardGame`` object</span>
+<span class="sd">        :rtype: :py:class:`boardgamegeek.games.BoardGame`</span>
+
+<span class="sd">        :raises: :py:exc:`boardgamegeek.exceptions.BoardGameGeekError` in case of invalid name or game_id</span>
+<span class="sd">        :raises: :py:exc:`boardgamegeek.exceptions.BoardGameGeekAPIRetryError` if this request should be retried after a</span>
+<span class="sd">                 short delay</span>
+<span class="sd">        :raises: :py:exc:`boardgamegeek.exceptions.BoardGameGeekAPIError` if the response couldn&#39;t be parsed</span>
+<span class="sd">        :raises: :py:exc:`boardgamegeek.exceptions.BoardGameGeekTimeoutError` if there was a timeout</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">name</span> <span class="ow">and</span> <span class="n">game_id</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">BGGError</span><span class="p">(</span><span class="s2">&quot;game name or id not specified&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">game_id</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">game_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_game_id</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">choose</span><span class="o">=</span><span class="n">choose</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">game_id</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;couldn&#39;t find any game named &#39;</span><span class="si">{}</span><span class="s2">&#39;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">name</span><span class="p">))</span>
+                <span class="k">raise</span> <span class="n">BGGItemNotFoundError</span>
+
+        <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;retrieving game id </span><span class="si">{}{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">game_id</span><span class="p">,</span> <span class="s2">&quot; (</span><span class="si">{}</span><span class="s2">)&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">name</span><span class="p">)</span> <span class="k">if</span> <span class="n">name</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="s2">&quot;&quot;</span><span class="p">))</span>
+
+        <span class="n">params</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="n">game_id</span><span class="p">,</span>
+                  <span class="s2">&quot;versions&quot;</span><span class="p">:</span> <span class="mi">1</span> <span class="k">if</span> <span class="n">versions</span> <span class="k">else</span> <span class="mi">0</span><span class="p">,</span>
+                  <span class="s2">&quot;videos&quot;</span><span class="p">:</span> <span class="mi">1</span> <span class="k">if</span> <span class="n">videos</span> <span class="k">else</span> <span class="mi">0</span><span class="p">,</span>
+                  <span class="s2">&quot;historical&quot;</span><span class="p">:</span> <span class="mi">1</span> <span class="k">if</span> <span class="n">historical</span> <span class="k">else</span> <span class="mi">0</span><span class="p">,</span>
+                  <span class="s2">&quot;marketplace&quot;</span><span class="p">:</span> <span class="mi">1</span> <span class="k">if</span> <span class="n">marketplace</span> <span class="k">else</span> <span class="mi">0</span><span class="p">,</span>
+                  <span class="s2">&quot;comments&quot;</span><span class="p">:</span> <span class="mi">1</span> <span class="k">if</span> <span class="n">comments</span> <span class="k">else</span> <span class="mi">0</span><span class="p">,</span>
+                  <span class="s2">&quot;ratingcomments&quot;</span><span class="p">:</span> <span class="mi">1</span> <span class="k">if</span> <span class="n">rating_comments</span> <span class="k">else</span> <span class="mi">0</span><span class="p">,</span>
+                  <span class="s2">&quot;pagesize&quot;</span><span class="p">:</span> <span class="mi">100</span><span class="p">,</span>
+                  <span class="s2">&quot;page&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+                  <span class="s2">&quot;stats&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">}</span>
+
+        <span class="n">xml_root</span> <span class="o">=</span> <span class="n">request_and_parse_xml</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">requests_session</span><span class="p">,</span>
+                                         <span class="bp">self</span><span class="o">.</span><span class="n">_thing_api_url</span><span class="p">,</span>
+                                         <span class="n">params</span><span class="o">=</span><span class="n">params</span><span class="p">,</span>
+                                         <span class="n">timeout</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_timeout</span><span class="p">,</span>
+                                         <span class="n">retries</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_retries</span><span class="p">,</span>
+                                         <span class="n">retry_delay</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_retry_delay</span><span class="p">)</span>
+
+        <span class="n">xml_root</span> <span class="o">=</span> <span class="n">xml_root</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s2">&quot;item&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">xml_root</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">msg</span> <span class="o">=</span> <span class="s2">&quot;invalid data for game id: </span><span class="si">{}{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">game_id</span><span class="p">,</span> <span class="s2">&quot;&quot;</span> <span class="k">if</span> <span class="n">name</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="s2">&quot; (</span><span class="si">{}</span><span class="s2">)&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">name</span><span class="p">))</span>
+            <span class="k">raise</span> <span class="n">BGGApiError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+
+        <span class="n">game</span> <span class="o">=</span> <span class="n">create_game_from_xml</span><span class="p">(</span><span class="n">xml_root</span><span class="p">,</span>
+                                    <span class="n">game_id</span><span class="o">=</span><span class="n">game_id</span><span class="p">,</span>
+                                    <span class="n">html_parser</span><span class="o">=</span><span class="n">html_parser</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">comments</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">game</span>
+
+        <span class="n">added_items</span><span class="p">,</span> <span class="n">total</span> <span class="o">=</span> <span class="n">add_game_comments_from_xml</span><span class="p">(</span><span class="n">game</span><span class="p">,</span> <span class="n">xml_root</span><span class="p">)</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">call_progress_cb</span><span class="p">(</span><span class="n">progress</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">game</span><span class="o">.</span><span class="n">comments</span><span class="p">),</span> <span class="n">total</span><span class="p">)</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">game</span>
+
+        <span class="n">page</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="k">while</span> <span class="n">added_items</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">game</span><span class="o">.</span><span class="n">comments</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">total</span><span class="p">:</span>
+            <span class="n">page</span> <span class="o">+=</span> <span class="mi">1</span>
+
+            <span class="n">xml_root</span> <span class="o">=</span> <span class="n">request_and_parse_xml</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">requests_session</span><span class="p">,</span>
+                                             <span class="bp">self</span><span class="o">.</span><span class="n">_thing_api_url</span><span class="p">,</span>
+                                             <span class="n">params</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="n">game_id</span><span class="p">,</span>
+                                                     <span class="s2">&quot;pagesize&quot;</span><span class="p">:</span> <span class="mi">100</span><span class="p">,</span>
+                                                     <span class="s2">&quot;comments&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+                                                     <span class="s2">&quot;page&quot;</span><span class="p">:</span> <span class="n">page</span><span class="p">})</span>
+
+            <span class="n">added_items</span> <span class="o">=</span> <span class="n">add_game_comments_from_xml</span><span class="p">(</span><span class="n">game</span><span class="p">,</span> <span class="n">xml_root</span><span class="p">)</span>
+
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">call_progress_cb</span><span class="p">(</span><span class="n">progress</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">game</span><span class="p">),</span> <span class="n">game</span><span class="o">.</span><span class="n">comments</span><span class="p">)</span>
+            <span class="k">except</span><span class="p">:</span>
+                <span class="k">break</span>
+
+        <span class="k">return</span> <span class="n">game</span></div>
+
+<div class="viewcode-block" id="BGGClient.games"><a class="viewcode-back" href="../../modules.html#boardgamegeek.api.BGGClient.games">[docs]</a>    <span class="k">def</span> <span class="nf">games</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Return a list containing all games with the given name</span>
+
+<span class="sd">        :param str name: the name of the game to search for</span>
+<span class="sd">        :return: list of :py:class:`boardgamegeek.games.BoardGame`</span>
+<span class="sd">        :raises: :py:exc:`boardgamegeek.exceptions.BoardGameGeekAPIRetryError` if this request should be retried after a short delay</span>
+<span class="sd">        :raises: :py:exc:`boardgamegeek.exceptions.BoardGameGeekAPIError` if the response couldn&#39;t be parsed</span>
+<span class="sd">        :raises: :py:exc:`boardgamegeek.exceptions.BoardGameGeekTimeoutError` if there was a timeout</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">game</span><span class="p">(</span><span class="n">game_id</span><span class="o">=</span><span class="n">s</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">name</span><span class="p">,</span>
+                                     <span class="n">search_type</span><span class="o">=</span><span class="p">[</span><span class="n">BGGRestrictSearchResultsTo</span><span class="o">.</span><span class="n">BOARD_GAME</span><span class="p">,</span> <span class="n">BGGRestrictSearchResultsTo</span><span class="o">.</span><span class="n">BOARD_GAME_EXPANSION</span><span class="p">],</span>
+                                     <span class="n">exact</span><span class="o">=</span><span class="kc">True</span><span class="p">)]</span></div></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">boardgamegeek 0.13.2 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" >Module code</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2014, Cosmin Luță.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.5.2.
+    </div>
+  </body>
+</html>
