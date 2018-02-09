@@ -100,6 +100,7 @@ Contributions to this fork:
 * Brent Ropp (github:bar350)
 * Michał Machnicki (github:machnic)
 * Philip Kendall (github:pak21)
+* David Feng (github:selwyth)
 
 Indices and tables
 ==================
