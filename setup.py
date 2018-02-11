@@ -23,7 +23,7 @@ class PyTest(TestCommand):
         import pytest
         pytest.main(self.test_args)
 
-tests_require = ["pytest"]
+tests_require = ["pytest", "pytest-mock"]
 
 setup(
     name="boardgamegeek",
