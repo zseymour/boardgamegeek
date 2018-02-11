@@ -1,16 +1,12 @@
 Changelog
 =========
 
-Massive refactoring.
 
-Splitting Plays into two classes, UserPlays and GamePlays.
-Refactored exceptions
-Most functions don't return ``None`` in case of item not found, but raise an exception
+1.0.0
+-----
 
-TODO: allow breaking from fetching pages by raising an exception from the progress callback
-
-- guild : members to prevent retrieving the members
-
+  * Massive refactoring. Module is now incompatible with the previous version and it can be installed
+via `pip install boardgamegeek2`
 
 
 0.13.2
