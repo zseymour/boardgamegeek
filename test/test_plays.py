@@ -9,11 +9,6 @@ from boardgamegeek.objects.plays import UserPlays, GamePlays, PlaySession, Plays
 progress_called = False
 
 
-def setup_module():
-    # more delays to prevent throttling from the BGG api
-    time.sleep(15)
-
-
 def progress_cb(items, total):
     global progress_called
     logging.debug("progress_cb: fetched {} items out of {}".format(items, total))
@@ -31,7 +26,10 @@ def test_get_plays_with_invalid_parameters(bgg):
         bgg.plays(name=None, game_id="asd")
 
 
-def test_get_plays_with_unknown_username_and_id(bgg):
+def test_get_plays_with_unknown_username_and_id(bgg, mocker):
+    mock_get = mocker.patch("requests.sessions.Session.get")
+    mock_get.side_effect = simulate_bgg
+
     with pytest.raises(BGGItemNotFoundError):
         bgg.plays(name=TEST_INVALID_USER)
 
@@ -48,14 +46,20 @@ def test_get_plays_with_invalid_dates(bgg):
         bgg.plays(name=TEST_VALID_USER, max_date="2014-12-31")
 
 
-def test_get_plays_with_valid_dates(bgg):
+def test_get_plays_with_valid_dates(bgg, mocker):
+    mock_get = mocker.patch("requests.sessions.Session.get")
+    mock_get.side_effect = simulate_bgg
+
     min_date = datetime.date(2014, 1, 1)
     max_date = datetime.date(2014, 12, 31)
     plays = bgg.plays(TEST_VALID_USER, min_date=min_date, max_date=max_date)
     assert len(plays) > 0
 
 
-def test_get_plays_of_user(bgg, null_logger):
+def test_get_plays_of_user(bgg, mocker, null_logger):
+    mock_get = mocker.patch("requests.sessions.Session.get")
+    mock_get.side_effect = simulate_bgg
+
     global progress_called
 
     plays = bgg.plays(name=TEST_VALID_USER, progress=progress_cb)
@@ -93,7 +97,10 @@ def test_get_plays_of_user(bgg, null_logger):
     plays._format(null_logger)
 
 
-def test_get_plays_of_game(bgg, null_logger):
+def test_get_plays_of_game(bgg, mocker, null_logger):
+    mock_get = mocker.patch("requests.sessions.Session.get")
+    mock_get.side_effect = simulate_bgg
+
     global progress_called
 
     plays = bgg.plays(game_id=TEST_GAME_ID_2, progress=progress_cb)

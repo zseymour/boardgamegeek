@@ -1,6 +1,8 @@
 # coding: utf-8
 
 import logging
+import os
+import io
 import pytest
 import sys
 import xml.etree.ElementTree as ET
@@ -35,6 +37,8 @@ if sys.version_info >= (3,):
 else:
     STR_TYPES_OR_NONE = [str, unicode, type(None)]
 
+# The top level directory for our XML files
+XML_PATH = os.path.join(os.path.dirname(__file__), "xml")
 
 @pytest.fixture
 def xml():
@@ -64,3 +68,28 @@ def null_logger():
     logger = logging.getLogger("null")
     logger.setLevel(logging.ERROR)
     return logger
+
+class MockResponse():
+    """
+    A simple object which contains all the fields we need from a response
+
+    :param str text: the text to be returned with the response
+    """
+    def __init__(self, text):
+        self.headers = {"content-type": "text/xml"}
+        self.status_code = 200
+        self.text = text
+
+def simulate_bgg(url, params, timeout):
+    last_slash = url.rindex('/')
+    fragment = url[last_slash + 1:]
+
+    sorted_params = sorted(params.items(), key=lambda t: t[0])
+    query_string = '&'.join([str(k) + "=" + str(v) for k, v in sorted_params])
+
+    filename = os.path.join(XML_PATH, fragment + "?" + query_string)
+
+    with io.open(filename, "r", encoding="utf-8") as xmlfile:
+        response_text = xmlfile.read()
+
+    return MockResponse(response_text)

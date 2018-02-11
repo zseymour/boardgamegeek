@@ -1,5 +1,7 @@
 # coding: utf-8
 import datetime
+import mock
+import requests
 import sys
 import time
 
@@ -9,18 +11,18 @@ from boardgamegeek.objects.games import BoardGameVideo, BoardGameVersion, BoardG
 from boardgamegeek.objects.games import PlayerSuggestion
 
 
-def setup_module():
-    # more delays to prevent throttling from the BGG api
-    time.sleep(15)
-
-
-def test_get_unknown_game_info(bgg):
+def test_get_unknown_game_info(bgg, mocker):
+    mock_get = mocker.patch("requests.sessions.Session.get")
+    mock_get.side_effect = simulate_bgg
 
     with pytest.raises(BGGItemNotFoundError):
         game = bgg.game(TEST_INVALID_GAME_NAME)
 
 
-def test_get_game_with_invalid_parameters(bgg):
+def test_get_game_with_invalid_parameters(bgg, mocker):
+    mock_get = mocker.patch("requests.sessions.Session.get")
+    mock_get.side_effect = simulate_bgg
+
     with pytest.raises(BGGError):
         bgg.game(name=None, game_id=None)
 
@@ -125,8 +127,9 @@ def check_game(game):
     # make sure no exception gets thrown
     repr(game)
 
-
-def test_get_known_game_info(bgg, null_logger):
+def test_get_known_game_info(bgg, mocker, null_logger):
+    mock_get = mocker.patch("requests.sessions.Session.get")
+    mock_get.side_effect = simulate_bgg
 
     # use an older game that's not so likely to change
     game = bgg.game(TEST_GAME_NAME, videos=True, versions=True)
@@ -139,12 +142,18 @@ def test_get_known_game_info(bgg, null_logger):
     assert type(game.data()) == dict
 
 
-def test_get_known_game_info_by_id(bgg):
+def test_get_known_game_info_by_id(bgg, mocker):
+    mock_get = mocker.patch("requests.sessions.Session.get")
+    mock_get.side_effect = simulate_bgg
+
     game = bgg.game(None, game_id=TEST_GAME_ID, videos=True, versions=True)
     check_game(game)
 
 
-def test_get_known_game_info_by_id_list(bgg):
+def test_get_known_game_info_by_id_list(bgg, mocker):
+    mock_get = mocker.patch("requests.sessions.Session.get")
+    mock_get.side_effect = simulate_bgg
+
     game_list = bgg.game_list(game_id_list=[TEST_GAME_ID, TEST_GAME_ID_2],
                               videos=True, versions=True)
     check_game(game_list[0])
@@ -155,7 +164,10 @@ def test_game_id_with_invalid_params(bgg):
         bgg.get_game_id(TEST_GAME_NAME, choose="voodoo")
 
 
-def test_get_game_id_by_name(bgg):
+def test_get_game_id_by_name(bgg, mocker):
+    mock_get = mocker.patch("requests.sessions.Session.get")
+    mock_get.side_effect = simulate_bgg
+
     game_id = bgg.get_game_id(TEST_GAME_NAME)
     assert game_id == TEST_GAME_ID
 
@@ -184,7 +196,10 @@ def test_get_game_id_by_name(bgg):
     assert game_id == best_id
 
 
-def test_get_games_by_name(bgg, null_logger):
+def test_get_games_by_name(bgg, mocker, null_logger):
+    mock_get = mocker.patch("requests.sessions.Session.get")
+    mock_get.side_effect = simulate_bgg
+
     games = bgg.games("coup")
 
     for g in games:
@@ -195,7 +210,10 @@ def test_get_games_by_name(bgg, null_logger):
 
     assert len(games) > 1
 
-def test_get_accessory(bgg):
+def test_get_accessory(bgg, mocker):
+    mock_get = mocker.patch("requests.sessions.Session.get")
+    mock_get.side_effect = simulate_bgg
+
     game = bgg.game(game_id=TEST_GAME_ACCESSORY_ID)
 
     assert game.id == TEST_GAME_ACCESSORY_ID

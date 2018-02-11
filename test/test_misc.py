@@ -6,14 +6,13 @@ from _common import *
 from boardgamegeek import BGGValueError, CacheBackendNone, CacheBackendSqlite
 
 
-def setup_module():
-    # more delays to prevent throttling from the BGG api
-    time.sleep(15)
-
 #
 # Test caches
 #
-def test_no_caching():
+def test_no_caching(mocker):
+    mock_get = mocker.patch("requests.sessions.Session.get")
+    mock_get.side_effect = simulate_bgg
+
     # test that we can disable caching
     bgg = BGGClient(cache=CacheBackendNone())
 
@@ -23,7 +22,10 @@ def test_no_caching():
     assert user.name == TEST_VALID_USER
 
 
-def test_sqlite_caching():
+def test_sqlite_caching(mocker):
+    mock_get = mocker.patch("requests.sessions.Session.get")
+    mock_get.side_effect = simulate_bgg
+
     # test that we can use the SQLite cache
     # generate a temporary file
     fd, name = tempfile.mkstemp(suffix=".cache")
