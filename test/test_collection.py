@@ -37,6 +37,7 @@ def test_get_valid_users_collection(bgg, null_logger):
     for g in collection:
         assert type(g) == CollectionBoardGame
         assert type(g.id) == int
+        assert isinstance(g.comment, basestring)
         if g.version is not None:
             assert type(g.version) == BoardGameVersion
         repr(g)
@@ -67,6 +68,8 @@ def test_creating_collection_out_of_raw_data():
                                "image": "",
                                "thumbnail": "",
                                "yearpublished": 1900,
+                               "numplays": 32,
+                               "comment": "This game is great!",
                                "minplayers": 1,
                                "maxplayers": 5,
                                "minplaytime": 60,
@@ -91,6 +94,8 @@ def test_creating_collection_out_of_raw_data():
     assert ci.id == 100
     assert ci.name == "foobar"
     assert ci.year == 1900
+    assert ci.numplays == 32
+    assert ci.comment == "This game is great!"
     assert ci.min_players == 1
     assert ci.max_players == 5
     assert ci.min_playing_time == 60

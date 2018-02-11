@@ -32,7 +32,8 @@ def add_collection_items_from_xml(collection, xml_root, subtype):
                                                      default=0,
                                                      convert=int,
                                                      quiet=True),
-                "numplays": xml_subelement_text(item, "numplays", convert=int, default=0)}
+                "numplays": xml_subelement_text(item, "numplays", convert=int, default=0),
+                "comment": xml_subelement_text(item, "comment", default='')}
 
         # Add item statistics
         stats = item.find("stats")
