@@ -615,6 +615,7 @@ class CollectionBoardGame(BaseGame):
         log.info("wishlist          : {}".format(self.wishlist))
         log.info("wishlist priority : {}".format(self.wishlist_priority))
         log.info("for trade         : {}".format(self.for_trade))
+        log.info("comment           : {}".format(self.comment))
         for v in self._versions:
             v._format(log)
 
@@ -719,6 +720,14 @@ class CollectionBoardGame(BaseGame):
     def wishlist_priority(self):
         # TODO: convert to int (it's str)
         return self._data.get("wishlistpriority")
+
+    @property
+    def comment(self):
+        """
+        :return: comment left by user
+        :rtype: str
+        """
+        return self._data.get("comment", "")
 
 
 class BoardGame(BaseGame):
