@@ -12,8 +12,8 @@
 """
 from __future__ import unicode_literals
 
-from .exceptions import BoardGameGeekError
-from .utils import DictObject
+from ..exceptions import BGGError
+from ..utils import DictObject
 
 
 class Thing(DictObject):
@@ -23,12 +23,14 @@ class Thing(DictObject):
     def __init__(self, data):
         for i in ["id", "name"]:
             if i not in data:
-                raise BoardGameGeekError("missing '{}' when trying to create a Thing".format(i))
+                raise BGGError("missing '{}' when trying to create a Thing".format(i))
 
         try:
-            data["id"] = int(data["id"])
+            self._id = int(data["id"])
         except:
-            raise BoardGameGeekError("id ({}) is not an int when trying to create a Thing".format(data["id"]))
+            raise BGGError("id ({}) is not an int when trying to create a Thing".format(data["id"]))
+
+        self._name = data["name"]
 
         super(Thing, self).__init__(data)
 
@@ -38,7 +40,7 @@ class Thing(DictObject):
         :return: name
         :rtype: str
         """
-        return self._data["name"]
+        return self._name
 
     @property
     def id(self):
@@ -46,7 +48,7 @@ class Thing(DictObject):
         :return: id
         :rtype: integer
         """
-        return self._data["id"]
+        return self._id
 
     def __repr__(self):
         return "Thing (id: {})".format(self.id)

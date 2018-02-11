@@ -14,7 +14,6 @@ from __future__ import unicode_literals
 import sys
 import xml.etree.ElementTree as ET
 from xml.etree.ElementTree import ParseError as ETParseError
-import requests_cache
 import requests
 import logging
 import time
@@ -27,8 +26,7 @@ try:
 except:
     import urlparse
 
-from .exceptions import BoardGameGeekAPIError, BoardGameGeekAPIRetryError, BoardGameGeekError
-from .exceptions import BoardGameGeekAPINonXMLError, BoardGameGeekTimeoutError
+from .exceptions import BGGApiError, BGGApiRetryError, BGGError, BGGApiTimeoutError
 
 log = logging.getLogger("boardgamegeek.utils")
 
@@ -101,12 +99,58 @@ class DictObject(object):
         except:
             raise AttributeError
 
+    # TODO: remove this ? Turn to property ?
     def data(self):
         """
         Access to the internal data dictionary, for easy dumping
         :return: the internal data dictionary
         """
         return self._data
+
+
+def xml_subelement_attr_by_attr(xml_elem, subelement, filter_attr, filter_value, convert=None, attribute="value", default=None, quiet=False):
+    """
+    Search for a sub-element having an attribute ``filter_attr`` set to ``filter_value``
+
+    For the following XML document:
+
+    .. code-block:: xml
+
+        <xml_elem>
+            <subelement filter="this" value="THIS" />
+        </xml_elem>
+
+    a call to ``xml_subelement_attr(xml_elem, "subelement", "filter", "this")`` would return ``"THIS"``
+
+
+    :param xml_elem: search the children nodes of this element
+    :param subelement: Name of the sub-element to search for
+    :param filter_attr: Name of the attribute the sub-element must contain
+    :param filter_value: Value of the attribute
+    :param convert: if not None, a callable to perform the conversion of this attribute to a certain object type
+    :param attribute: name of the attribute to get
+    :param default: default value if the subelement or attribute is not found
+    :param quiet: if True, don't raise exception from conversions, return default instead
+    :return: value of the attribute or ``None`` in error cases
+
+    """
+    if xml_elem is None or not subelement:
+        return None
+
+    for subel in xml_elem.findall('.//{}[@{}="{}"]'.format(subelement, filter_attr, filter_value)):
+        value = subel.attrib.get(attribute)
+        if value is None:
+            value = default
+        elif convert:
+            try:
+                value = convert(value)
+            except:
+                if quiet:
+                    value = default
+                else:
+                    raise
+        return value
+    return default
 
 
 def xml_subelement_attr(xml_elem, subelement, convert=None, attribute="value", default=None, quiet=False):
@@ -240,7 +284,7 @@ def xml_subelement_text(xml_elem, subelement, convert=None, default=None, quiet=
     return text
 
 
-def get_parsed_xml_response(requests_session, url, params=None, timeout=15, retries=3, retry_delay=5):
+def request_and_parse_xml(requests_session, url, params=None, timeout=15, retries=3, retry_delay=5):
     """
     Downloads an XML from the specified url, parses it and returns the xml ElementTree.
 
@@ -251,10 +295,9 @@ def get_parsed_xml_response(requests_session, url, params=None, timeout=15, retr
     :param retries: number of retries to perform in case of timeout
     :param retry_delay: the amount of seconds to sleep when retrying an API call that returned 202
     :return: :py:func:`xml.etree.ElementTree` corresponding to the XML
-    :raises: :py:class:`BoardGameGeekAPINonXMLError` if the API response wasn't XML
-    :raises: :py:class:`BoardGameGeekAPIRetryError` if this request should be retried after a short delay
-    :raises: :py:class:`BoardGameGeekAPIError` if the response couldn't be parsed
-    :raises: :py:class:`BoardGameGeekTimeoutError` if there was a timeout
+    :raises: :py:class:`BGGApiRetryError` if this request should be retried after a short delay
+    :raises: :py:class:`BGGApiError` if the response was invalid or couldn't be parsed
+    :raises: :py:class:`BGGApiTimeoutError` if there was a timeout
     """
 
     retr = retries
@@ -270,10 +313,10 @@ def get_parsed_xml_response(requests_session, url, params=None, timeout=15, retr
                     # no retries have been requested, therefore raise exception to signal the application that it
                     # needs to retry
                     # (BoardGameGeek API says that on status code 202 the call should be retried after a delay)
-                    raise BoardGameGeekAPIRetryError()
+                    raise BGGApiRetryError
                 elif retr == 0:
                     # retries were requested, but we reached 0. Signal the application that it needs to retry itself.
-                    raise BoardGameGeekAPIRetryError("failed to retrieve data after {} retries".format(retries))
+                    raise BGGApiRetryError("failed to retrieve data after {} retries".format(retries))
                 else:
                     # sleep for the specified delay and retry
                     log.debug("API call will be retried in {} seconds ({} more retries)".format(retry_delay, retr))
@@ -290,8 +333,8 @@ def get_parsed_xml_response(requests_session, url, params=None, timeout=15, retr
                     retry_delay *= 3
                 continue
 
-            if not r.headers.get("content-type").startswith("text/xml"):
-                raise BoardGameGeekAPINonXMLError("non-XML reply")
+            if not r.headers.get("content-type").lower().startswith("text/xml"):
+                raise BGGApiError("non-XML reply")
 
             xml = r.text
 
@@ -305,74 +348,26 @@ def get_parsed_xml_response(requests_session, url, params=None, timeout=15, retr
 
         except requests.exceptions.Timeout:
             if retries == 0:
-                raise BoardGameGeekTimeoutError()
+                raise BGGApiTimeoutError
             elif retr == 0:
                 # ... reached 0 retries
-                raise BoardGameGeekTimeoutError("failed to retrieve data after {} retries".format(retries))
+                raise BGGApiTimeoutError("failed to retrieve data after {} retries".format(retries))
             else:
                 log.debug("API request timeout, retrying {} more times w/timeout {}".format(retr, timeout))
                 timeout *= 2.5
                 continue
 
         except ETParseError as e:
-            raise BoardGameGeekAPIError("error decoding BGG API response: {}".format(e))
+            raise BGGApiError("error decoding BGG API response: {}".format(e))
 
-        except (BoardGameGeekAPIRetryError, BoardGameGeekAPINonXMLError, BoardGameGeekTimeoutError):
+        except (BGGApiRetryError, BGGApiTimeoutError):
             raise
 
         except Exception as e:
-            raise BoardGameGeekAPIError("error fetching BGG API response: {}".format(e))
+            raise BGGApiError("error fetching BGG API response: {}".format(e))
 
-    raise BoardGameGeekAPIError("couldn't fetch data within the configured number of retries")
+    raise BGGApiError("couldn't fetch data within the configured number of retries")
 
-
-def get_cache_session_from_uri(uri):
-    """
-    Returns a requests-cache session using caching specified in the URI. Valid uris are:
-
-    * memory:///?ttl=<seconds>
-    * sqlite:///path/to/sqlite.db?ttl=<seconds>&fast_save=<0|1>
-
-    :param uri: URI specifying the type of cache to use and its parameters
-    :return: CachedSession instance, which can be used as a regular ``requests`` session.
-    :raises: :class:`BoardGameGeekError` in case of error
-    """
-
-    try:
-        r = urlparse.urlparse(uri)
-
-        args = urlparse.parse_qs(r.query)
-
-        # if not specified, default cache time is 3600 seconds
-        ttl = int(args.get("ttl", ['3600'])[0])
-
-        if r.scheme == "memory":
-            return requests_cache.core.CachedSession(backend="memory",
-                                                     expire_after=ttl,
-                                                     allowable_codes=(200,))
-
-        elif r.scheme == "sqlite":
-            fast_save = args.get("fast_save", ["0"])[0] != "0"
-            return requests_cache.core.CachedSession(cache_name=r.path,
-                                                     backend="sqlite",
-                                                     expire_after=ttl,
-                                                     extension="",
-                                                     fast_save=fast_save,
-                                                     allowable_codes=(200,))
-
-        # TODO: add the redis backend
-        # elif r.scheme == "redis":
-        #     return requests_cache.core.CachedSession(cache_name=args.get("prefix", ["cache"])[0],
-        #                                              backend="redis",
-        #                                              expire_after=ttl,
-        #                                              allowable_codes=(200,))
-
-        # TODO: add the mongo backend
-
-    except Exception as e:
-        raise BoardGameGeekError("error trying to create a CachedSession from '{}': {}".format(uri, e))
-
-    raise BoardGameGeekError("invalid cache URI: {}".format(uri))
 
 def fix_url(url):
     """
@@ -386,9 +381,31 @@ def fix_url(url):
         url = "http:{}".format(url)
     return url
 
+
 def fix_unsigned_negative(value):
     # the BGG api seems to return negative years casted to unsigned ints (32 bit) in search results. This function
     # fixes the values so that they're negative again.
     if value > 0x7FFFFFFF:
         value -= 0x100000000
     return value
+
+
+def get_board_game_version_from_element(xml_elem):
+    data = {"id": int(xml_elem.attrib["id"]),
+            "yearpublished": fix_unsigned_negative(xml_subelement_attr(xml_elem,
+                                                                       "yearpublished",
+                                                                       convert=int,
+                                                                       default=0,
+                                                                       quiet=True)),
+            "language": xml_subelement_attr_by_attr(xml_elem, "link", "type", "language"),
+            "publisher": xml_subelement_attr_by_attr(xml_elem, "link", "type", "boardgamepublisher"),
+            "artist": xml_subelement_attr_by_attr(xml_elem, "link", "type", "boardgameartist"),
+            "thumbnail": xml_subelement_text(xml_elem, "thumbnail"),
+            "image": xml_subelement_text(xml_elem, "image"),
+            "name": xml_subelement_attr(xml_elem, "name"),
+            "product_code": xml_subelement_attr(xml_elem, "productcode")}
+
+    for item in ["width", "length", "depth", "weight"]:
+        data[item] = xml_subelement_attr(xml_elem, item, convert=float, quiet=True, default=0.0)
+
+    return data

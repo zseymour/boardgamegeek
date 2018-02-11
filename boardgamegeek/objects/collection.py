@@ -11,11 +11,12 @@
 
 """
 from __future__ import unicode_literals
+
 from copy import copy
 
-from .exceptions import BoardGameGeekError
+from ..exceptions import BGGError
+from ..utils import DictObject
 from .games import CollectionBoardGame
-from .utils import DictObject
 
 
 class Collection(DictObject):
@@ -28,19 +29,11 @@ class Collection(DictObject):
     def __init__(self, data):
         kw = copy(data)
 
-        if "items" not in kw:
-            kw["items"] = []
-
         self._items = []
         self.__game_ids = set()
 
-        for i in kw["items"]:
-            try:
-                if i["id"] not in self.__game_ids:
-                    self.__game_ids.add(i["id"])
-                    self._items.append(CollectionBoardGame(i))
-            except KeyError:
-                raise BoardGameGeekError("invalid game data")
+        for game in kw.get("items", []):
+            self.add_game(game)
 
         super(Collection, self).__init__(kw)
 
@@ -62,13 +55,13 @@ class Collection(DictObject):
         :raises: :py:class:`boardgamegeek.exceptions.BoardGameGeekError` in case of invalid data
         """
         try:
-            # Collections can have duplicate elements (different collection ids), so don't add the same thing multiple times
+            # Collections can have duplicate elements (different collection ids), so don't add the same thing
+            # multiple times
             if game["id"] not in self.__game_ids:
-                self._data["items"].append(game)
                 self.__game_ids.add(game["id"])
                 self._items.append(CollectionBoardGame(game))
         except KeyError:
-            raise BoardGameGeekError("invalid game data")
+            raise BGGError("invalid game data")
 
     def __getitem__(self, item):
         return self._items.__getitem__(item)
@@ -80,7 +73,7 @@ class Collection(DictObject):
         return "Collection: (owner: {}, items: {})".format(self.owner, len(self))
 
     def __len__(self):
-        return len(self._data["items"])
+        return len(self._items)
 
     @property
     def owner(self):
@@ -103,5 +96,5 @@ class Collection(DictObject):
         return self._items
 
     def __iter__(self):
-        for item in self._data["items"]:
-            yield CollectionBoardGame(item)
+        for item in self._items:
+            yield item

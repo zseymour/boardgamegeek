@@ -49,7 +49,11 @@ Quick Install
 
 To install ``boardgamegeek``, just use pip::
 
-    > pip install boardgamegeek
+    > pip install boardgamegeek2
+
+If you had previously used this library before it was rewritten, you'll need to uninstall it first::
+
+    > pip uninstall boardgamegeek
 
 
 Usage
@@ -59,8 +63,8 @@ Here's a quick usage example:
 
 .. code-block:: pycon
 
-    >>> from boardgamegeek import BoardGameGeek
-    >>> bgg = BoardGameGeek()
+    >>> from boardgamegeek import BGGClient
+    >>> bgg = BGGClient()
     >>> g = bgg.game("Android: Netrunner")
     >>> g.name
     'Android: Netrunner'
@@ -82,12 +86,21 @@ To Do
 
 Contributions/suggestions are welcome!
 
-Contributions
-=============
+Credits
+=======
 
-* Phil S. Stein (philsstein) (libBGG inspired this fork)
-* Tom Usher (tomusher)
+Original authors:
 
+* Phil S. Stein (github:philsstein)
+* Geoff Lawler (github:glawler)
+
+Contributions to this fork:
+
+* Tom Usher (github:tomusher)
+* Brent Ropp (github:bar350)
+* Michał Machnicki (github:machnic)
+* Philip Kendall (github:pak21)
+* David Feng (github:selwyth)
 
 Indices and tables
 ==================

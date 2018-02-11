@@ -1,6 +1,14 @@
 Changelog
 =========
 
+
+1.0.0
+-----
+
+  * Massive refactoring. Module is now incompatible with the previous version and it can be installed
+via `pip install boardgamegeek2`
+
+
 0.13.2
 ------
 

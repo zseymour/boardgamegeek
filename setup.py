@@ -23,10 +23,10 @@ class PyTest(TestCommand):
         import pytest
         pytest.main(self.test_args)
 
-tests_require = ["pytest"]
+tests_require = ["pytest", "pytest-mock"]
 
 setup(
-    name="boardgamegeek",
+    name="boardgamegeek2",
     version=version["__version__"],
     packages=find_packages(),
     license="BSD",

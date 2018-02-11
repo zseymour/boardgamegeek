@@ -3,13 +3,13 @@ import sys
 import argparse
 import logging
 
-from boardgamegeek.api import BoardGameGeek, BoardGameGeekNetworkAPI, HOT_ITEM_CHOICES
+from boardgamegeek.api import BGGClient, HOT_ITEM_CHOICES
 
 log = logging.getLogger("boardgamegeek")
 log_fmt = "[%(levelname)s] %(message)s"
 
-def brief_game_stats(game):
 
+def brief_game_stats(game):
     try:
         desc = '''"{}",{},{}-{},{},{},{},{},"{}","{}"'''.format(game.name, game.year,
                game.min_players, game.max_players,
@@ -84,49 +84,42 @@ def main():
                 args.plays, args.plays_by_game, args.hot_items, args.search]):
         p.error("no action specified!")
 
-    bgg = BoardGameGeek(timeout=args.timeout, retries=args.retries)
+    bgg = BGGClient(timeout=args.timeout, retries=args.retries)
 
     if args.user:
         user = bgg.user(args.user, progress=progress_cb)
-        if user:
-            user._format(log)
+        user._format(log)
 
     # query by game id
     if args.id:
-        game = bgg.game(game_id=args.id)
-        if game:
-            game._format(log)
+        game = bgg.game(game_id=args.id, comments=True)
+        game._format(log)
 
     # query by game name
     if args.game:
         # fetch the most popular
         if args.most_popular:
-            game = bgg.game(args.game, choose="best-rank")
+            game = bgg.game(args.game, choose="best-rank", comments=True)
         else:
         # fetch the most recent one
-            game = bgg.game(args.game, choose="recent")
-        if game:
-            game._format(log)
+            game = bgg.game(args.game, choose="recent", comments=True)
+        game._format(log)
 
     if args.game_stats:
         game = bgg.game(args.game_stats)
-        if game:
-            brief_game_stats(game)
+        brief_game_stats(game)
 
     if args.guild:
         guild = bgg.guild(args.guild, progress=progress_cb)
-        if guild:
-            guild._format(log)
+        guild._format(log)
 
     if args.collection:
-        collection = bgg.collection(args.collection)
-        if collection:
-            collection._format(log)
+        collection = bgg.collection(args.collection, versions=True)
+        collection._format(log)
 
     if args.plays:
         plays = bgg.plays(name=args.plays, progress=progress_cb)
-        if plays:
-            plays._format(log)
+        plays._format(log)
 
     if args.plays_by_game:
         try:
@@ -135,8 +128,7 @@ def main():
             game_id = bgg.get_game_id(args.plays_by_game)
 
         plays = bgg.plays(game_id=game_id, progress=progress_cb)
-        if plays:
-            plays._format(log)
+        plays._format(log)
 
     if args.hot_items:
         hot_items = bgg.hot_items(args.hot_items)
@@ -146,10 +138,9 @@ def main():
 
     if args.search:
         results = bgg.search(args.search)
-        if results:
-            for r in results:
-                r._format(log)
-                log.info("")
+        for r in results:
+            r._format(log)
+            log.info("")
 
 if __name__ == "__main__":
     main()

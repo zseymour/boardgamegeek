@@ -10,22 +10,37 @@
 .. moduleauthor:: Cosmin Luță <q4break@gmail.com>
 """
 
-# boardgamegeek library base exception
-class BoardGameGeekError(Exception):
+
+class BGGValueError(ValueError):
+    """ invalid parameters """
     pass
 
 
-class BoardGameGeekTimeoutError(BoardGameGeekError):
+class BGGError(Exception):
     pass
 
 
-class BoardGameGeekAPIError(BoardGameGeekError):
+class BGGItemNotFoundError(BGGError):
+    """ Requested item was not found """
     pass
 
 
-class BoardGameGeekAPIRetryError(BoardGameGeekAPIError):
+class BGGApiTimeoutError(BGGError):
+    """ Network timeout conditions """
     pass
 
 
-class BoardGameGeekAPINonXMLError(BoardGameGeekAPIError):
+class BGGApiError(BGGError):
+    """ An error related to the BGG XML2 API """
     pass
+
+
+class BGGApiRetryError(BGGApiError):
+    """ The request to the BGG XML2 API should be retried """
+    pass
+
+
+BoardGameGeekError = BGGError
+BoardGameGeekTimeoutError = BGGApiTimeoutError
+BoardGameGeekAPIError = BGGApiError
+BGGApiRetryError = BGGApiRetryError

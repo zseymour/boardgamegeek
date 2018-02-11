@@ -12,6 +12,8 @@
 """
 from __future__ import unicode_literals
 
+from copy import copy
+
 from .things import Thing
 
 
@@ -35,6 +37,17 @@ class Guild(Thing):
             log.info("{} members".format(len(self.members)))
             for i in self.members:
                 log.info(" - {}".format(i))
+
+    def __init__(self, data):
+
+        kw = copy(data)
+
+        if "members" in kw:
+            self._members = set(kw.pop("members"))
+        else:
+            self._members = set()
+
+        super(Guild, self).__init__(kw)
 
     @property
     def country(self):
@@ -121,10 +134,17 @@ class Guild(Thing):
     def members(self):
         """
         :return: members of the guild
-        :rtype: list of str
-        :return: ``None`` if n/a
+        :rtype: set of str
         """
-        return self._data.get("members", [])
+        return self._members
+
+    @property
+    def members_count(self):
+        """
+        :return: number of members, as reported by the server
+        :rtype: int
+        """
+        return self._data.get("member_count", 0)
 
     @property
     def description(self):
@@ -153,12 +173,15 @@ class Guild(Thing):
         """
         return self._data.get("website")
 
+    def add_member(self, member):
+        self._members.add(member)
+
     def __len__(self):
-        return len(self._data.get("members", []))
+        return len(self._members)
 
     def __repr__(self):
         return "Guild (id: {})".format(self.id)
 
     def __iter__(self):
-        for member in self._data.get("members"):
+        for member in self._members:
             yield member

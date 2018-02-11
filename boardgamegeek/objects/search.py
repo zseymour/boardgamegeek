@@ -12,8 +12,9 @@
 """
 from __future__ import unicode_literals
 
-from .exceptions import BoardGameGeekError
-from .things import Thing
+from boardgamegeek.objects.things import Thing
+from boardgamegeek.exceptions import BGGError
+from boardgamegeek.utils import fix_unsigned_negative
 
 
 class SearchResult(Thing):
@@ -22,9 +23,13 @@ class SearchResult(Thing):
     """
 
     def __init__(self, data):
+        self._yearpublished = None
         if "yearpublished" in data:
             if type(data["yearpublished"]) not in [int, type(None)]:
-                raise BoardGameGeekError("yearpublished is not valid")
+                raise BGGError("yearpublished is not valid")
+
+            self._yearpublished = fix_unsigned_negative(data["yearpublished"])
+
         super(SearchResult, self).__init__(data)
 
     def _format(self, log):
@@ -39,4 +44,4 @@ class SearchResult(Thing):
 
     @property
     def year(self):
-        return self._data.get("yearpublished")
+        return self._yearpublished

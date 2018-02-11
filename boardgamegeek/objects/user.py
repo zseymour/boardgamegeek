@@ -63,11 +63,11 @@ class User(Thing):
         :param dict data: buddy's data
         """
         self._buddies.append(Thing(data))
-        self._data["buddies"].append(data)
+        #self._data["buddies"].append(data)
 
     def add_guild(self, data):
         self._guilds.append(Thing(data))
-        self._data["guilds"].append(data)
+        #self._data["guilds"].append(data)
 
     def add_top_item(self, data):
         self._data["top"].append(data)
@@ -120,7 +120,7 @@ class User(Thing):
         :return: number of buddies
         :rtype: integer
         """
-        return len(self._data["buddies"])
+        return len(self._buddies)
 
     @property
     def total_guilds(self):
@@ -128,7 +128,7 @@ class User(Thing):
         :return: number of guilds
         :rtype: integer
         """
-        return len(self._data["guilds"])
+        return len(self._guilds)
 
     @property
     def top10(self):

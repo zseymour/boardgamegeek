@@ -14,8 +14,8 @@ from __future__ import unicode_literals
 from copy import copy
 import datetime
 
-from .exceptions import BoardGameGeekError
-from .utils import DictObject
+from boardgamegeek.exceptions import BGGError
+from boardgamegeek.utils import DictObject
 
 
 class PlaysessionPlayer(DictObject):
@@ -101,6 +101,15 @@ class PlaysessionPlayer(DictObject):
         """
         return self._data.get("score")
 
+    @property
+    def color(self):
+        """
+        :return:
+        :rtype:
+        :return: ``None`` if n/a
+        """
+        return self._data.get("color")
+
 
 class PlaySession(DictObject):
     """
@@ -112,19 +121,21 @@ class PlaySession(DictObject):
 
     def __init__(self, data):
         if "id" not in data:
-            raise BoardGameGeekError("missing id of PlaySession")
+            raise BGGError("missing id of PlaySession")
 
-        if "date" in data:
-            if type(data["date"]) != datetime.datetime:
+        kw = copy(data)
+
+        if "date" in kw:
+            if type(kw["date"]) != datetime.datetime:
                 try:
-                    data["date"] = datetime.datetime.strptime(data["date"], "%Y-%m-%d")
+                    kw["date"] = datetime.datetime.strptime(kw["date"], "%Y-%m-%d")
                 except:
-                    data["date"] = None
+                    kw["date"] = None
 
         # create "nice" dictionaries out of plain ones, so you can .dot access stuff.
-        data["players"] = [PlaysessionPlayer(player) for player in data.get("players", [])]
+        self._players = [PlaysessionPlayer(player) for player in kw.get("players", [])]
 
-        super(PlaySession, self).__init__(data)
+        super(PlaySession, self).__init__(kw)
 
     def _format(self, log):
         log.info("play id         : {}".format(self.id))
@@ -211,6 +222,13 @@ class PlaySession(DictObject):
         return self._data.get("nowinstats")
 
     @property
+    def location(self):
+        """
+        :return:
+        """
+        return self._data.get("location")
+
+    @property
     def game_id(self):
         """
         :return: played game id
@@ -237,6 +255,10 @@ class PlaySession(DictObject):
         """
         return self._data.get("comment")
 
+    @property
+    def players(self):
+        return self._players
+
 
 class Plays(DictObject):
     """
@@ -247,24 +269,12 @@ class Plays(DictObject):
 
     def __init__(self, data):
         kw = copy(data)
-        if "plays" not in kw:
-            kw["plays"] = []
         self._plays = []
 
-        for p in kw["plays"]:
+        for p in kw.get("plays", []):
             self._plays.append(PlaySession(p))
 
         super(Plays, self).__init__(kw)
-
-    def _format(self, log):
-        if self.user:
-            log.info("plays of        : {} ({})".format(self.user, self.user_id))
-        else:
-            log.info("plays of game id: {}".format(self.game_id))
-        log.info("count           : {}".format(len(self)))
-        for p in self.plays:
-            p._format(log)
-            log.info("")
 
     def __getitem__(self, item):
         return self._plays.__getitem__(item)
@@ -272,9 +282,37 @@ class Plays(DictObject):
     def __len__(self):
         return len(self._plays)
 
+    @property
+    def plays(self):
+        """
+        :return: play sessions
+        :rtype: list of :py:class:`boardgamegeek.plays.PlaySession`
+        """
+        return self._plays
+
+    @property
+    def plays_count(self):
+        """
+        :return: plays count, as reported by the server
+        :rtype: integer
+        """
+        return self._data.get("plays_count", 0)
+
+
+class UserPlays(Plays):
+
+    def _format(self, log):
+        log.info("plays of        : {} ({})".format(self.user, self.user_id))
+        log.info("count           : {}".format(len(self)))
+        for p in self.plays:
+            p._format(log)
+            log.info("")
+
     def add_play(self, data):
-        self._data["plays"].append(data)
-        self._plays.append(PlaySession(data))
+        kw = copy(data)
+        # User plays don't have the ID set in the XML
+        kw["user_id"] = self.user_id
+        self._plays.append(PlaySession(kw))
 
     @property
     def user(self):
@@ -294,6 +332,19 @@ class Plays(DictObject):
         """
         return self._data.get("user_id")
 
+
+class GamePlays(Plays):
+
+    def _format(self, log):
+        log.info("plays of game id: {}".format(self.game_id))
+        log.info("count           : {}".format(len(self)))
+        for p in self.plays:
+            p._format(log)
+            log.info("")
+
+    def add_play(self, data):
+        self._plays.append(PlaySession(data))
+
     @property
     def game_id(self):
         """
@@ -302,11 +353,3 @@ class Plays(DictObject):
         :return: ``None`` if this list is that of an user
         """
         return self._data.get("game_id")
-
-    @property
-    def plays(self):
-        """
-        :return: play sessions
-        :rtype: list of :py:class:`boardgamegeek.plays.PlaySession`
-        """
-        return self._plays

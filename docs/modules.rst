@@ -3,7 +3,7 @@ Modules
 
 .. automodule:: boardgamegeek.api
 
-  .. autoclass:: boardgamegeek.api.BoardGameGeek
+  .. autoclass:: boardgamegeek.api.BGGClient
       :members:
       :inherited-members:
 
