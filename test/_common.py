@@ -2,6 +2,7 @@
 
 import logging
 import os
+import io
 import pytest
 import xml.etree.ElementTree as ET
 
@@ -31,7 +32,7 @@ TEST_GUILD_ID_2 = 930
 TEST_GAME_ACCESSORY_ID = 104163 # Descent: Journeys in the Dark (second edition) – Conversion Kit
 
 # The top level directory for our XML files
-XML_PATH = os.path.join("test", "xml")
+XML_PATH = os.path.join(os.path.dirname(__file__), "xml")
 
 @pytest.fixture
 def xml():
@@ -82,7 +83,7 @@ def simulate_bgg(url, params, timeout):
 
     filename = os.path.join(XML_PATH, fragment + "?" + query_string)
 
-    with open(filename, "r") as xmlfile:
+    with io.open(filename, "r", encoding="utf-8") as xmlfile:
         response_text = xmlfile.read()
 
     return MockResponse(response_text)
