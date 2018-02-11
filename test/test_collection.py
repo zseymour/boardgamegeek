@@ -37,7 +37,7 @@ def test_get_valid_users_collection(bgg, null_logger):
     for g in collection:
         assert type(g) == CollectionBoardGame
         assert type(g.id) == int
-        assert isinstance(g.comment, basestring)
+        assert type(g.comment) in STR_TYPES_OR_NONE
         if g.version is not None:
             assert type(g.version) == BoardGameVersion
         repr(g)

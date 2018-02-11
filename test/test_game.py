@@ -8,11 +8,6 @@ from boardgamegeek import BGGError, BGGItemNotFoundError, BGGValueError
 from boardgamegeek.objects.games import BoardGameVideo, BoardGameVersion, BoardGameRank
 from boardgamegeek.objects.games import PlayerSuggestion
 
-if sys.version_info >= (3,):
-    STR_TYPES_OR_NONE = [str, type(None)]
-else:
-    STR_TYPES_OR_NONE = [str, unicode, type(None)]
-
 
 def setup_module():
     # more delays to prevent throttling from the BGG api

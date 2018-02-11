@@ -2,6 +2,7 @@
 
 import logging
 import pytest
+import sys
 import xml.etree.ElementTree as ET
 
 
@@ -28,6 +29,11 @@ TEST_GUILD_ID = 1229
 TEST_GUILD_ID_2 = 930
 
 TEST_GAME_ACCESSORY_ID = 104163 # Descent: Journeys in the Dark (second edition) – Conversion Kit
+
+if sys.version_info >= (3,):
+    STR_TYPES_OR_NONE = [str, type(None)]
+else:
+    STR_TYPES_OR_NONE = [str, unicode, type(None)]
 
 
 @pytest.fixture
