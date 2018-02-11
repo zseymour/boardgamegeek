@@ -9,11 +9,6 @@ from _common import *
 progress_called = False
 
 
-def setup_module():
-    # more delays to prevent throttling from the BGG api
-    time.sleep(15)
-
-
 def progress_cb(items, total):
     global progress_called
     logging.debug("progress_cb: fetched {} items out of {}".format(items, total))
@@ -30,13 +25,18 @@ def test_get_user_with_invalid_parameters(bgg):
         bgg.user(TEST_VALID_USER, domain="voodoo")
 
 
-def test_get_invalid_user_info(bgg):
+def test_get_invalid_user_info(bgg, mocker):
+    mock_get = mocker.patch("requests.sessions.Session.get")
+    mock_get.side_effect = simulate_bgg
 
     with pytest.raises(BGGItemNotFoundError):
         bgg.user(TEST_INVALID_USER, progress=progress_cb)
 
 
-def test_get_valid_user_info(bgg, null_logger):
+def test_get_valid_user_info(bgg, mocker, null_logger):
+    mock_get = mocker.patch("requests.sessions.Session.get")
+    mock_get.side_effect = simulate_bgg
+
     global progress_called
 
     progress_called = False
