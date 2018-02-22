@@ -53,7 +53,7 @@ class RateLimitingAdapter(HTTPAdapter):
         :return:
         """
         if rpm <= 0:
-            log.warn("invalid requests per minute value ({}), falling back to default".format(rpm))
+            log.warning("invalid requests per minute value ({}), falling back to default".format(rpm))
             rpm = DEFAULT_REQUESTS_PER_MINUTE
 
         RateLimitingAdapter.__time_between_requests = 60.0 / float(rpm)
