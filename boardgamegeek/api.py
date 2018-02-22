@@ -843,7 +843,6 @@ class BGGClient(BGGCommon):
         if game_id is None:
             game_id = self.get_game_id(name, choose=choose)
             if game_id is None:
-                log.error("couldn't find any game named '{}'".format(name))
                 raise BGGItemNotFoundError
 
         log.debug("retrieving game id {}{}".format(game_id, " ({})".format(name) if name is not None else ""))
