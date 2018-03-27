@@ -16,8 +16,7 @@ import datetime
 from copy import copy
 
 from .things import Thing
-from .games import BoardGameRank, PlayerSuggestion, 
-	BoardGameComment, BoardGameVideo, BaseGame
+from .games import BaseGame
 from ..exceptions import BGGError
 from ..utils import fix_url, DictObject, fix_unsigned_negative
 
@@ -81,11 +80,6 @@ class RPGGame(BaseGame):
             for i in self.mechanics:
                 log.info("- {}".format(i))
 
-        if self.implementations:
-            log.info("implementations")
-            for i in self.implementations:
-                log.info("- {}".format(i))
-
         if self.designers:
             log.info("designers")
             for i in self.designers:
@@ -111,14 +105,6 @@ class RPGGame(BaseGame):
             log.info("versions")
             for v in self.versions:
                 v._format(log)
-                log.info("--------")
-
-        if self.player_suggestions:
-            log.info("Player Suggestions")
-            for v in self.player_suggestions:
-                log.info("- {} - Best: {}, Recommended: {}, Not Recommended: {}"
-                         .format(v.player_count, v.best,
-                                 v.recommended, v.not_recommended))
                 log.info("--------")
 
         log.info("users rated game  : {}".format(self.users_rated))
@@ -309,18 +295,22 @@ class RPGIssue(BaseGame):
         self._comments = []
         for comment in data.get("comments", []):
             self.add_comment(comment)
-
-        super(RPGGame, self).__init__(data)
+        self.articles = None
+        super(RPGIssue, self).__init__(data)
 
     def __repr__(self):
         return "RPGIssue (id: {})".format(self.id)
 
     def add_comment(self, data):
         self._comments.append(BoardGameComment(data))
+        
+    def add_articles(self, articles):
+        self.articles = articles
 
     def _format(self, log):
         log.info("rpg id      : {}".format(self.id))
         log.info("rpg name    : {}".format(self.name))
+        log.info("rpg period. : {}".format(self.magazine))
         log.info("rpg rank    : {}".format(self.bgg_rank))
         if self.alternative_names:
             for i in self.alternative_names:
@@ -347,11 +337,6 @@ class RPGIssue(BaseGame):
         if self.mechanics:
             log.info("mechanics")
             for i in self.mechanics:
-                log.info("- {}".format(i))
-
-        if self.implementations:
-            log.info("implementations")
-            for i in self.implementations:
                 log.info("- {}".format(i))
 
         if self.designers:
@@ -381,14 +366,6 @@ class RPGIssue(BaseGame):
                 v._format(log)
                 log.info("--------")
 
-        if self.player_suggestions:
-            log.info("Player Suggestions")
-            for v in self.player_suggestions:
-                log.info("- {} - Best: {}, Recommended: {}, Not Recommended: {}"
-                         .format(v.player_count, v.best,
-                                 v.recommended, v.not_recommended))
-                log.info("--------")
-
         log.info("users rated game  : {}".format(self.users_rated))
         log.info("users avg rating  : {}".format(self.rating_average))
         log.info("users b-avg rating: {}".format(self.rating_bayes_average))
@@ -402,7 +379,8 @@ class RPGIssue(BaseGame):
         if self.comments:
             for c in self.comments:
                 c._format(log)
-
+        if self.articles:
+            log.info(self.articles)
     @property
     def alternative_names(self):
         """

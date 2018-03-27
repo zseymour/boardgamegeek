@@ -20,7 +20,7 @@ from ..exceptions import BGGError
 from ..utils import fix_url, DictObject, fix_unsigned_negative
 
 
-class BoardGameRank(Thing):
+class GameRank(Thing):
     @property
     def type(self):
         return self._data.get("type")
@@ -58,7 +58,7 @@ class PlayerSuggestion(DictObject):
             return int(self.player_count)
 
 
-class BoardGameStats(DictObject):
+class GameStats(DictObject):
     """
     Statistics about a board game
     """
@@ -66,14 +66,13 @@ class BoardGameStats(DictObject):
         self._ranks = []
 
         for rank in data.get("ranks", []):
-            if rank.get("name") == "boardgame":
-                try:
-                    self._bgg_rank = int(rank["value"])
-                except (KeyError, TypeError):
-                    self._bgg_rank = None
-            self._ranks.append(BoardGameRank(rank))
+            try:
+                self._bgg_rank = int(rank["value"])
+            except (KeyError, TypeError):
+                self._bgg_rank = None
+            self._ranks.append(GameRank(rank))
 
-        super(BoardGameStats, self).__init__(data)
+        super(GameStats, self).__init__(data)
 
     @property
     def bgg_rank(self):
@@ -424,7 +423,7 @@ class BaseGame(Thing):
         if "stats" not in data:
             raise BGGError("invalid data")
 
-        self._stats = BoardGameStats(data["stats"])
+        self._stats = GameStats(data["stats"])
 
         self._versions = []
         self._versions_set = set()

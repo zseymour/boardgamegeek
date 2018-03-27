@@ -2,7 +2,7 @@ import logging
 from dateutil import parser as datetime_parser
 
 from ..objects.games import BoardGame
-from ..objects.games import RPGGame, RPGIssue
+from ..objects.rpgs import RPGGame, RPGIssue
 from ..exceptions import BGGApiError
 from ..utils import xml_subelement_attr_list, xml_subelement_text, xml_subelement_attr, get_board_game_version_from_element
 
@@ -10,19 +10,21 @@ from ..utils import xml_subelement_attr_list, xml_subelement_text, xml_subelemen
 log = logging.getLogger("boardgamegeek.loaders.game")
 
 def create_game_from_xml(xml_root, game_id, html_parser):
-	game_type = xml_root.attrib["type"]
-	if game_type in ["boardgame", "boardgameexpansion", "boardgameaccessory"]:
-		_create_game_from_xml(xml_root, game_id, game_type, html_parser)
-	elif game_type == 'rpgitem':
-		_create_rpg_from_xml(xml_root, game_id, game_type, html_parser)
-	elif game_type == 'rpgissue':
-		_create_rpgissue_from_xml(xml_root, game_id, game_type, html_parser)
-	elif game_type == 'videogame':
-		raise NotImplementedError("BGG videogame entries are not yet supported")
-	else:
-		log.debug("unsupported type {} for item id {}".format(game_type, game_id))
+    game_type = xml_root.attrib["type"]
+    if game_type in ["boardgame", "boardgameexpansion", "boardgameaccessory"]:
+        game = _create_game_from_xml(xml_root, game_id, game_type, html_parser)
+    elif game_type == 'rpgitem':
+        game = _create_rpg_from_xml(xml_root, game_id, game_type, html_parser)
+    elif game_type == 'rpgissue':
+        game = _create_rpgissue_from_xml(xml_root, game_id, game_type, html_parser)
+    elif game_type == 'videogame':
+        raise NotImplementedError("BGG videogame entries are not yet supported")
+    else:
+        log.debug("unsupported type {} for item id {}".format(game_type, game_id))
         raise BGGApiError("item has an unsupported type")
-
+    
+    return game
+    
 def _create_game_from_xml(xml_root, game_id, game_type, html_parser):
     data = {"id": game_id,
             "name": xml_subelement_attr(xml_root, "name[@type='primary']"),
@@ -262,8 +264,7 @@ def _create_rpgissue_from_xml(xml_root, game_id, game_type, html_parser):
             "publishers": xml_subelement_attr_list(xml_root, "link[@type='rpgpublisher']"),
             "producers": xml_subelement_attr_list(xml_root, "link[@type='rpgproducer']"),
             "description": xml_subelement_text(xml_root, "description", convert=html_parser.unescape, quiet=True),
-            "datepublished": xml_subelement_attr(xml_root, "datepublished", convert=datetime_parser.parse, quiet=True)}
-            
+            "datepublished": xml_subelement_attr(xml_root, "datepublished", convert=lambda x: datetime_parser.parse(x[:-3] if len(x)==10 else x), quiet=False)}
     data['yearpublished'] = data['datepublished'].year
     # Look for the videos
     # TODO: The BGG API doesn't take the page=NNN parameter into account for videos; when it does, paginate them too
@@ -344,7 +345,7 @@ def _add_linked_articles(rpgissue):
     BASE_URL = "https://rpggeek.com/geekitem.php?action=linkeditems&objectid={}&subtype=rpgissue&modulename=linkedarticles&showcount=100"
     browser.open(BASE_URL.format(rpgissue.id))
     
-    issue.add_articles(browser.find('div', id='module_').find('table'))    
+    rpgissue.add_articles(browser.find('div', id='module_').find('table'))    
     
     
 def add_game_comments_from_xml(game, xml_root):
