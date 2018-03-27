@@ -114,6 +114,7 @@ class BGGCommon(object):
     def __init__(self, api_endpoint, cache, timeout, retries, retry_delay, requests_per_minute):
         self._search_api_url = api_endpoint + "/search"
         self._thing_api_url = api_endpoint + "/thing"
+        self._family_api_url = api_endpoint + "/family"
         self._guild_api_url = api_endpoint + "/guild"
         self._user_api_url = api_endpoint + "/user"
         self._plays_api_url = api_endpoint + "/plays"
