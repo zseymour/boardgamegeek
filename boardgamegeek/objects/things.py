@@ -51,4 +51,4 @@ class Thing(DictObject):
         return self._id
 
     def __repr__(self):
-        return "Thing (id: {})".format(self.id)
+        return "{} (id: {})".format(self.__name__, self.id)

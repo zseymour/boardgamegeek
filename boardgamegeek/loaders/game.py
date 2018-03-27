@@ -1,20 +1,29 @@
 import logging
+from dateutil import parser as datetime_parser
 
 from ..objects.games import BoardGame
+from ..objects.games import RPGGame, RPGIssue
 from ..exceptions import BGGApiError
 from ..utils import xml_subelement_attr_list, xml_subelement_text, xml_subelement_attr, get_board_game_version_from_element
 
 
 log = logging.getLogger("boardgamegeek.loaders.game")
 
-
 def create_game_from_xml(xml_root, game_id, html_parser):
-
-    game_type = xml_root.attrib["type"]
-    if game_type not in ["boardgame", "boardgameexpansion", "boardgameaccessory"]:
-        log.debug("unsupported type {} for item id {}".format(game_type, game_id))
+	game_type = xml_root.attrib["type"]
+	if game_type in ["boardgame", "boardgameexpansion", "boardgameaccessory"]:
+		_create_game_from_xml(xml_root, game_id, game_type, html_parser)
+	elif game_type == 'rpgitem':
+		_create_rpg_from_xml(xml_root, game_id, game_type, html_parser)
+	elif game_type == 'rpgissue':
+		_create_rpgissue_from_xml(xml_root, game_id, game_type, html_parser)
+	elif game_type == 'videogame':
+		raise NotImplementedError("BGG videogame entries are not yet supported")
+	else:
+		log.debug("unsupported type {} for item id {}".format(game_type, game_id))
         raise BGGApiError("item has an unsupported type")
 
+def _create_game_from_xml(xml_root, game_id, game_type, html_parser):
     data = {"id": game_id,
             "name": xml_subelement_attr(xml_root, "name[@type='primary']"),
             "alternative_names": xml_subelement_attr_list(xml_root, "name[@type='alternate']"),
@@ -150,7 +159,194 @@ def create_game_from_xml(xml_root, game_id, html_parser):
 
     return BoardGame(data)
 
+def _create_rpg_from_xml(xml_root, game_id, game_type, html_parser):
+    data = {"id": game_id,
+            "name": xml_subelement_attr(xml_root, "name[@type='primary']"),
+            "alternative_names": xml_subelement_attr_list(xml_root, "name[@type='alternate']"),
+            "thumbnail": xml_subelement_text(xml_root, "thumbnail"),
+            "image": xml_subelement_text(xml_root, "image"),
+            "systems": xml_subelement_attr_list(xml_root, "link[@type='rpg']"),
+            "categories": xml_subelement_attr_list(xml_root, "link[@type='rpgcategory']"),
+            "genres": xml_subelement_attr_list(xml_root, "link[@type='rpggenre']"),
+            "mechanics": xml_subelement_attr_list(xml_root, "link[@type='rpgmechanic']"),
+            "designers": xml_subelement_attr_list(xml_root, "link[@type='rpgdesigner']"),
+            "artists": xml_subelement_attr_list(xml_root, "link[@type='rpgartist']"),
+            "publishers": xml_subelement_attr_list(xml_root, "link[@type='rpgpublisher']"),
+            "producers": xml_subelement_attr_list(xml_root, "link[@type='rpgproducer']"),
+            "description": xml_subelement_text(xml_root, "description", convert=html_parser.unescape, quiet=True),
+            "yearpublished": xml_subelement_attr(xml_root, "yearpublished", convert=int, quiet=True)}
 
+    # Look for the videos
+    # TODO: The BGG API doesn't take the page=NNN parameter into account for videos; when it does, paginate them too
+    videos = xml_root.find("videos")
+    if videos is not None:
+        vid_list = []
+        for vid in videos.findall("video"):
+            try:
+                vd = {"id": vid.attrib["id"],
+                      "name": vid.attrib["title"],
+                      "category": vid.attrib.get("category"),
+                      "language": vid.attrib.get("language"),
+                      "link": vid.attrib["link"],
+                      "uploader": vid.attrib.get("username"),
+                      "uploader_id": vid.attrib.get("userid"),
+                      "post_date": vid.attrib.get("postdate")
+                      }
+                vid_list.append(vd)
+            except KeyError:
+                raise BGGApiError("malformed XML element ('video')")
+
+        data["videos"] = vid_list
+
+    # look for the versions
+    versions = xml_root.find("versions")
+    if versions is not None:
+        ver_list = []
+
+        for version in versions.findall("item[@type='rpgitemversion']"):
+            try:
+                vd = get_board_game_version_from_element(version)
+                ver_list.append(vd)
+            except KeyError:
+                raise BGGApiError("malformed XML element ('versions')")
+
+        data["versions"] = ver_list
+
+    # look for the statistics
+    stats = xml_root.find("statistics/ratings")
+    if stats is not None:
+        sd = {
+            "usersrated": xml_subelement_attr(stats, "usersrated", convert=int, quiet=True),
+            "average": xml_subelement_attr(stats, "average", convert=float, quiet=True),
+            "bayesaverage": xml_subelement_attr(stats, "bayesaverage", convert=float, quiet=True),
+            "stddev": xml_subelement_attr(stats, "stddev", convert=float, quiet=True),
+            "median": xml_subelement_attr(stats, "median", convert=float, quiet=True),
+            "owned": xml_subelement_attr(stats, "owned", convert=int, quiet=True),
+            "trading": xml_subelement_attr(stats, "trading", convert=int, quiet=True),
+            "wanting": xml_subelement_attr(stats, "wanting", convert=int, quiet=True),
+            "wishing": xml_subelement_attr(stats, "wishing", convert=int, quiet=True),
+            "numcomments": xml_subelement_attr(stats, "numcomments", convert=int, quiet=True),
+            "numweights": xml_subelement_attr(stats, "numweights", convert=int, quiet=True),
+            "averageweight": xml_subelement_attr(stats, "averageweight", convert=float, quiet=True),
+            "ranks": []
+        }
+
+        ranks = stats.findall("ranks/rank")
+        for rank in ranks:
+            try:
+                rank_value = int(rank.attrib.get("value"))
+            except:
+                rank_value = None
+            sd["ranks"].append({"id": rank.attrib["id"],
+                                "name": rank.attrib["name"],
+                                "friendlyname": rank.attrib.get("friendlyname"),
+                                "value": rank_value})
+
+        data["stats"] = sd
+
+    return RPGGame(data)
+
+def _create_rpgissue_from_xml(xml_root, game_id, game_type, html_parser):
+    data = {"id": game_id,
+            "name": xml_subelement_attr(xml_root, "name[@type='primary']"),
+            "alternative_names": xml_subelement_attr_list(xml_root, "name[@type='alternate']"),
+            "magazine": xml_subelement_attr(xml_root, "link[@type='rpgissue']"),
+            "thumbnail": xml_subelement_text(xml_root, "thumbnail"),
+            "image": xml_subelement_text(xml_root, "image"),
+            "systems": xml_subelement_attr_list(xml_root, "link[@type='rpg']"),
+            "categories": xml_subelement_attr_list(xml_root, "link[@type='rpgcategory']"),
+            "genres": xml_subelement_attr_list(xml_root, "link[@type='rpggenre']"),
+            "mechanics": xml_subelement_attr_list(xml_root, "link[@type='rpgmechanic']"),
+            "designers": xml_subelement_attr_list(xml_root, "link[@type='rpgdesigner']"),
+            "artists": xml_subelement_attr_list(xml_root, "link[@type='rpgartist']"),
+            "publishers": xml_subelement_attr_list(xml_root, "link[@type='rpgpublisher']"),
+            "producers": xml_subelement_attr_list(xml_root, "link[@type='rpgproducer']"),
+            "description": xml_subelement_text(xml_root, "description", convert=html_parser.unescape, quiet=True),
+            "datepublished": xml_subelement_attr(xml_root, "datepublished", convert=datetime_parser.parse, quiet=True)}
+            
+    data['yearpublished'] = data['datepublished'].year
+    # Look for the videos
+    # TODO: The BGG API doesn't take the page=NNN parameter into account for videos; when it does, paginate them too
+    videos = xml_root.find("videos")
+    if videos is not None:
+        vid_list = []
+        for vid in videos.findall("video"):
+            try:
+                vd = {"id": vid.attrib["id"],
+                      "name": vid.attrib["title"],
+                      "category": vid.attrib.get("category"),
+                      "language": vid.attrib.get("language"),
+                      "link": vid.attrib["link"],
+                      "uploader": vid.attrib.get("username"),
+                      "uploader_id": vid.attrib.get("userid"),
+                      "post_date": vid.attrib.get("postdate")
+                      }
+                vid_list.append(vd)
+            except KeyError:
+                raise BGGApiError("malformed XML element ('video')")
+
+        data["videos"] = vid_list
+
+    # look for the versions
+    versions = xml_root.find("versions")
+    if versions is not None:
+        ver_list = []
+
+        for version in versions.findall("item[@type='rpgitemversion']"):
+            try:
+                vd = get_board_game_version_from_element(version)
+                ver_list.append(vd)
+            except KeyError:
+                raise BGGApiError("malformed XML element ('versions')")
+
+        data["versions"] = ver_list
+
+    # look for the statistics
+    stats = xml_root.find("statistics/ratings")
+    if stats is not None:
+        sd = {
+            "usersrated": xml_subelement_attr(stats, "usersrated", convert=int, quiet=True),
+            "average": xml_subelement_attr(stats, "average", convert=float, quiet=True),
+            "bayesaverage": xml_subelement_attr(stats, "bayesaverage", convert=float, quiet=True),
+            "stddev": xml_subelement_attr(stats, "stddev", convert=float, quiet=True),
+            "median": xml_subelement_attr(stats, "median", convert=float, quiet=True),
+            "owned": xml_subelement_attr(stats, "owned", convert=int, quiet=True),
+            "trading": xml_subelement_attr(stats, "trading", convert=int, quiet=True),
+            "wanting": xml_subelement_attr(stats, "wanting", convert=int, quiet=True),
+            "wishing": xml_subelement_attr(stats, "wishing", convert=int, quiet=True),
+            "numcomments": xml_subelement_attr(stats, "numcomments", convert=int, quiet=True),
+            "numweights": xml_subelement_attr(stats, "numweights", convert=int, quiet=True),
+            "averageweight": xml_subelement_attr(stats, "averageweight", convert=float, quiet=True),
+            "ranks": []
+        }
+
+        ranks = stats.findall("ranks/rank")
+        for rank in ranks:
+            try:
+                rank_value = int(rank.attrib.get("value"))
+            except:
+                rank_value = None
+            sd["ranks"].append({"id": rank.attrib["id"],
+                                "name": rank.attrib["name"],
+                                "friendlyname": rank.attrib.get("friendlyname"),
+                                "value": rank_value})
+
+        data["stats"] = sd
+
+    issue = RPGIssue(data)
+    _add_linked_articles(issue)
+    
+    return issue
+
+def _add_linked_articles(rpgissue):
+    from robobrowser import RoboBrowser
+    browser = RoboBrowser()
+    BASE_URL = "https://rpggeek.com/geekitem.php?action=linkeditems&objectid={}&subtype=rpgissue&modulename=linkedarticles&showcount=100"
+    browser.open(BASE_URL.format(rpgissue.id))
+    
+    issue.add_articles(browser.find('div', id='module_').find('table'))    
+    
+    
 def add_game_comments_from_xml(game, xml_root):
 
     added_items = False
