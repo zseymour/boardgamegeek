@@ -12,6 +12,7 @@ log = logging.getLogger("boardgamegeek.loaders.game")
 def create_family_from_xml(xml_root, family_id, html_parser):
     family_type = xml_root.attrib["type"]
     data = {"id": family_id,
+            "type": family_type
             "name": xml_subelement_attr(xml_root, "name[@type='primary']"),
             "alternative_names": xml_subelement_attr_list(xml_root, "name[@type='alternate']"),
             "thumbnail": xml_subelement_text(xml_root, "thumbnail"),

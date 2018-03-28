@@ -41,6 +41,7 @@ from .loaders import create_plays_from_xml, add_plays_from_xml
 from .loaders import create_hot_items_from_xml, add_hot_items_from_xml
 from .loaders import create_collection_from_xml, add_collection_items_from_xml
 from .loaders import create_game_from_xml, add_game_comments_from_xml
+from .loaders import create_family_from_xml
 
 
 log = logging.getLogger("boardgamegeek.api")
@@ -946,7 +947,8 @@ class BGGClient(BGGCommon):
                                      search_type=[game_type for game_type in BGGRestrictGameSearchResultsTo],
                                      exact=True)]
 
-    def family(self, name=None, family_id=None, choose=BGGChoose.FIRST):
+    def family(self, name=None, family_id=None, choose=BGGChoose.FIRST, versions=False, videos=False, historical=False,
+             marketplace=False, comments=False, rating_comments=False, progress=None):
         """
         Get information about a game.
 
@@ -981,7 +983,16 @@ class BGGClient(BGGCommon):
 
         log.debug("retrieving game id {}{}".format(game_id, " ({})".format(name) if name is not None else ""))
 
-        params = {"id": family_id}
+        params = {"id": family_id,
+                  "versions": 1 if versions else 0,
+                  "videos": 1 if videos else 0,
+                  "historical": 1 if historical else 0,
+                  "marketplace": 1 if marketplace else 0,
+                  "comments": 1 if comments else 0,
+                  "ratingcomments": 1 if rating_comments else 0,
+                  "pagesize": 100,
+                  "page": 1,
+                  "stats": 1}
 
         xml_root = request_and_parse_xml(self.requests_session,
                                          self._family_api_url,
@@ -998,5 +1009,33 @@ class BGGClient(BGGCommon):
         family = create_family_from_xml(xml_root,
                                     family_id=family_id,
                                     html_parser=html_parser)
+                                    
+        if not comments:
+            return family
+
+        added_items, total = add_game_comments_from_xml(family, xml_root)
+
+        try:
+            call_progress_cb(progress, len(family.comments), total)
+        except:
+            return family
+
+        page = 1
+        while added_items and len(family.comments) < total:
+            page += 1
+
+            xml_root = request_and_parse_xml(self.requests_session,
+                                             self._thing_api_url,
+                                             params={"id": game_id,
+                                                     "pagesize": 100,
+                                                     "comments": 1,
+                                                     "page": page})
+
+            added_items = add_game_comments_from_xml(family, xml_root)
+
+            try:
+                call_progress_cb(progress, len(family), family.comments)
+            except:
+                break
 
         return family
