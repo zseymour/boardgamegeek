@@ -58,10 +58,11 @@ class BGGChoose(object):
     """
     FIRST = "first"
     RECENT = "recent"
+    NEAREST = "nearest"
     BEST_RANK = "best-rank"
 
 
-class BGGRestrictSearchResultsTo(Enum):
+class BGGRestrictGameSearchResultsTo(Enum):
     """
     Item types that should be included in search results
     """
@@ -71,6 +72,10 @@ class BGGRestrictSearchResultsTo(Enum):
     BOARD_GAME = "boardgame"
     BOARD_GAME_EXPANSION = "boardgameexpansion"
 
+class BGGRestrictFamilySearchResultsTo(Enum):
+    RPG = "rpg"
+    PERIODICAL = "rpgperiodical"
+    BOARD_GAME = "boardgamefamily"
 
 class BGGRestrictDomainTo(object):
     """
@@ -136,7 +141,7 @@ class BGGCommon(object):
         # add the rate limiting adapter
         self.requests_session.mount(api_endpoint, RateLimitingAdapter(rpm=requests_per_minute))
 
-    def _get_game_id(self, name, game_type, choose):
+    def _get_id(self, name, game_types, choose):
         """
         Returns the BGG ID of a game, searching by name
 
@@ -153,11 +158,11 @@ class BGGCommon(object):
         :raises: :py:exc:`boardgamegeek.exceptions.BGGApiTimeoutError` if there was a timeout
         """
 
-        if choose not in [BGGChoose.FIRST, BGGChoose.RECENT, BGGChoose.BEST_RANK]:
+        if choose not in [BGGChoose.FIRST, BGGChoose.RECENT, BGGChoose.BEST_RANK, BGGChoose.NEAREST]:
             raise BGGValueError("invalid value for parameter 'choose': {}".format(choose))
 
         log.debug("getting game id for '{}'".format(name))
-        res = self.search(name, search_type=[game_type], exact=True)
+        res = self.search(name, search_type=game_types, exact=True)
 
         if not res:
             raise BGGItemNotFoundError("can't find '{}'".format(name))
@@ -167,6 +172,8 @@ class BGGCommon(object):
         elif choose == BGGChoose.RECENT:
             # choose the result with the biggest year
             return max(res, key=lambda x: x.year if x.year is not None else -300000).id
+        elif choose == BGGChoose.NEAREST:
+            return max(res, key=lambda x: fuzz.token_set_ratio(name, x.name)).id
         else:
             # getting the best rank requires fetching the data of all games returned
             game_data = [self.game(game_id=r.id) for r in res]
@@ -672,18 +679,18 @@ class BGGCommon(object):
             raise BGGValueError("invalid query string")
 
         if search_type is None:
-            search_type = [BGGRestrictSearchResultsTo.BOARD_GAME]
+            search_type = [BGGRestrictGameSearchResultsTo.BOARD_GAME]
 
         params = {"query": query}
 
         for s in search_type:
             
-            values = [type_.value for type_ in BGGRestrictSearchResultsTo]
+            values = [type_.value for type_ in BGGRestrictGameSearchResultsTo]
             log.debug(values)
-            if s not in values and s not in BGGRestrictSearchResultsTo:
+            if s not in values and s not in BGGRestrictGameSearchResultsTo:
                 raise BGGValueError("invalid search type: {}".format(search_type))
 
-        params["type"] = ",".join(s.value if s in BGGRestrictSearchResultsTo else s for s in search_type)
+        params["type"] = ",".join(s.value if s in BGGRestrictGameSearchResultsTo else s for s in search_type)
 
         if exact:
             params["exact"] = 1
@@ -758,8 +765,23 @@ class BGGClient(BGGCommon):
         :raises: :py:exc:`boardgamegeek.exceptions.BGGApiError` if the response couldn't be parsed
         :raises: :py:exc:`boardgamegeek.exceptions.BGGApiTimeoutError` if there was a timeout
         """
-        return self._get_game_id(name, game_type=BGGRestrictSearchResultsTo.BOARD_GAME, choose=choose)
+        return self._get_id(name, game_type=[game_type for game_type in BGGRestrictGameSearchResultsTo], choose=choose)
+    
+    def get_family_id(self, name, choose=BGGChoose.NEAREST):
+        """
+        Returns the BGG ID of a game, searching by name
 
+        :param str name: The name of the game to search for
+        :param boardgamegeek.BGGChoose choose: method of selecting the game by name, when dealing with multiple results.
+        :return: the family's id
+        :rtype: integer
+        :return: ``None`` if game wasn't found
+        :raises: :py:exc:`boardgamegeek.exceptions.BGGError` in case of invalid name
+        :raises: :py:exc:`boardgamegeek.exceptions.BGGApiRetryError` if this request should be retried after a short delay
+        :raises: :py:exc:`boardgamegeek.exceptions.BGGApiError` if the response couldn't be parsed
+        :raises: :py:exc:`boardgamegeek.exceptions.BGGApiTimeoutError` if there was a timeout
+        """
+        return self._get_id(name, game_type=[game_type for game_type in BGGRestrictFamilySearchResultsTo], choose=choose)
 
     def game_list(self, game_id_list=[], versions=False,
                   videos=False, historical=False, marketplace=False):
@@ -921,5 +943,60 @@ class BGGClient(BGGCommon):
         """
         return [self.game(game_id=s.id)
                 for s in self.search(name,
-                                     search_type=[BGGRestrictSearchResultsTo.BOARD_GAME, BGGRestrictSearchResultsTo.BOARD_GAME_EXPANSION],
+                                     search_type=[game_type for game_type in BGGRestrictGameSearchResultsTo],
                                      exact=True)]
+
+    def family(self, name=None, family_id=None, choose=BGGChoose.FIRST):
+        """
+        Get information about a game.
+
+        :param str name: If not None, get information about a game with this name
+        :param integer game_id:  If not None, get information about a game with this id
+        :param str choose: method of selecting the game by name, when dealing with multiple results.
+                           Valid values are : "first", "recent" or "best-rank"
+        :param bool versions: include versions information
+        :param bool videos: include videos
+        :param bool historical: include historical data
+        :param bool marketplace: include marketplace data
+        :param bool comments: include comments
+        :param bool rating_comments: include comments with rating (ignored in favor of ``comments``, if that is true)
+        :param callable progress: callable for reporting progress if fetching comments
+        :return: ``BoardGame`` object
+        :rtype: :py:class:`boardgamegeek.games.BoardGame`
+
+        :raises: :py:exc:`boardgamegeek.exceptions.BoardGameGeekError` in case of invalid name or game_id
+        :raises: :py:exc:`boardgamegeek.exceptions.BoardGameGeekAPIRetryError` if this request should be retried after a
+                 short delay
+        :raises: :py:exc:`boardgamegeek.exceptions.BoardGameGeekAPIError` if the response couldn't be parsed
+        :raises: :py:exc:`boardgamegeek.exceptions.BoardGameGeekTimeoutError` if there was a timeout
+        """
+
+        if not name and game_id is None:
+            raise BGGError("game name or id not specified")
+
+        if game_id is None:
+            game_id = self.get_family_id(name, choose=choose)
+            if game_id is None:
+                raise BGGItemNotFoundError
+
+        log.debug("retrieving game id {}{}".format(game_id, " ({})".format(name) if name is not None else ""))
+
+        params = {"id": family_id}
+
+        xml_root = request_and_parse_xml(self.requests_session,
+                                         self._family_api_url,
+                                         params=params,
+                                         timeout=self._timeout,
+                                         retries=self._retries,
+                                         retry_delay=self._retry_delay)
+
+        xml_root = xml_root.find("item")
+        if xml_root is None:
+            msg = "invalid data for game id: {}{}".format(game_id, "" if name is None else " ({})".format(name))
+            raise BGGApiError(msg)
+
+        family = create_family_from_xml(xml_root,
+                                    family_id=family_id,
+                                    html_parser=html_parser)
+
+        return family
