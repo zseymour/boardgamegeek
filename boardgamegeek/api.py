@@ -18,7 +18,8 @@ import datetime
 import logging
 import sys
 import warnings
-
+from enum import Enum
+from fuzzywuzzy import fuzz
 # This is required for decoding HTML entities from the description text
 # of games
 if sys.version_info >= (3,):
@@ -60,12 +61,13 @@ class BGGChoose(object):
     BEST_RANK = "best-rank"
 
 
-class BGGRestrictSearchResultsTo(object):
+class BGGRestrictSearchResultsTo(Enum):
     """
     Item types that should be included in search results
     """
     RPG = "rpgitem"
-    VIDEO_GAME = "videogame"
+    RPGISSUE = "rpgissue"
+    # VIDEO_GAME = "videogame"
     BOARD_GAME = "boardgame"
     BOARD_GAME_EXPANSION = "boardgameexpansion"
 
@@ -675,11 +677,13 @@ class BGGCommon(object):
         params = {"query": query}
 
         for s in search_type:
-            if s not in [BGGRestrictSearchResultsTo.RPG, BGGRestrictSearchResultsTo.VIDEO_GAME,
-                         BGGRestrictSearchResultsTo.BOARD_GAME, BGGRestrictSearchResultsTo.BOARD_GAME_EXPANSION]:
+            
+            values = [type_.value for type_ in BGGRestrictSearchResultsTo]
+            log.debug(values)
+            if s not in values and s not in BGGRestrictSearchResultsTo:
                 raise BGGValueError("invalid search type: {}".format(search_type))
 
-        params["type"] = ",".join(search_type)
+        params["type"] = ",".join(s.value if s in BGGRestrictSearchResultsTo else s for s in search_type)
 
         if exact:
             params["exact"] = 1
@@ -704,7 +708,7 @@ class BGGCommon(object):
 
             results.append(SearchResult(kwargs))
 
-        return results
+        return sorted(results, key=lambda x: fuzz.token_set_ratio(query, x.name), reverse=True)
 
 
 class BGGClient(BGGCommon):

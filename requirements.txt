@@ -1,2 +1,3 @@
 requests>=2.3.0
 requests-cache>=0.4.4
+fuzzywuzzy[speedup]>=0.16.0

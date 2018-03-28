@@ -16,12 +16,12 @@ import datetime
 from copy import copy
 
 from .things import Thing
-from .games import BaseGame
+from .games import BaseGame, BoardGameVideo, BoardGameComment
 from ..exceptions import BGGError
 from ..utils import fix_url, DictObject, fix_unsigned_negative
 
-class RPGGame(BaseGame):
 
+class RPGGame(BaseGame):
     """
     Object containing information about a role-playing game
     """
@@ -295,7 +295,9 @@ class RPGIssue(BaseGame):
         self._comments = []
         for comment in data.get("comments", []):
             self.add_comment(comment)
-        self.articles = None
+        self._articles = []
+        for article in data.get("articles", []):
+            self.add_article(article)
         super(RPGIssue, self).__init__(data)
 
     def __repr__(self):
@@ -304,13 +306,14 @@ class RPGIssue(BaseGame):
     def add_comment(self, data):
         self._comments.append(BoardGameComment(data))
         
-    def add_articles(self, articles):
-        self.articles = articles
+    def add_article(self, data):
+        self._articles.append(RPGIssueArticle(data))
 
     def _format(self, log):
         log.info("rpg id      : {}".format(self.id))
         log.info("rpg name    : {}".format(self.name))
-        log.info("rpg period. : {}".format(self.magazine))
+        log.info("periodical  : {}".format(self.magazine))
+        log.info("issue no.   : {}".format(self.issue_number))
         log.info("rpg rank    : {}".format(self.bgg_rank))
         if self.alternative_names:
             for i in self.alternative_names:
@@ -380,7 +383,8 @@ class RPGIssue(BaseGame):
             for c in self.comments:
                 c._format(log)
         if self.articles:
-            log.info(self.articles)
+            for a in self.articles:
+                a._format(log)
     @property
     def alternative_names(self):
         """
@@ -388,11 +392,15 @@ class RPGIssue(BaseGame):
         :rtype: list of str
         """
         return self._data.get("alternative_names", [])
-    
+
     @property
     def magazine(self):
         return self._data.get("magazine", "")
-        
+
+    @property
+    def issue_number(self):
+        return self._data.get("issue_number", -1)
+    
     @property
     def description(self):
         """
@@ -426,6 +434,10 @@ class RPGIssue(BaseGame):
         return self._data.get("categories", [])
 
     @property
+    def articles(self):
+        return self._articles
+    
+    @property
     def comments(self):
         return self._comments
 
@@ -436,7 +448,6 @@ class RPGIssue(BaseGame):
         :rtype: list of str
         """
         return self._data.get("mechanics", [])
-
 
     @property
     def designers(self):
@@ -542,3 +553,23 @@ class RPGIssue(BaseGame):
         return self._versions
 
 
+class RPGIssueArticle(DictObject):
+    def _format(self, log):
+        author_string = self.authors[0] if len(self.authors) == 1 else self.authors
+        log.info("{} by {} on page {}: {}".format(self.type, author_string, self.page, self.description))
+    @property
+    def author(self):
+        return self._data.get("authors", [])
+
+    @property
+    def type(self):
+        return self._data.get("type", "")
+
+    @property
+    def description(self):
+        return self._data.get("description", "")
+
+    @property
+    def page(self):
+        return self._data.get("page", -1)
+    

@@ -1,4 +1,5 @@
 import logging
+import re
 from dateutil import parser as datetime_parser
 
 from ..objects.games import BoardGame
@@ -253,6 +254,7 @@ def _create_rpgissue_from_xml(xml_root, game_id, game_type, html_parser):
             "name": xml_subelement_attr(xml_root, "name[@type='primary']"),
             "alternative_names": xml_subelement_attr_list(xml_root, "name[@type='alternate']"),
             "magazine": xml_subelement_attr(xml_root, "link[@type='rpgissue']"),
+            "issue_number": xml_subelement_attr(xml_root, "issueindex", convert=int, quiet=True),
             "thumbnail": xml_subelement_text(xml_root, "thumbnail"),
             "image": xml_subelement_text(xml_root, "image"),
             "systems": xml_subelement_attr_list(xml_root, "link[@type='rpg']"),
@@ -264,7 +266,7 @@ def _create_rpgissue_from_xml(xml_root, game_id, game_type, html_parser):
             "publishers": xml_subelement_attr_list(xml_root, "link[@type='rpgpublisher']"),
             "producers": xml_subelement_attr_list(xml_root, "link[@type='rpgproducer']"),
             "description": xml_subelement_text(xml_root, "description", convert=html_parser.unescape, quiet=True),
-            "datepublished": xml_subelement_attr(xml_root, "datepublished", convert=lambda x: datetime_parser.parse(x[:-3] if len(x)==10 else x), quiet=False)}
+            "datepublished": xml_subelement_attr(xml_root, "datepublished", convert=lambda x: datetime_parser.parse(x.replace("-00", "")), quiet=False)}
     data['yearpublished'] = data['datepublished'].year
     # Look for the videos
     # TODO: The BGG API doesn't take the page=NNN parameter into account for videos; when it does, paginate them too
@@ -341,13 +343,24 @@ def _create_rpgissue_from_xml(xml_root, game_id, game_type, html_parser):
 
 def _add_linked_articles(rpgissue):
     from robobrowser import RoboBrowser
-    browser = RoboBrowser()
+    browser = RoboBrowser(parser="lxml")
     BASE_URL = "https://rpggeek.com/geekitem.php?action=linkeditems&objectid={}&subtype=rpgissue&modulename=linkedarticles&showcount=100"
     browser.open(BASE_URL.format(rpgissue.id))
     
-    rpgissue.add_articles(browser.find('div', id='module_').find('table'))    
-    
-    
+    article_table_rows = browser.find('div', id='module_').find_all('tr')
+    for row in article_table_rows:
+        columns = row.find_all('td')
+        if 'No Articles Found' in columns[0].text:
+            break
+        data = {
+            "page":int(columns[0].text.split()[-1]),
+            "title":columns[1].text.strip(),
+            "type":columns[2].text.strip(),
+            "authors":columns[3].text.strip().split('\n'),
+            "description":columns[4].text.strip().replace("\\", "")}
+        rpgissue.add_article(data)
+
+        
 def add_game_comments_from_xml(game, xml_root):
 
     added_items = False
