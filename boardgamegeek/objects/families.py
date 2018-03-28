@@ -30,7 +30,7 @@ class Family(BaseGame):
                          "rpg":"RPG",
                          "rpgperiodical":"RPGPeriodical"}
         
-        self.type = FAMILIY_TYPES[self.data["type"]]
+        self.type = FAMILIY_TYPES[data["type"]]
         self._videos = []
         self._videos_ids = set()
         for video in data.get("videos", []):
@@ -65,9 +65,11 @@ class Family(BaseGame):
 
         if self.family_members:
             log.info("family members")
-            for i in self.family_members:
+            for i in self.family_members[:10]:
                 log.info("- {}".format(i))
-
+            if len(self.family_members) > 10:
+                log.info("- and {} more.".format(len(self.family_members) - 10))
+                
         if self.videos:
             log.info("videos")
             for v in self.videos:

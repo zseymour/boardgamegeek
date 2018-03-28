@@ -686,12 +686,13 @@ class BGGCommon(object):
 
         for s in search_type:
             
-            values = [type_.value for type_ in BGGRestrictGameSearchResultsTo]
+            values = [type_.value for l in [BGGRestrictGameSearchResultsTo, BGGRestrictFamilySearchResultsTo] for type_ in l]
+            
             log.debug(values)
-            if s not in values and s not in BGGRestrictGameSearchResultsTo:
+            if s not in values and s not in BGGRestrictGameSearchResultsTo and s not in BGGRestrictFamilySearchResultsTo:
                 raise BGGValueError("invalid search type: {}".format(search_type))
 
-        params["type"] = ",".join(s.value if s in BGGRestrictGameSearchResultsTo else s for s in search_type)
+        params["type"] = ",".join(s.value if s in BGGRestrictGameSearchResultsTo or s in BGGRestrictFamilySearchResultsTo else s for s in search_type)
 
         if exact:
             params["exact"] = 1
@@ -766,7 +767,7 @@ class BGGClient(BGGCommon):
         :raises: :py:exc:`boardgamegeek.exceptions.BGGApiError` if the response couldn't be parsed
         :raises: :py:exc:`boardgamegeek.exceptions.BGGApiTimeoutError` if there was a timeout
         """
-        return self._get_id(name, game_type=[game_type for game_type in BGGRestrictGameSearchResultsTo], choose=choose)
+        return self._get_id(name, game_types=[game_type for game_type in BGGRestrictGameSearchResultsTo], choose=choose)
     
     def get_family_id(self, name, choose=BGGChoose.NEAREST):
         """
@@ -782,7 +783,7 @@ class BGGClient(BGGCommon):
         :raises: :py:exc:`boardgamegeek.exceptions.BGGApiError` if the response couldn't be parsed
         :raises: :py:exc:`boardgamegeek.exceptions.BGGApiTimeoutError` if there was a timeout
         """
-        return self._get_id(name, game_type=[game_type for game_type in BGGRestrictFamilySearchResultsTo], choose=choose)
+        return self._get_id(name, game_types=[game_type for game_type in BGGRestrictFamilySearchResultsTo], choose=choose)
 
     def game_list(self, game_id_list=[], versions=False,
                   videos=False, historical=False, marketplace=False):
@@ -973,15 +974,15 @@ class BGGClient(BGGCommon):
         :raises: :py:exc:`boardgamegeek.exceptions.BoardGameGeekTimeoutError` if there was a timeout
         """
 
-        if not name and game_id is None:
+        if not name and family_id is None:
             raise BGGError("game name or id not specified")
 
-        if game_id is None:
-            game_id = self.get_family_id(name, choose=choose)
-            if game_id is None:
+        if family_id is None:
+            family_id = self.get_family_id(name, choose=choose)
+            if family_id is None:
                 raise BGGItemNotFoundError
 
-        log.debug("retrieving game id {}{}".format(game_id, " ({})".format(name) if name is not None else ""))
+        log.debug("retrieving game id {}{}".format(family_id, " ({})".format(name) if name is not None else ""))
 
         params = {"id": family_id,
                   "versions": 1 if versions else 0,
@@ -1003,7 +1004,7 @@ class BGGClient(BGGCommon):
 
         xml_root = xml_root.find("item")
         if xml_root is None:
-            msg = "invalid data for game id: {}{}".format(game_id, "" if name is None else " ({})".format(name))
+            msg = "invalid data for game id: {}{}".format(family_id, "" if name is None else " ({})".format(name))
             raise BGGApiError(msg)
 
         family = create_family_from_xml(xml_root,
