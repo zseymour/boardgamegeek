@@ -21,6 +21,8 @@ from ..utils import fix_url, DictObject, fix_unsigned_negative
 
 
 class GameRank(Thing):
+    def __repr__(self):
+        return "{} of {} (Avg: {})".format(self.friendly_name, self.value, self.rating_bayes_average)
     @property
     def type(self):
         return self._data.get("type")
